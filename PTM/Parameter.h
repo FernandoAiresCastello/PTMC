@@ -16,6 +16,8 @@ public:
 	~Parameter();
 
 	ParameterType GetType();
+	std::string GetStringValue();
+	int GetNumericValue();
 
 private:
 	ParameterType Type;

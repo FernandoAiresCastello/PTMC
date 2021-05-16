@@ -11,13 +11,16 @@ ProgramLine::ProgramLine(int lineNumber, int sourceLineNumber, std::string& sour
 
 ProgramLine::~ProgramLine()
 {
+	for (int i = 0; i < Params.size(); i++) {
+		delete Params.at(i);
+	}
 }
 
 bool ProgramLine::ValidateParams()
 {
 	for (int i = 0; i < Params.size(); i++) {
-		Parameter& param = Params[i];
-		if (param.GetType() == ParameterType::PARAM_INVALID)
+		Parameter* param = Params.at(i);
+		if (param->GetType() == ParameterType::PARAM_INVALID)
 			return false;
 	}
 
@@ -27,6 +30,31 @@ bool ProgramLine::ValidateParams()
 int ProgramLine::GetSourceLineNumber()
 {
 	return SourceLineNumber;
+}
+
+int ProgramLine::GetLineNumber()
+{
+	return LineNumber;
+}
+
+std::string& ProgramLine::GetSourceLine()
+{
+	return SourceLine;
+}
+
+std::string& ProgramLine::GetCommand()
+{
+	return Command;
+}
+
+Parameter* ProgramLine::GetParam(int index)
+{
+	return Params.at(index);
+}
+
+int ProgramLine::GetParamCount()
+{
+	return ParamCount;
 }
 
 void ProgramLine::Parse(std::string& sourceLine)
@@ -104,8 +132,7 @@ void ProgramLine::Parse(std::string& sourceLine)
 			rawParam = String::RemoveFirst(rawParam);
 		}
 
-		Parameter param(rawParam, type);
-		Params.push_back(param);
+		Params.push_back(new Parameter(rawParam, type));
 	}
 	
 	ParamCount = Params.size();

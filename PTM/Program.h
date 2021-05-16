@@ -11,7 +11,9 @@ public:
 
 	void Parse(std::vector<std::string>& sourceLines);
 	std::string Validate();
+	int GetSize();
+	ProgramLine* GetLine(int lineNumber);
 
 private:
-	std::vector<ProgramLine> Lines;
+	std::vector<ProgramLine*> Lines;
 };

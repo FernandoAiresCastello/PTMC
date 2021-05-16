@@ -18,3 +18,13 @@ ParameterType Parameter::GetType()
 {
 	return Type;
 }
+
+std::string Parameter::GetStringValue()
+{
+	return StringValue;
+}
+
+int Parameter::GetNumericValue()
+{
+	return NumericValue;
+}

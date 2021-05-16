@@ -11,13 +11,18 @@ public:
 
 	bool ValidateParams();
 	int GetSourceLineNumber();
+	int GetLineNumber();
+	std::string& GetSourceLine();
+	std::string& GetCommand();
+	Parameter* GetParam(int index);
+	int GetParamCount();
 
 private:
 	int LineNumber;
 	int SourceLineNumber;
 	std::string SourceLine;
 	std::string Command;
-	std::vector<Parameter> Params;
+	std::vector<Parameter*> Params;
 	int ParamCount;
 
 	void Parse(std::string& sourceLine);
