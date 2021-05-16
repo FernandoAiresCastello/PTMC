@@ -131,6 +131,9 @@ void ProgramLine::Parse(std::string& sourceLine)
 			type = ParameterType::PARAM_VARIABLE;
 			rawParam = String::RemoveFirst(rawParam);
 		}
+		else if (Command == "GOTO" || Command == "CALL") {
+			type = ParameterType::PARAM_LABEL;
+		}
 
 		Params.push_back(new Parameter(rawParam, type));
 	}

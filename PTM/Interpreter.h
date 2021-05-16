@@ -22,7 +22,9 @@ private:
 	int ParamPtr;
 
 	void FatalError(std::string msg);
+	void ErrorOutOfParams();
 	std::string NextString();
 	int NextNumber();
+	std::string NextVariableIdentifier();
 	void Execute(ProgramLine* line);
 };

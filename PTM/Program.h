@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 #include <vector>
 #include <string>
 #include "ProgramLine.h"
@@ -13,7 +14,9 @@ public:
 	std::string Validate();
 	int GetSize();
 	ProgramLine* GetLine(int lineNumber);
+	int GetLabel(std::string label);
 
 private:
 	std::vector<ProgramLine*> Lines;
+	std::map<std::string, int> Labels;
 };

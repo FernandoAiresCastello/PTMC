@@ -20,9 +20,15 @@ void Program::Parse(std::vector<std::string>& sourceLines)
 	for (int srcLineNum = 0; srcLineNum < sourceLines.size(); srcLineNum++) {
 		std::string srcLine = String::Trim(sourceLines[srcLineNum]);
 		if (!srcLine.empty() && !String::StartsWith(srcLine, "//")) {
-			ProgramLine* line = new ProgramLine(actualLineNum, srcLineNum + 1, srcLine);
-			Lines.push_back(line);
-			actualLineNum++;
+			if (String::EndsWith(srcLine, ":")) {
+				std::string label = String::RemoveLast(srcLine);
+				Labels[label] = actualLineNum;
+			}
+			else {
+				ProgramLine* line = new ProgramLine(actualLineNum, srcLineNum + 1, srcLine);
+				Lines.push_back(line);
+				actualLineNum++;
+			}
 		}
 	}
 }
@@ -50,4 +56,9 @@ int Program::GetSize()
 ProgramLine* Program::GetLine(int lineNumber)
 {
 	return Lines.at(lineNumber);
+}
+
+int Program::GetLabel(std::string label)
+{
+	return Labels[label];
 }
