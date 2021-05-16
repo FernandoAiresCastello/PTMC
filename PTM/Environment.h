@@ -9,6 +9,9 @@ class Environment
 {
 public:
 	Graphics* Gr;
+	UIContext* Ui;
+	int GfxCursorX;
+	int GfxCursorY;
 
 	Environment();
 	~Environment();
@@ -19,7 +22,6 @@ public:
 	int GetNumericVar(std::string var);
 
 private:
-	UIContext* Ui;
 	Project* Proj;
 	std::map<std::string, std::string> Vars;
 };
