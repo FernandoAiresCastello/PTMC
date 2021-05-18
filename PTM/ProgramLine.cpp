@@ -131,7 +131,7 @@ void ProgramLine::Parse(std::string& sourceLine)
 			type = ParameterType::PARAM_VARIABLE;
 			rawParam = String::RemoveFirst(rawParam);
 		}
-		else if (Command == "GOTO" || Command == "CALL") {
+		else if (Command == "GOTO" || Command == "CALL" || String::StartsWith(Command, "IF")) {
 			type = ParameterType::PARAM_LABEL;
 		}
 

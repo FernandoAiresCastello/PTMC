@@ -26,5 +26,7 @@ private:
 	std::string NextString();
 	int NextNumber();
 	std::string NextVariableIdentifier();
+	void Goto();
+	void Call();
 	void Execute(ProgramLine* line);
 };

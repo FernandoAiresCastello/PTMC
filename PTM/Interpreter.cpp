@@ -1,8 +1,6 @@
 #include "Interpreter.h"
 #include "Util.h"
 
-#define CYCLE_DELAY 1
-
 Interpreter::Interpreter() : 
 	Env(NULL), Program(NULL), CurrentLine(NULL), ProgramPtr(0), 
 	Running(false), Paused(false), ParamPtr(0)
@@ -112,6 +110,19 @@ std::string Interpreter::NextVariableIdentifier()
 	return ident;
 }
 
+void Interpreter::Goto()
+{
+	std::string label = NextString();
+	ProgramPtr = Program->GetLabel(label);
+}
+
+void Interpreter::Call()
+{
+	std::string label = NextString();
+	Env->PushToCallStack(ProgramPtr + 1);
+	ProgramPtr = Program->GetLabel(label);
+}
+
 void Interpreter::Execute(ProgramLine* line)
 {
 	std::string& command = line->GetCommand();
@@ -121,16 +132,99 @@ void Interpreter::Execute(ProgramLine* line)
 		Running = false;
 	}
 	else if (command == "GOTO") {
-		std::string label = NextString();
-		ProgramPtr = Program->GetLabel(label);
+		Goto();
 	}
 	else if (command == "CALL") {
-		std::string label = NextString();
-		Env->PushToCallStack(ProgramPtr + 1);
-		ProgramPtr = Program->GetLabel(label);
+		Call();
 	}
 	else if (command == "RETURN") {
 		ProgramPtr = Env->PopFromCallStack();
+	}
+	// IFx_GOTO
+	else if (command == "IFEQ_GOTO") {
+		int a = NextNumber();
+		int b = NextNumber();
+		if (a == b) {
+			Goto();
+		}
+	}
+	else if (command == "IFNEQ_GOTO") {
+		int a = NextNumber();
+		int b = NextNumber();
+		if (a != b) {
+			Goto();
+		}
+	}
+	else if (command == "IFLT_GOTO") {
+		int a = NextNumber();
+		int b = NextNumber();
+		if (a < b) {
+			Goto();
+		}
+	}
+	else if (command == "IFLE_GOTO") {
+		int a = NextNumber();
+		int b = NextNumber();
+		if (a <= b) {
+			Goto();
+		}
+	}
+	else if (command == "IFGT_GOTO") {
+		int a = NextNumber();
+		int b = NextNumber();
+		if (a > b) {
+			Goto();
+		}
+	}
+	else if (command == "IFGE_GOTO") {
+		int a = NextNumber();
+		int b = NextNumber();
+		if (a >= b) {
+			Goto();
+		}
+	}
+	// IFx_CALL
+	else if (command == "IFEQ_CALL") {
+		int a = NextNumber();
+		int b = NextNumber();
+		if (a == b) {
+			Call();
+		}
+	}
+	else if (command == "IFNEQ_CALL") {
+		int a = NextNumber();
+		int b = NextNumber();
+		if (a != b) {
+			Call();
+		}
+	}
+	else if (command == "IFLT_CALL") {
+		int a = NextNumber();
+		int b = NextNumber();
+		if (a < b) {
+			Call();
+		}
+	}
+	else if (command == "IFLE_CALL") {
+		int a = NextNumber();
+		int b = NextNumber();
+		if (a <= b) {
+			Call();
+		}
+	}
+	else if (command == "IFGT_CALL") {
+		int a = NextNumber();
+		int b = NextNumber();
+		if (a > b) {
+			Call();
+		}
+	}
+	else if (command == "IFGE_CALL") {
+		int a = NextNumber();
+		int b = NextNumber();
+		if (a >= b) {
+			Call();
+		}
 	}
 	else if (command == "MSGBOX") {
 		if (line->GetParamCount() == 1) {
@@ -155,6 +249,30 @@ void Interpreter::Execute(ProgramLine* line)
 			std::string value = param2->GetStringValue();
 			Env->SetVar(var, value);
 		}
+	}
+	else if (command == "ADD") {
+		std::string result = NextVariableIdentifier();
+		std::string var = NextVariableIdentifier();
+		int value = NextNumber();
+		Env->SetVar(result, Env->GetNumericVar(var) + value);
+	}
+	else if (command == "SUB") {
+		std::string result = NextVariableIdentifier();
+		std::string var = NextVariableIdentifier();
+		int value = NextNumber();
+		Env->SetVar(result, Env->GetNumericVar(var) - value);
+	}
+	else if (command == "MUL") {
+		std::string result = NextVariableIdentifier();
+		std::string var = NextVariableIdentifier();
+		int value = NextNumber();
+		Env->SetVar(result, Env->GetNumericVar(var) * value);
+	}
+	else if (command == "DIV") {
+		std::string result = NextVariableIdentifier();
+		std::string var = NextVariableIdentifier();
+		int value = NextNumber();
+		Env->SetVar(result, Env->GetNumericVar(var) / value);
 	}
 	else if (command == "CYCLE") {
 		std::string var = NextVariableIdentifier();
