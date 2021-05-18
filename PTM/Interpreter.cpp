@@ -3,7 +3,7 @@
 
 Interpreter::Interpreter() : 
 	Env(NULL), Program(NULL), CurrentLine(NULL), ProgramPtr(0), 
-	Running(false), Paused(false), ParamPtr(0)
+	Running(false), Branching(false), Halted(false), PausedFor(0), ParamPtr(0)
 {
 }
 
@@ -14,11 +14,13 @@ Interpreter::~Interpreter()
 void Interpreter::Run(class Program* program, Environment* env)
 {
 	Env = env;
-	Env->Cycles = 0;
+	Env->Cycles = -1;
 	Program = program;
 	ProgramPtr = 0;
 	Running = true;
-	Paused = false;
+	Branching = false;
+	Halted = false;
+	PausedFor = 0;
 
 	SDL_Event e;
 
@@ -28,21 +30,37 @@ void Interpreter::Run(class Program* program, Environment* env)
 			Running = false;
 			return;
 		}
-		if (Paused) {
+
+		if (Halted) {
 			continue;
+		}
+
+		Env->Cycles++;
+		if (Env->Cycles >= ULLONG_MAX) {
+			Env->Cycles = 0;
+			PausedFor = 0;
 		}
 		if (e.type == SDL_KEYDOWN) {
 			// handle key events here
 		}
-		int oldPtr = ProgramPtr;
+		if (PausedFor > 0) {
+			if (Env->Cycles != PausedFor)
+				continue;
+			else
+				PausedFor = 0;
+		}
+
 		ProgramLine* line = program->GetLine(ProgramPtr);
 		CurrentLine = line;
 		Execute(line);
-		Env->Cycles++;
-		if (!Running) {
-			break;
+
+		if (!Running || Halted) {
+			continue;
 		}
-		if (ProgramPtr == oldPtr) {
+		if (Branching) {
+			Branching = false;
+		}
+		else {
 			ProgramPtr++;
 			if (ProgramPtr >= program->GetSize()) {
 				FatalError("Execution pointer past end of program");
@@ -53,14 +71,17 @@ void Interpreter::Run(class Program* program, Environment* env)
 
 void Interpreter::FatalError(std::string msg)
 {
-	ShowErrorMessageBox(msg);
 	Running = false;
+	ShowErrorMessageBox("PTM - Runtime Error", 
+		String::Format("Error at line %i:\n%s\n\n%s", 
+		CurrentLine->GetSourceLineNumber(), 
+		CurrentLine->GetSourceLine().c_str(),
+		msg.c_str()));
 }
 
 void Interpreter::ErrorOutOfParams()
 {
-	FatalError(String::Format("Out of parameters in line %i", 
-		CurrentLine->GetSourceLineNumber()));
+	FatalError("Missing parameters");
 }
 
 std::string Interpreter::NextString()
@@ -114,6 +135,7 @@ void Interpreter::Goto()
 {
 	std::string label = NextString();
 	ProgramPtr = Program->GetLabel(label);
+	Branching = true;
 }
 
 void Interpreter::Call()
@@ -121,6 +143,7 @@ void Interpreter::Call()
 	std::string label = NextString();
 	Env->PushToCallStack(ProgramPtr + 1);
 	ProgramPtr = Program->GetLabel(label);
+	Branching = true;
 }
 
 void Interpreter::Execute(ProgramLine* line)
@@ -131,6 +154,14 @@ void Interpreter::Execute(ProgramLine* line)
 	if (command == "EXIT") {
 		Running = false;
 	}
+	else if (command == "HALT") {
+		Halted = true;
+	}
+	else if (command == "TITLE") {
+		Env->WindowTitle = NextString();
+		if (Env->Gr != NULL)
+			Env->Gr->SetWindowTitle(Env->WindowTitle);
+	}
 	else if (command == "GOTO") {
 		Goto();
 	}
@@ -139,6 +170,9 @@ void Interpreter::Execute(ProgramLine* line)
 	}
 	else if (command == "RETURN") {
 		ProgramPtr = Env->PopFromCallStack();
+	}
+	else if (command == "PAUSE") {
+		PausedFor = Env->Cycles + (NextNumber() * 1000);
 	}
 	// IFx_GOTO
 	else if (command == "IFEQ_GOTO") {
@@ -250,6 +284,14 @@ void Interpreter::Execute(ProgramLine* line)
 			Env->SetVar(var, value);
 		}
 	}
+	else if (command == "INC") {
+		std::string var = NextVariableIdentifier();
+		Env->SetVar(var, Env->GetNumericVar(var) + 1);
+	}
+	else if (command == "DEC") {
+		std::string var = NextVariableIdentifier();
+		Env->SetVar(var, Env->GetNumericVar(var) - 1);
+	}
 	else if (command == "ADD") {
 		std::string result = NextVariableIdentifier();
 		std::string var = NextVariableIdentifier();
@@ -274,6 +316,23 @@ void Interpreter::Execute(ProgramLine* line)
 		int value = NextNumber();
 		Env->SetVar(result, Env->GetNumericVar(var) / value);
 	}
+	else if (command == "DIVR") {
+		std::string result = NextVariableIdentifier();
+		std::string var = NextVariableIdentifier();
+		int value = NextNumber();
+		Env->SetVar(result, Env->GetNumericVar(var) % value);
+	}
+	else if (command == "POW") {
+		std::string result = NextVariableIdentifier();
+		std::string var = NextVariableIdentifier();
+		int value = NextNumber();
+		Env->SetVar(result, pow(Env->GetNumericVar(var), value));
+	}
+	else if (command == "SQRT") {
+		std::string result = NextVariableIdentifier();
+		std::string var = NextVariableIdentifier();
+		Env->SetVar(result, sqrt(Env->GetNumericVar(var)));
+	}
 	else if (command == "CYCLE") {
 		std::string var = NextVariableIdentifier();
 		Env->SetVar(var, Env->Cycles);
@@ -284,15 +343,21 @@ void Interpreter::Execute(ProgramLine* line)
 		Env->SetVar(var, Util::Random(max));
 	}
 	else if (command == "SCREEN") {
-		int cols = NextNumber();
-		int rows = NextNumber();
-		int width = NextNumber();
-		int height = NextNumber();
-		int fullscreen = NextNumber();
+		if (Env->Gr == NULL) {
+			int cols = NextNumber();
+			int rows = NextNumber();
+			int width = NextNumber();
+			int height = NextNumber();
+			int fullscreen = NextNumber();
 
-		Env->Gr = new Graphics(8 * cols, 8 * rows, width, height, fullscreen);
-		Env->Ui = new UIContext(Env->Gr, 0xffffff, 0x000000);
-		Env->Ui->Clear();
+			Env->Gr = new Graphics(8 * cols, 8 * rows, width, height, fullscreen);
+			Env->Gr->SetWindowTitle(Env->WindowTitle);
+			Env->Ui = new UIContext(Env->Gr, 0xffffff, 0x000000);
+			Env->Ui->Clear();
+		}
+		else {
+			FatalError("Screen is already created");
+		}
 	}
 	else if (command == "CLS") {
 		Env->Ui->Clear();
@@ -324,8 +389,46 @@ void Interpreter::Execute(ProgramLine* line)
 	else if (command == "REFRESH") {
 		Env->Ui->Update();
 	}
+	else if (command == "CREATE_MAP") {
+		std::string name = NextString();
+		if (Env->GetMap(name) == NULL) {
+			int width = NextNumber();
+			int height = NextNumber();
+			int layers = NextNumber();
+			Map* map = new Map(Env->Proj, name, width, height, layers);
+			Env->AddMap(name, map);
+		}
+		else {
+			FatalError(String::Format("Map with name \"%s\" already exists", name.c_str()));
+		}
+	}
+	else if (command == "CREATE_VIEW") {
+		std::string mapName = NextString();
+		if (Env->GetMap(mapName) != NULL) {
+			int x = NextNumber();
+			int y = NextNumber();
+			int width = NextNumber();
+			int height = NextNumber();
+			Map* map = Env->GetMap(mapName);
+			MapViewport* view = new MapViewport(Env->Ui, map, x, y, width, height, 0, 0, 10);
+			Env->AddView(mapName, view);
+		}
+		else {
+			FatalError(String::Format("Map with name \"%s\" does not exist", mapName.c_str()));
+		}
+	}
+	else if (command == "DRAW_MAP") {
+		std::string id = NextString();
+		MapViewport* view = Env->GetView(id);
+		if (view != NULL) {
+			view->Draw();
+		}
+		else {
+			FatalError(String::Format("View with name \"%s\" does not exist", id.c_str()));
+		}
+	}
+	
 	else {
-		FatalError(String::Format("Invalid command in line %i: %s", 
-			line->GetSourceLineNumber(), command.c_str()));
+		FatalError(String::Format("Invalid command: %s", command.c_str()));
 	}
 }

@@ -40,7 +40,8 @@ std::string Program::Validate()
 	for (int i = 0; i < Lines.size(); i++) {
 		ProgramLine* line = Lines.at(i);
 		if (!line->ValidateParams()) {
-			validation = String::Format("Syntax error in line %i", line->GetSourceLineNumber());
+			validation = String::Format("Syntax error in line %i:\n\n%s", 
+				line->GetSourceLineNumber(), line->GetSourceLine().c_str());
 			break;
 		}
 	}

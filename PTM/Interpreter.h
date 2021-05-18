@@ -18,7 +18,9 @@ private:
 	ProgramLine* CurrentLine;
 	int ProgramPtr;
 	bool Running;
-	bool Paused;
+	bool Branching;
+	bool Halted;
+	int PausedFor;
 	int ParamPtr;
 
 	void FatalError(std::string msg);

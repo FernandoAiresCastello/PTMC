@@ -10,13 +10,13 @@ using namespace TBRLGPT;
 int main(int argc, char** argv)
 {
 	if (!File::Exists(INIT_FILE)) {
-		ShowErrorMessageBox("Init file " INIT_FILE " not found.");
+		ShowErrorMessageBox("PTM - Initialization Error", "Init file " INIT_FILE " not found.");
 		return 1;
 	}
 
 	std::string programFile = String::RemoveAll(File::ReadText(INIT_FILE), "\n\t ");
 	if (!File::Exists(programFile)) {
-		ShowErrorMessageBox("Program file " + programFile + " not found.");
+		ShowErrorMessageBox("PTM - Initialization Error", "Program file " + programFile + " not found.");
 		return 1;
 	}
 

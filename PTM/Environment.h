@@ -9,7 +9,9 @@ using namespace TBRLGPT;
 class Environment
 {
 public:
-	int Cycles = 0;
+	std::string WindowTitle = "";
+	unsigned long long Cycles = 0;
+	Project* Proj = new Project();
 	Graphics* Gr = NULL;
 	UIContext* Ui = NULL;
 	int GfxCursorX = 0;
@@ -24,9 +26,14 @@ public:
 	int GetNumericVar(std::string var);
 	void PushToCallStack(int programPtr);
 	int PopFromCallStack();
+	void AddMap(std::string& id, Map* map);
+	Map* GetMap(std::string& id);
+	void AddView(std::string& id, MapViewport* view);
+	MapViewport* GetView(std::string& id);
 
 private:
-	Project* Proj;
 	std::map<std::string, std::string> Vars;
 	std::stack<int> CallStack;
+	std::map<std::string, Map*> Maps;
+	std::map<std::string, MapViewport*> Views;
 };

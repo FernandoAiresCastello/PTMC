@@ -21,7 +21,7 @@ Program* ProgramLoader::Load(std::string filename)
 
 	std::string validation = program->Validate();
 	if (!validation.empty()) {
-		ShowErrorMessageBox(validation);
+		ShowErrorMessageBox("PTM - Validation Error", validation);
 		delete program;
 		program = NULL;
 	}
