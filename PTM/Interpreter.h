@@ -1,8 +1,11 @@
 #pragma once
 #include <string>
+#include <TBRLGPT.h>
 #include "Program.h"
 #include "ProgramLine.h"
 #include "Environment.h"
+
+using namespace TBRLGPT;
 
 class Interpreter
 {
@@ -30,5 +33,6 @@ private:
 	std::string NextVariableIdentifier();
 	void Goto();
 	void Call();
+	Object* GetSelectedObject();
 	void Execute(ProgramLine* line);
 };

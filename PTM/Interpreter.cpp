@@ -31,6 +31,10 @@ void Interpreter::Run(class Program* program, Environment* env)
 			return;
 		}
 
+		if (Env->Ui != NULL) {
+			Env->Ui->Update();
+		}
+
 		if (Halted) {
 			continue;
 		}
@@ -144,6 +148,14 @@ void Interpreter::Call()
 	Env->PushToCallStack(ProgramPtr + 1);
 	ProgramPtr = Program->GetLabel(label);
 	Branching = true;
+}
+
+Object* Interpreter::GetSelectedObject()
+{
+	if (Env->CurrentMap != NULL)
+		return Env->CurrentMap->GetObject(Env->MapCursorX, Env->MapCursorY, Env->MapCursorLayer);
+
+	return NULL;
 }
 
 void Interpreter::Execute(ProgramLine* line)
@@ -349,11 +361,7 @@ void Interpreter::Execute(ProgramLine* line)
 			int width = NextNumber();
 			int height = NextNumber();
 			int fullscreen = NextNumber();
-
-			Env->Gr = new Graphics(8 * cols, 8 * rows, width, height, fullscreen);
-			Env->Gr->SetWindowTitle(Env->WindowTitle);
-			Env->Ui = new UIContext(Env->Gr, 0xffffff, 0x000000);
-			Env->Ui->Clear();
+			Env->InitWindow(cols, rows, width, height, fullscreen);
 		}
 		else {
 			FatalError("Screen is already created");
@@ -363,71 +371,273 @@ void Interpreter::Execute(ProgramLine* line)
 		Env->Ui->Clear();
 	}
 	else if (command == "LOCATE") {
-		int x = NextNumber();
-		int y = NextNumber();
-		Env->GfxCursorX = x;
-		Env->GfxCursorY = y;
+		Env->GfxCursorX = NextNumber();
+		Env->GfxCursorY = NextNumber();
 	}
-	else if (command == "FORECOLOR") {
-		int fgc = NextNumber();
-		Env->Ui->ForeColor = fgc;
+	else if (command == "FCOLOR") {
+		Env->Ui->ForeColor = NextNumber();
 	}
-	else if (command == "BACKCOLOR") {
-		int bgc = NextNumber();
-		Env->Ui->BackColor = bgc;
+	else if (command == "BCOLOR") {
+		Env->Ui->BackColor = NextNumber();
 	}
 	else if (command == "COLOR") {
-		int fgc = NextNumber();
-		int bgc = NextNumber();
-		Env->Ui->ForeColor = fgc;
-		Env->Ui->BackColor = bgc;
+		Env->Ui->ForeColor = NextNumber();
+		Env->Ui->BackColor = NextNumber();
 	}
 	else if (command == "PRINT") {
-		std::string val = NextString();
-		Env->Ui->Print(Env->GfxCursorX, Env->GfxCursorY, val);
+		Env->Ui->Print(Env->GfxCursorX, Env->GfxCursorY, NextString());
+	}
+	else if (command == "PUTC") {
+		Env->Ui->PutChar(NextNumber(), Env->GfxCursorX, Env->GfxCursorY);
+	}
+	else if (command == "SETC") {
+		int ix = NextNumber();
+		int row0 = NextNumber();
+		int row1 = NextNumber();
+		int row2 = NextNumber();
+		int row3 = NextNumber();
+		int row4 = NextNumber();
+		int row5 = NextNumber();
+		int row6 = NextNumber();
+		int row7 = NextNumber();
+
+		Env->Ui->Chars->SetChar(ix, row0, row1, row2, row3, row4, row5, row6, row7);
 	}
 	else if (command == "REFRESH") {
 		Env->Ui->Update();
 	}
+	else if (command == "LOAD_PROJ") {
+		Env->LoadProject(NextString());
+	}
 	else if (command == "CREATE_MAP") {
-		std::string name = NextString();
-		if (Env->GetMap(name) == NULL) {
+		std::string id = NextString();
+		if (Env->GetMap(id) == NULL) {
 			int width = NextNumber();
 			int height = NextNumber();
 			int layers = NextNumber();
-			Map* map = new Map(Env->Proj, name, width, height, layers);
-			Env->AddMap(name, map);
+			Map* map = new Map(Env->Proj, "", width, height, layers);
+			map->SetId(id);
+			Env->AddMap(map);
 		}
 		else {
-			FatalError(String::Format("Map with name \"%s\" already exists", name.c_str()));
+			FatalError(String::Format("Map with id \"%s\" already exists", id.c_str()));
+		}
+	}
+	else if (command == "SELECT_MAP") {
+		std::string mapid = NextString();
+		Map* map = Env->GetMap(mapid);
+		if (map != NULL) {
+			Env->CurrentMap = map;
+		}
+		else {
+			FatalError(String::Format("Map with id \"%s\" does not exist", mapid.c_str()));
 		}
 	}
 	else if (command == "CREATE_VIEW") {
-		std::string mapName = NextString();
-		if (Env->GetMap(mapName) != NULL) {
+		if (Env->CurrentMap != NULL) {
 			int x = NextNumber();
 			int y = NextNumber();
 			int width = NextNumber();
 			int height = NextNumber();
-			Map* map = Env->GetMap(mapName);
-			MapViewport* view = new MapViewport(Env->Ui, map, x, y, width, height, 0, 0, 10);
-			Env->AddView(mapName, view);
+			int animationDelay = 100;
+			if (CurrentLine->GetParamCount() > 4) {
+				animationDelay = NextNumber();
+			}
+
+			MapViewport* view = new MapViewport(Env->Ui, Env->CurrentMap, x, y, width, height, 0, 0, animationDelay);
+			std::string mapid = Env->CurrentMap->GetId();
+			Env->AddView(mapid, view);
 		}
 		else {
-			FatalError(String::Format("Map with name \"%s\" does not exist", mapName.c_str()));
+			FatalError("No map selected");
 		}
 	}
 	else if (command == "DRAW_MAP") {
-		std::string id = NextString();
-		MapViewport* view = Env->GetView(id);
+		std::string mapid = Env->CurrentMap->GetId();
+		MapViewport* view = Env->GetView(mapid);
 		if (view != NULL) {
 			view->Draw();
 		}
 		else {
-			FatalError(String::Format("View with name \"%s\" does not exist", id.c_str()));
+			FatalError(String::Format("There is no view for the current map: \"%s\"", mapid.c_str()));
 		}
 	}
-	
+	else if (command == "SELECT_OBJ") {
+		if (Env->CurrentMap != NULL) {
+			Env->MapCursorX = NextNumber();
+			Env->MapCursorY = NextNumber();
+			Env->MapCursorLayer = NextNumber();
+		}
+		else {
+			FatalError("No map selected");
+		}
+	}
+	else if (command == "OBJ_DELETE") {
+		if (Env->CurrentMap != NULL) {
+			GetSelectedObject()->SetVoid(true);
+		}
+		else {
+			FatalError("No map selected");
+		}
+	}
+	else if (command == "OBJ_ADD_CHAR") {
+		if (Env->CurrentMap != NULL) {
+			int ix = NextNumber();
+			int fgc = NextNumber();
+			int bgc = NextNumber();
+			Object* o = GetSelectedObject();
+			o->SetVoid(false);
+			o->GetAnimation().AddFrame(ObjectChar(ix, fgc, bgc));
+		}
+		else {
+			FatalError("No map selected");
+		}
+	}
+	else if (command == "OBJ_SET_CHAR") {
+		if (Env->CurrentMap != NULL) {
+			int frame = NextNumber();
+			int ix = NextNumber();
+			int fgc = NextNumber();
+			int bgc = NextNumber();
+			Object* o = GetSelectedObject();
+			o->SetVoid(false);
+			o->GetAnimation().SetFrame(frame, ObjectChar(ix, fgc, bgc));
+		}
+		else {
+			FatalError("No map selected");
+		}
+	}
+	else if (command == "OBJ_SET_CHAR_IX") {
+		if (Env->CurrentMap != NULL) {
+			int frame = NextNumber();
+			int ix = NextNumber();
+			Object* o = GetSelectedObject();
+			o->SetVoid(false);
+			ObjectChar& ch = o->GetAnimation().GetFrame(frame);
+			ch.Index = ix;
+		}
+		else {
+			FatalError("No map selected");
+		}
+	}
+	else if (command == "OBJ_SET_CHAR_FCOLOR") {
+		if (Env->CurrentMap != NULL) {
+			int frame = NextNumber();
+			int ix = NextNumber();
+			Object* o = GetSelectedObject();
+			o->SetVoid(false);
+			ObjectChar& ch = o->GetAnimation().GetFrame(frame);
+			ch.ForeColorIx = ix;
+		}
+		else {
+			FatalError("No map selected");
+		}
+	}
+	else if (command == "OBJ_SET_CHAR_BCOLOR") {
+		if (Env->CurrentMap != NULL) {
+			int frame = NextNumber();
+			int ix = NextNumber();
+			Object* o = GetSelectedObject();
+			o->SetVoid(false);
+			ObjectChar& ch = o->GetAnimation().GetFrame(frame);
+			ch.BackColorIx = ix;
+		}
+		else {
+			FatalError("No map selected");
+		}
+	}
+	else if (command == "OBJ_GET_CHAR") {
+		if (Env->CurrentMap != NULL) {
+			int frame = NextNumber();
+			std::string ix = NextVariableIdentifier();
+			std::string fgc = NextVariableIdentifier();
+			std::string bgc = NextVariableIdentifier();
+			ObjectChar& ch = GetSelectedObject()->GetAnimation().GetFrame(frame);
+			Env->SetVar(ix, ch.Index);
+			Env->SetVar(fgc, ch.ForeColorIx);
+			Env->SetVar(bgc, ch.BackColorIx);
+		}
+		else {
+			FatalError("No map selected");
+		}
+	}
+	else if (command == "OBJ_GET_CHAR_IX") {
+		if (Env->CurrentMap != NULL) {
+			int frame = NextNumber();
+			std::string ix = NextVariableIdentifier();
+			ObjectChar& ch = GetSelectedObject()->GetAnimation().GetFrame(frame);
+			Env->SetVar(ix, ch.Index);
+		}
+		else {
+			FatalError("No map selected");
+		}
+	}
+	else if (command == "OBJ_GET_CHAR_FCOLOR") {
+		if (Env->CurrentMap != NULL) {
+			int frame = NextNumber();
+			std::string fgc = NextVariableIdentifier();
+			ObjectChar& ch = GetSelectedObject()->GetAnimation().GetFrame(frame);
+			Env->SetVar(fgc, ch.ForeColorIx);
+		}
+		else {
+			FatalError("No map selected");
+		}
+	}
+	else if (command == "OBJ_GET_CHAR_BCOLOR") {
+		if (Env->CurrentMap != NULL) {
+			int frame = NextNumber();
+			std::string bgc = NextVariableIdentifier();
+			ObjectChar& ch = GetSelectedObject()->GetAnimation().GetFrame(frame);
+			Env->SetVar(bgc, ch.BackColorIx);
+		}
+		else {
+			FatalError("No map selected");
+		}
+	}
+	else if (command == "OBJ_SET_PROP") {
+		if (Env->CurrentMap != NULL) {
+			std::string prop = NextString();
+			std::string value = NextString();
+			Object* o = GetSelectedObject();
+			o->SetVoid(false);
+			o->SetProperty(prop, value);
+		}
+		else {
+			FatalError("No map selected");
+		}
+	}
+	else if (command == "OBJ_GET_PROP") {
+		if (Env->CurrentMap != NULL) {
+			std::string var = NextVariableIdentifier();
+			std::string prop = NextString();
+			Env->SetVar(var, GetSelectedObject()->GetPropertyAsString(prop));
+		}
+		else {
+			FatalError("No map selected");
+		}
+	}
+	else if (command == "OBJ_HAS_PROP") {
+		if (Env->CurrentMap != NULL) {
+			bool has = false;
+			std::string var = NextVariableIdentifier();
+			if (CurrentLine->GetParamCount() == 3) {
+				std::string prop = NextString();
+				std::string value = NextString();
+				Object* o = GetSelectedObject();
+				has = o->HasPropertyValue(prop, value);
+			}
+			else if (CurrentLine->GetParamCount() == 2) {
+				std::string prop = NextString();
+				Object* o = GetSelectedObject();
+				has = o->HasProperty(prop);
+			}
+			Env->SetVar(var, has ? 1 : 0);
+		}
+		else {
+			FatalError("No map selected");
+		}
+	}
+
 	else {
 		FatalError(String::Format("Invalid command: %s", command.c_str()));
 	}
