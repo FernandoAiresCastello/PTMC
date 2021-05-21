@@ -11,7 +11,7 @@ class Environment
 public:
 	std::string WindowTitle = "";
 	unsigned long long Cycles = 0;
-	Project* Proj = new Project();
+	Project* Proj = NULL;
 	Graphics* Gr = NULL;
 	UIContext* Ui = NULL;
 	Map* CurrentMap = NULL;
@@ -31,7 +31,7 @@ public:
 	int GetNumericVar(std::string var);
 	void PushToCallStack(int programPtr);
 	int PopFromCallStack();
-	void LoadProject(std::string filename);
+	bool LoadProject(std::string filename);
 	void AddMap(Map* map);
 	Map* GetMap(std::string& id);
 	void AddView(std::string& id, MapViewport* view);
@@ -42,4 +42,6 @@ private:
 	std::stack<int> CallStack;
 	std::map<std::string, Map*> Maps;
 	std::map<std::string, MapViewport*> Views;
+
+	void DeleteViews();
 };

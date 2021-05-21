@@ -7,12 +7,16 @@ Environment::Environment()
 
 Environment::~Environment()
 {
+	DeleteViews();
+	delete Proj;
+}
+
+void Environment::DeleteViews()
+{
 	for (auto it = Views.begin(); it != Views.end(); ++it) {
 		delete it->second;
 	}
 	Views.clear();
-
-	delete Proj;
 }
 
 void Environment::InitWindow(int cols, int rows, int width, int height, int fullscreen)
@@ -55,17 +59,43 @@ int Environment::PopFromCallStack()
 	return top;
 }
 
-void Environment::LoadProject(std::string filename)
+bool Environment::LoadProject(std::string filename)
 {
+	if (!File::Exists(filename))
+		return false;
+
 	delete Proj;
 	Proj = new Project();
-	Proj->Load(filename);
-	Ui->Pal = Proj->GetPalette();
-	Ui->Chars = Proj->GetCharset();
+	bool ok = Proj->Load(filename);
+
+	if (ok) {
+		CurrentMap = NULL;
+		DeleteViews();
+		Maps.clear();
+
+		Ui->Pal = Proj->GetPalette();
+		Ui->Chars = Proj->GetCharset();
+
+		auto maps = Proj->GetMaps();
+		for (int i = 0; i < maps.size(); i++) {
+			Map* map = maps[i];
+			Maps[map->GetId()] = map;
+		}
+	}
+	else {
+		Proj = NULL;
+	}
+
+	return ok;
 }
 
 void Environment::AddMap(Map* map)
 {
+	if (Proj == NULL) {
+		Proj = new Project();
+		Proj->SetCharset(Ui->Chars);
+		Proj->SetPalette(Ui->Pal);
+	}
 	Proj->AddMap(map);
 	Maps[map->GetId()] = map;
 }

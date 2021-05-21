@@ -390,7 +390,7 @@ void Interpreter::Execute(ProgramLine* line)
 	else if (command == "PUTC") {
 		Env->Ui->PutChar(NextNumber(), Env->GfxCursorX, Env->GfxCursorY);
 	}
-	else if (command == "SETC") {
+	else if (command == "SETCHR") {
 		int ix = NextNumber();
 		int row0 = NextNumber();
 		int row1 = NextNumber();
@@ -403,11 +403,21 @@ void Interpreter::Execute(ProgramLine* line)
 
 		Env->Ui->Chars->SetChar(ix, row0, row1, row2, row3, row4, row5, row6, row7);
 	}
+	else if (command == "SETPAL") {
+		int ix = NextNumber();
+		int rgb = NextNumber();
+
+		Env->Ui->Pal->Set(ix, rgb);
+	}
 	else if (command == "REFRESH") {
 		Env->Ui->Update();
 	}
 	else if (command == "LOAD_PROJ") {
-		Env->LoadProject(NextString());
+		std::string file = NextString();
+		bool ok = Env->LoadProject(file);
+		if (!ok) {
+			FatalError(String::Format("Project file \"%s\" not found", file.c_str()));
+		}
 	}
 	else if (command == "CREATE_MAP") {
 		std::string id = NextString();
@@ -453,13 +463,18 @@ void Interpreter::Execute(ProgramLine* line)
 		}
 	}
 	else if (command == "DRAW_MAP") {
-		std::string mapid = Env->CurrentMap->GetId();
-		MapViewport* view = Env->GetView(mapid);
-		if (view != NULL) {
-			view->Draw();
+		if (Env->CurrentMap != NULL) {
+			std::string mapid = Env->CurrentMap->GetId();
+			MapViewport* view = Env->GetView(mapid);
+			if (view != NULL) {
+				view->Draw();
+			}
+			else {
+				FatalError(String::Format("There is no view for the current map: \"%s\"", mapid.c_str()));
+			}
 		}
 		else {
-			FatalError(String::Format("There is no view for the current map: \"%s\"", mapid.c_str()));
+			FatalError("No map selected");
 		}
 	}
 	else if (command == "SELECT_OBJ") {
