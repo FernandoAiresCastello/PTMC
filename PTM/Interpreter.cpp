@@ -67,13 +67,13 @@ void Interpreter::Run(class Program* program, Environment* env)
 		else {
 			ProgramPtr++;
 			if (ProgramPtr >= program->GetSize()) {
-				FatalError("Execution pointer past end of program");
+				Abort("Execution pointer past end of program");
 			}
 		}
 	}
 }
 
-void Interpreter::FatalError(std::string msg)
+void Interpreter::Abort(std::string msg)
 {
 	Running = false;
 	ShowErrorMessageBox("PTM - Runtime Error", 
@@ -85,7 +85,7 @@ void Interpreter::FatalError(std::string msg)
 
 void Interpreter::ErrorOutOfParams()
 {
-	FatalError("Missing parameters");
+	Abort("Missing parameters");
 }
 
 std::string Interpreter::NextString()
@@ -182,6 +182,7 @@ void Interpreter::Execute(ProgramLine* line)
 	}
 	else if (command == "RETURN") {
 		ProgramPtr = Env->PopFromCallStack();
+		Branching = true;
 	}
 	else if (command == "PAUSE") {
 		PausedFor = Env->Cycles + (NextNumber() * 1000);
@@ -364,7 +365,7 @@ void Interpreter::Execute(ProgramLine* line)
 			Env->InitWindow(cols, rows, width, height, fullscreen);
 		}
 		else {
-			FatalError("Screen is already created");
+			Abort("Screen is already created");
 		}
 	}
 	else if (command == "CLS") {
@@ -416,7 +417,7 @@ void Interpreter::Execute(ProgramLine* line)
 		std::string file = NextString();
 		bool ok = Env->LoadProject(file);
 		if (!ok) {
-			FatalError(String::Format("Project file \"%s\" not found", file.c_str()));
+			Abort(String::Format("Project file \"%s\" not found", file.c_str()));
 		}
 	}
 	else if (command == "CREATE_MAP") {
@@ -430,7 +431,7 @@ void Interpreter::Execute(ProgramLine* line)
 			Env->AddMap(map);
 		}
 		else {
-			FatalError(String::Format("Map with id \"%s\" already exists", id.c_str()));
+			Abort(String::Format("Map with id \"%s\" already exists", id.c_str()));
 		}
 	}
 	else if (command == "SELECT_MAP") {
@@ -440,7 +441,7 @@ void Interpreter::Execute(ProgramLine* line)
 			Env->CurrentMap = map;
 		}
 		else {
-			FatalError(String::Format("Map with id \"%s\" does not exist", mapid.c_str()));
+			Abort(String::Format("Map with id \"%s\" does not exist", mapid.c_str()));
 		}
 	}
 	else if (command == "CREATE_VIEW") {
@@ -459,7 +460,7 @@ void Interpreter::Execute(ProgramLine* line)
 			Env->AddView(mapid, view);
 		}
 		else {
-			FatalError("No map selected");
+			Abort("No map selected");
 		}
 	}
 	else if (command == "DRAW_MAP") {
@@ -470,11 +471,11 @@ void Interpreter::Execute(ProgramLine* line)
 				view->Draw();
 			}
 			else {
-				FatalError(String::Format("There is no view for the current map: \"%s\"", mapid.c_str()));
+				Abort(String::Format("There is no view for the current map: \"%s\"", mapid.c_str()));
 			}
 		}
 		else {
-			FatalError("No map selected");
+			Abort("No map selected");
 		}
 	}
 	else if (command == "SELECT_OBJ") {
@@ -484,7 +485,7 @@ void Interpreter::Execute(ProgramLine* line)
 			Env->MapCursorLayer = NextNumber();
 		}
 		else {
-			FatalError("No map selected");
+			Abort("No map selected");
 		}
 	}
 	else if (command == "OBJ_DELETE") {
@@ -492,7 +493,7 @@ void Interpreter::Execute(ProgramLine* line)
 			GetSelectedObject()->SetVoid(true);
 		}
 		else {
-			FatalError("No map selected");
+			Abort("No map selected");
 		}
 	}
 	else if (command == "OBJ_ADD_CHAR") {
@@ -505,7 +506,7 @@ void Interpreter::Execute(ProgramLine* line)
 			o->GetAnimation().AddFrame(ObjectChar(ix, fgc, bgc));
 		}
 		else {
-			FatalError("No map selected");
+			Abort("No map selected");
 		}
 	}
 	else if (command == "OBJ_SET_CHAR") {
@@ -519,7 +520,7 @@ void Interpreter::Execute(ProgramLine* line)
 			o->GetAnimation().SetFrame(frame, ObjectChar(ix, fgc, bgc));
 		}
 		else {
-			FatalError("No map selected");
+			Abort("No map selected");
 		}
 	}
 	else if (command == "OBJ_SET_CHAR_IX") {
@@ -532,7 +533,7 @@ void Interpreter::Execute(ProgramLine* line)
 			ch.Index = ix;
 		}
 		else {
-			FatalError("No map selected");
+			Abort("No map selected");
 		}
 	}
 	else if (command == "OBJ_SET_CHAR_FCOLOR") {
@@ -545,7 +546,7 @@ void Interpreter::Execute(ProgramLine* line)
 			ch.ForeColorIx = ix;
 		}
 		else {
-			FatalError("No map selected");
+			Abort("No map selected");
 		}
 	}
 	else if (command == "OBJ_SET_CHAR_BCOLOR") {
@@ -558,7 +559,7 @@ void Interpreter::Execute(ProgramLine* line)
 			ch.BackColorIx = ix;
 		}
 		else {
-			FatalError("No map selected");
+			Abort("No map selected");
 		}
 	}
 	else if (command == "OBJ_GET_CHAR") {
@@ -573,7 +574,7 @@ void Interpreter::Execute(ProgramLine* line)
 			Env->SetVar(bgc, ch.BackColorIx);
 		}
 		else {
-			FatalError("No map selected");
+			Abort("No map selected");
 		}
 	}
 	else if (command == "OBJ_GET_CHAR_IX") {
@@ -584,7 +585,7 @@ void Interpreter::Execute(ProgramLine* line)
 			Env->SetVar(ix, ch.Index);
 		}
 		else {
-			FatalError("No map selected");
+			Abort("No map selected");
 		}
 	}
 	else if (command == "OBJ_GET_CHAR_FCOLOR") {
@@ -595,7 +596,7 @@ void Interpreter::Execute(ProgramLine* line)
 			Env->SetVar(fgc, ch.ForeColorIx);
 		}
 		else {
-			FatalError("No map selected");
+			Abort("No map selected");
 		}
 	}
 	else if (command == "OBJ_GET_CHAR_BCOLOR") {
@@ -606,7 +607,7 @@ void Interpreter::Execute(ProgramLine* line)
 			Env->SetVar(bgc, ch.BackColorIx);
 		}
 		else {
-			FatalError("No map selected");
+			Abort("No map selected");
 		}
 	}
 	else if (command == "OBJ_SET_PROP") {
@@ -618,7 +619,7 @@ void Interpreter::Execute(ProgramLine* line)
 			o->SetProperty(prop, value);
 		}
 		else {
-			FatalError("No map selected");
+			Abort("No map selected");
 		}
 	}
 	else if (command == "OBJ_GET_PROP") {
@@ -628,7 +629,7 @@ void Interpreter::Execute(ProgramLine* line)
 			Env->SetVar(var, GetSelectedObject()->GetPropertyAsString(prop));
 		}
 		else {
-			FatalError("No map selected");
+			Abort("No map selected");
 		}
 	}
 	else if (command == "OBJ_HAS_PROP") {
@@ -649,11 +650,11 @@ void Interpreter::Execute(ProgramLine* line)
 			Env->SetVar(var, has ? 1 : 0);
 		}
 		else {
-			FatalError("No map selected");
+			Abort("No map selected");
 		}
 	}
 
 	else {
-		FatalError(String::Format("Invalid command: %s", command.c_str()));
+		Abort(String::Format("Invalid command: %s", command.c_str()));
 	}
 }

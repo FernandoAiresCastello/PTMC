@@ -26,7 +26,7 @@ private:
 	int PausedFor;
 	int ParamPtr;
 
-	void FatalError(std::string msg);
+	void Abort(std::string msg);
 	void ErrorOutOfParams();
 	std::string NextString();
 	int NextNumber();
