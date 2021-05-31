@@ -119,7 +119,8 @@ void ProgramLine::Parse(std::string& sourceLine)
 			type = ParameterType::PARAM_NUMERIC;
 			rawParam = String::ToString(String::BinaryToInt(rawParam));
 		}
-		else if (String::StartsWith(rawParam, "0x") || String::StartsWithNumber(rawParam)) {
+		else if (String::StartsWith(rawParam, "0x") || String::StartsWithNumber(rawParam) ||
+				 String::StartsWith(rawParam, "-") || String::StartsWith(rawParam, "+")) {
 			type = ParameterType::PARAM_NUMERIC;
 			rawParam = String::ToString(String::ToInt(rawParam));
 		}

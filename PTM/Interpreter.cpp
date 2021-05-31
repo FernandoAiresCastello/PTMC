@@ -30,23 +30,26 @@ void Interpreter::Run(class Program* program, Environment* env)
 			Running = false;
 			return;
 		}
-
 		if (Env->Ui != NULL) {
+			Env->DrawEnabledViews();
 			Env->Ui->Update();
 		}
-
 		if (Halted) {
 			continue;
 		}
-
 		Env->Cycles++;
 		if (Env->Cycles >= ULLONG_MAX) {
 			Env->Cycles = 0;
 			PausedFor = 0;
 		}
+		
 		if (e.type == SDL_KEYDOWN) {
-			// handle key events here
+			Env->LastKeyPressed = e.key.keysym.sym;
 		}
+		else if (e.type == SDL_KEYUP) {
+			Env->LastKeyPressed = 0;
+		}
+
 		if (PausedFor > 0) {
 			if (Env->Cycles != PausedFor)
 				continue;
@@ -138,16 +141,26 @@ std::string Interpreter::NextVariableIdentifier()
 void Interpreter::Goto()
 {
 	std::string label = NextString();
-	ProgramPtr = Program->GetLabel(label);
-	Branching = true;
+	if (Program->HasLabel(label)) {
+		ProgramPtr = Program->GetLabel(label);
+		Branching = true;
+	}
+	else {
+		Abort("Label not found: " + label);
+	}
 }
 
 void Interpreter::Call()
 {
 	std::string label = NextString();
-	Env->PushToCallStack(ProgramPtr + 1);
-	ProgramPtr = Program->GetLabel(label);
-	Branching = true;
+	if (Program->HasLabel(label)) {
+		Env->PushToCallStack(ProgramPtr + 1);
+		ProgramPtr = Program->GetLabel(label);
+		Branching = true;
+	}
+	else {
+		Abort("Label not found: " + label);
+	}
 }
 
 Object* Interpreter::GetSelectedObject()
@@ -185,7 +198,7 @@ void Interpreter::Execute(ProgramLine* line)
 		Branching = true;
 	}
 	else if (command == "PAUSE") {
-		PausedFor = Env->Cycles + (NextNumber() * 1000);
+		PausedFor = Env->Cycles + NextNumber();
 	}
 	// IFx_GOTO
 	else if (command == "IFEQ_GOTO") {
@@ -355,6 +368,11 @@ void Interpreter::Execute(ProgramLine* line)
 		int max = NextNumber();
 		Env->SetVar(var, Util::Random(max));
 	}
+	else if (command == "GETK") {
+		std::string var = NextVariableIdentifier();
+		SDL_Keycode key = NextNumber();
+		Env->SetVar(var, Env->LastKeyPressed == key ? 1 : 0);
+	}
 	else if (command == "SCREEN") {
 		if (Env->Gr == NULL) {
 			int cols = NextNumber();
@@ -445,38 +463,42 @@ void Interpreter::Execute(ProgramLine* line)
 		}
 	}
 	else if (command == "CREATE_VIEW") {
-		if (Env->CurrentMap != NULL) {
-			int x = NextNumber();
-			int y = NextNumber();
-			int width = NextNumber();
-			int height = NextNumber();
-			int animationDelay = 100;
-			if (CurrentLine->GetParamCount() > 4) {
-				animationDelay = NextNumber();
-			}
+		std::string viewid = NextString();
+		std::string mapid = NextString();
+		int x = NextNumber();
+		int y = NextNumber();
+		int width = NextNumber();
+		int height = NextNumber();
+		int animationDelay = NextNumber();
 
-			MapViewport* view = new MapViewport(Env->Ui, Env->CurrentMap, x, y, width, height, 0, 0, animationDelay);
-			std::string mapid = Env->CurrentMap->GetId();
-			Env->AddView(mapid, view);
-		}
-		else {
-			Abort("No map selected");
-		}
+		Map* map = Env->GetMap(mapid);
+		MapViewport* view = new MapViewport(Env->Ui, map, x, y, width, height, 0, 0, animationDelay);
+		Env->AddView(viewid, view);
 	}
-	else if (command == "DRAW_MAP") {
-		if (Env->CurrentMap != NULL) {
-			std::string mapid = Env->CurrentMap->GetId();
-			MapViewport* view = Env->GetView(mapid);
-			if (view != NULL) {
-				view->Draw();
-			}
-			else {
-				Abort(String::Format("There is no view for the current map: \"%s\"", mapid.c_str()));
-			}
-		}
-		else {
-			Abort("No map selected");
-		}
+	else if (command == "SET_VIEW_MAP") {
+		std::string viewid = NextString();
+		std::string mapid = NextString();
+		Env->GetView(viewid)->SetMap(Env->GetMap(mapid));
+	}
+	else if (command == "SCROLL_VIEW_TO") {
+		std::string viewid = NextString();
+		int scrollX = NextNumber();
+		int scrollY = NextNumber();
+		Env->GetView(viewid)->SetScroll(scrollX, scrollY);
+	}
+	else if (command == "SCROLL_VIEW_BY") {
+		std::string viewid = NextString();
+		int distX = NextNumber();
+		int distY = NextNumber();
+		Env->GetView(viewid)->ScrollView(distX, distY);
+	}
+	else if (command == "ENABLE_VIEW") {
+		std::string id = NextString();
+		Env->EnableView(id, true);
+	}
+	else if (command == "DISABLE_VIEW") {
+		std::string id = NextString();
+		Env->EnableView(id, false);
 	}
 	else if (command == "SELECT_OBJ") {
 		if (Env->CurrentMap != NULL) {
@@ -653,7 +675,41 @@ void Interpreter::Execute(ProgramLine* line)
 			Abort("No map selected");
 		}
 	}
-
+	else if (command == "OBJ_MOVE_BY") {
+		if (Env->CurrentMap != NULL) {
+			int dx = NextNumber();
+			int dy = NextNumber();
+			ObjectPosition pos = ObjectPosition(Env->MapCursorX, Env->MapCursorY, Env->MapCursorLayer);
+			Object* o = Env->CurrentMap->GetObject(pos.X, pos.Y, pos.Layer);
+			if (!o->IsVoid()) {
+				Env->CurrentMap->MoveObject(pos, pos.Move(dx, dy));
+			}
+			else {
+				Abort(String::Format("No object found at %i, %i, %i", pos.X, pos.Y, pos.Layer));
+			}
+		}
+		else {
+			Abort("No map selected");
+		}
+	}
+	else if (command == "OBJ_MOVE_TO") {
+		if (Env->CurrentMap != NULL) {
+			int x = NextNumber();
+			int y = NextNumber();
+			int layer = NextNumber();
+			ObjectPosition pos = ObjectPosition(Env->MapCursorX, Env->MapCursorY, Env->MapCursorLayer);
+			Object* o = Env->CurrentMap->GetObject(pos.X, pos.Y, pos.Layer);
+			if (!o->IsVoid()) {
+				Env->CurrentMap->MoveObject(pos, ObjectPosition(x, y, layer));
+			}
+			else {
+				Abort(String::Format("No object found at %i, %i, %i", pos.X, pos.Y, pos.Layer));
+			}
+		}
+		else {
+			Abort("No map selected");
+		}
+	}
 	else {
 		Abort(String::Format("Invalid command: %s", command.c_str()));
 	}

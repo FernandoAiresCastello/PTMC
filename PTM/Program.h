@@ -14,7 +14,8 @@ public:
 	std::string Validate();
 	int GetSize();
 	ProgramLine* GetLine(int lineNumber);
-	int GetLabel(std::string label);
+	bool HasLabel(std::string& label);
+	int GetLabel(std::string& label);
 
 private:
 	std::vector<ProgramLine*> Lines;

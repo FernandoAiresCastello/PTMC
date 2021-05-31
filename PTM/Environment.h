@@ -20,6 +20,7 @@ public:
 	int MapCursorX = 0;
 	int MapCursorY = 0;
 	int MapCursorLayer = 0;
+	SDL_Keycode LastKeyPressed = 0;
 
 	Environment();
 	~Environment();
@@ -36,12 +37,21 @@ public:
 	Map* GetMap(std::string& id);
 	void AddView(std::string& id, MapViewport* view);
 	MapViewport* GetView(std::string& id);
+	void EnableView(std::string& id, bool enable);
+	void DrawEnabledViews();
 
 private:
+	struct View {
+		MapViewport* Viewport;
+		bool Enabled;
+		View() : Viewport(NULL), Enabled(true) {}
+		View(MapViewport* view, bool enabled) : Viewport(view), Enabled(enabled) {}
+	};
+
 	std::map<std::string, std::string> Vars;
 	std::stack<int> CallStack;
 	std::map<std::string, Map*> Maps;
-	std::map<std::string, MapViewport*> Views;
+	std::map<std::string, View> Views;
 
 	void DeleteViews();
 };

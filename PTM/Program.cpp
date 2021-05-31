@@ -59,7 +59,12 @@ ProgramLine* Program::GetLine(int lineNumber)
 	return Lines.at(lineNumber);
 }
 
-int Program::GetLabel(std::string label)
+bool Program::HasLabel(std::string& label)
+{
+	return Labels.find(label) != Labels.end();
+}
+
+int Program::GetLabel(std::string& label)
 {
 	return Labels[label];
 }

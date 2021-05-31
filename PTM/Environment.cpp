@@ -14,7 +14,7 @@ Environment::~Environment()
 void Environment::DeleteViews()
 {
 	for (auto it = Views.begin(); it != Views.end(); ++it) {
-		delete it->second;
+		delete it->second.Viewport;
 	}
 	Views.clear();
 }
@@ -79,7 +79,7 @@ bool Environment::LoadProject(std::string filename)
 		auto maps = Proj->GetMaps();
 		for (int i = 0; i < maps.size(); i++) {
 			Map* map = maps[i];
-			Maps[map->GetId()] = map;
+			Maps[map->GetName()] = map;
 		}
 	}
 	else {
@@ -97,7 +97,7 @@ void Environment::AddMap(Map* map)
 		Proj->SetPalette(Ui->Pal);
 	}
 	Proj->AddMap(map);
-	Maps[map->GetId()] = map;
+	Maps[map->GetName()] = map;
 }
 
 Map* Environment::GetMap(std::string& id)
@@ -107,10 +107,25 @@ Map* Environment::GetMap(std::string& id)
 
 void Environment::AddView(std::string& id, MapViewport* view)
 {
-	Views[id] = view;
+	Views[id] = View(view, true);
 }
 
 MapViewport* Environment::GetView(std::string& id)
 {
-	return Views[id];
+	return Views[id].Viewport;
+}
+
+void Environment::EnableView(std::string& id, bool enable)
+{
+	Views[id].Enabled = enable;
+}
+
+void Environment::DrawEnabledViews()
+{
+	for (auto it = Views.begin(); it != Views.end(); it++) {
+		View& view = (*it).second;
+		if (view.Enabled) {
+			view.Viewport->Draw();
+		}
+	}
 }
