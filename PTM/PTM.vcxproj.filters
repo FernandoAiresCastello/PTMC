@@ -1,67 +1,84 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Main.cpp" />
     <ClCompile Include="ProgramLoader.cpp">
-      <Filter>Program</Filter>
+      <Filter>Old\Program</Filter>
     </ClCompile>
     <ClCompile Include="Parameter.cpp">
-      <Filter>Program</Filter>
+      <Filter>Old\Program</Filter>
     </ClCompile>
     <ClCompile Include="Program.cpp">
-      <Filter>Program</Filter>
+      <Filter>Old\Program</Filter>
     </ClCompile>
     <ClCompile Include="ProgramLine.cpp">
-      <Filter>Program</Filter>
+      <Filter>Old\Program</Filter>
     </ClCompile>
     <ClCompile Include="Util.cpp">
-      <Filter>Util</Filter>
+      <Filter>Old\Util</Filter>
     </ClCompile>
     <ClCompile Include="Interpreter.cpp">
-      <Filter>Machine</Filter>
+      <Filter>Old\Machine</Filter>
     </ClCompile>
     <ClCompile Include="Environment.cpp">
-      <Filter>Machine</Filter>
+      <Filter>Old\Machine</Filter>
     </ClCompile>
     <ClCompile Include="Machine.cpp">
-      <Filter>Machine</Filter>
+      <Filter>Old\Machine</Filter>
+    </ClCompile>
+    <ClCompile Include="Main2.cpp">
+      <Filter>Old</Filter>
+    </ClCompile>
+    <ClCompile Include="Main.cpp">
+      <Filter>New</Filter>
+    </ClCompile>
+    <ClCompile Include="Functions.cpp">
+      <Filter>New</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ProgramLoader.h">
-      <Filter>Program</Filter>
+      <Filter>Old\Program</Filter>
     </ClInclude>
     <ClInclude Include="Parameter.h">
-      <Filter>Program</Filter>
+      <Filter>Old\Program</Filter>
     </ClInclude>
     <ClInclude Include="Program.h">
-      <Filter>Program</Filter>
+      <Filter>Old\Program</Filter>
     </ClInclude>
     <ClInclude Include="ProgramLine.h">
-      <Filter>Program</Filter>
+      <Filter>Old\Program</Filter>
     </ClInclude>
     <ClInclude Include="Util.h">
-      <Filter>Util</Filter>
+      <Filter>Old\Util</Filter>
     </ClInclude>
     <ClInclude Include="Interpreter.h">
-      <Filter>Machine</Filter>
+      <Filter>Old\Machine</Filter>
     </ClInclude>
     <ClInclude Include="Environment.h">
-      <Filter>Machine</Filter>
+      <Filter>Old\Machine</Filter>
     </ClInclude>
     <ClInclude Include="Machine.h">
-      <Filter>Machine</Filter>
+      <Filter>Old\Machine</Filter>
+    </ClInclude>
+    <ClInclude Include="Functions.h">
+      <Filter>New</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Program">
-      <UniqueIdentifier>{40f5e0af-4e60-4b3d-bf7d-4a6de1242fe5}</UniqueIdentifier>
+    <Filter Include="Old">
+      <UniqueIdentifier>{27d5ee6c-20ae-4e71-b9c5-25dad9c5807f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Util">
+    <Filter Include="Old\Util">
       <UniqueIdentifier>{ea35b1df-30a9-4c56-b949-bf3af5023257}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Machine">
+    <Filter Include="Old\Program">
+      <UniqueIdentifier>{40f5e0af-4e60-4b3d-bf7d-4a6de1242fe5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Old\Machine">
       <UniqueIdentifier>{6c1de376-7481-4fb5-a3e8-14a6a8b2eaca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="New">
+      <UniqueIdentifier>{3118c699-18f6-41a3-9c59-a7c226e73981}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
