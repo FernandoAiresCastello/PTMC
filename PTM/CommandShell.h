@@ -4,12 +4,11 @@
 #include <TBRLGPT.h>
 using namespace TBRLGPT;
 
-struct Command {
-	std::string Name;
-	std::vector<std::string> Args;
-	bool Empty;
-};
+struct Command;
+struct ProgramLine;
 
+void RunCommandShell();
+void ExitCommandShell();
 void InitScreen();
 void Debug();
 void ToggleFullscreen();
@@ -31,7 +30,9 @@ std::string GetCurrentLineTrimmed();
 std::string GetLine(int index);
 void Print(std::string text);
 void Print(std::string text, int x, int y);
+void Print(std::string text, int x, int y, int fgc, int bgc);
 void PrintLine(std::string text);
+void PrintOnBottomBorder(std::string text);
 void PutChar(int ch);
 void ShowCursor(bool show);
 void UpdateCursor();
@@ -48,3 +49,9 @@ void CursorMoveToEndOfLine();
 void ScrollBufferUp();
 Command ParseCommandLine(std::string commandLine);
 void InterpretCurrentLine();
+void SetWorkingDir(std::string dir);
+void PrintFiles(std::string pattern);
+void AddProgramLine(std::string command);
+void InitProgramEditor();
+void RunProgramEditor();
+void PrintProgramEditor();

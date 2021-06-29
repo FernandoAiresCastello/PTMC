@@ -126,28 +126,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Environment.cpp" />
-    <ClCompile Include="Interpreter.cpp" />
-    <ClCompile Include="Machine.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="ProgramLoader.cpp" />
-    <ClCompile Include="Main2.cpp" />
-    <ClCompile Include="Parameter.cpp" />
-    <ClCompile Include="Program.cpp" />
-    <ClCompile Include="ProgramLine.cpp" />
-    <ClCompile Include="Functions.cpp" />
-    <ClCompile Include="Util.cpp" />
+    <ClCompile Include="CommandShell.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Functions.h" />
-    <ClInclude Include="Environment.h" />
-    <ClInclude Include="Interpreter.h" />
-    <ClInclude Include="Machine.h" />
-    <ClInclude Include="ProgramLoader.h" />
-    <ClInclude Include="Parameter.h" />
-    <ClInclude Include="Program.h" />
-    <ClInclude Include="ProgramLine.h" />
-    <ClInclude Include="Util.h" />
+    <ClInclude Include="CommandShell.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
