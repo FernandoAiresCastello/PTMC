@@ -3,8 +3,14 @@
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="CommandShell.cpp" />
+    <ClCompile Include="ProgramEditor.cpp" />
+    <ClCompile Include="SharedScreen.cpp" />
+    <ClCompile Include="SharedObjects.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommandShell.h" />
+    <ClInclude Include="ProgramEditor.h" />
+    <ClInclude Include="SharedScreen.h" />
+    <ClInclude Include="SharedObjects.h" />
   </ItemGroup>
 </Project>
