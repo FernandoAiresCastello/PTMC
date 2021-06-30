@@ -4,7 +4,7 @@
 #include <TBRLGPT.h>
 using namespace TBRLGPT;
 
-struct Command;
+struct ShellCommand;
 struct ProgramLine;
 
 void RunCommandShell();
@@ -47,11 +47,13 @@ void CursorMove(int dx, int dy);
 void CursorMoveToStartOfLine();
 void CursorMoveToEndOfLine();
 void ScrollBufferUp();
-Command ParseCommandLine(std::string commandLine);
+bool IsTypableChar(int ch);
+ShellCommand ParseCommandLine(std::string commandLine);
 void InterpretCurrentLine();
 void SetWorkingDir(std::string dir);
 void PrintFiles(std::string pattern);
 void AddProgramLine(std::string command);
 void InitProgramEditor();
 void RunProgramEditor();
+void FormatProgramLine(ProgramLine* line, bool trim);
 void PrintProgramEditor();

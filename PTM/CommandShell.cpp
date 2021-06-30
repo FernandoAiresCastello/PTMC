@@ -34,7 +34,7 @@ struct {
 
 } Screen;
 
-struct Command {
+struct ShellCommand {
 	std::string Name;
 	std::vector<std::string> Args;
 	bool Empty;
@@ -45,6 +45,11 @@ struct {
 	const int Space = 32;
 	const int Insert = 127;
 } SpecialChar;
+
+struct {
+	const int Minimum = 32;
+	const int Maximum = 126;
+} TypableChar;
 
 struct {
 	const int Fore = 1;
@@ -149,15 +154,13 @@ void RunCommandShell()
 			else if (key == SDLK_INSERT) {
 				ToggleInsertMode();
 			}
-			else {
+			else if (IsTypableChar(key)) {
 				int ch = (int)key;
-				if (ch >= 32 && ch < 256) {
-					if (Key::CapsLock() || shift) {
-						PutChar(shift ? String::ShiftChar(toupper(ch)) : toupper(ch));
-					}
-					else {
-						PutChar(shift ? String::ShiftChar(ch) : ch);
-					}
+				if (Key::CapsLock() || shift) {
+					PutChar(shift ? String::ShiftChar(toupper(ch)) : toupper(ch));
+				}
+				else {
+					PutChar(shift ? String::ShiftChar(ch) : ch);
 				}
 			}
 		}
@@ -535,9 +538,14 @@ void ScrollBufferUp()
 	Locate(0, Screen.Cursor.Y);
 }
 
-Command ParseCommandLine(std::string commandLine)
+bool IsTypableChar(int ch)
 {
-	Command cmd;
+	return ch >= TypableChar.Minimum && ch <= TypableChar.Maximum;
+}
+
+ShellCommand ParseCommandLine(std::string commandLine)
+{
+	ShellCommand cmd;
 	std::string line = String::Trim(commandLine);
 	cmd.Empty = line.empty();
 	
@@ -563,7 +571,7 @@ Command ParseCommandLine(std::string commandLine)
 
 void InterpretCurrentLine()
 {
-	const Command cmdobj = ParseCommandLine(GetCurrentLineTrimmed());
+	const ShellCommand cmdobj = ParseCommandLine(GetCurrentLineTrimmed());
 	Crlf();
 	if (cmdobj.Empty)
 		return;
@@ -651,12 +659,12 @@ void InterpretCurrentLine()
 			error = Error.WrongNumArgs;
 		}
 	}
-	else if (cmd == "list") {
-		error = Error.NotImplemented;
-	}
 	else if (cmd == "prog") {
 		RunProgramEditor();
 		ClearScreen();
+	}
+	else if (cmd == "list") {
+		error = Error.NotImplemented;
 	}
 	else {
 		syntaxError = true;
@@ -697,7 +705,7 @@ void PrintFiles(std::string pattern)
 
 struct {
 
-	const int MaxCommandLength = 19;
+	const int MaxCommandLength = 28;
 
 	struct {
 		int Line;
@@ -738,20 +746,6 @@ void InitProgramEditor()
 	PrgEdit.Color.Command = 27;
 	PrgEdit.Color.Params = 1;
 	PrgEdit.Color.Label = 43;
-
-	// test
-	/*
-	AddProgramLine("FIRST");
-	for (int i = 0; i < 1; i++) {
-		AddProgramLine("CLS");
-		AddProgramLine("PUSH", "123");
-		AddProgramLine("PUSH", "456");
-		AddProgramLine("HALT");
-		AddProgramLine("END");
-	}
-	AddProgramLine("LAST");
-	*/
-	// end test
 
 	if (Program.Lines.empty()) {
 		AddProgramLine("");
@@ -943,27 +937,54 @@ void RunProgramEditor()
 				Program.Lines.insert(Program.Lines.begin() + PrgEdit.Cursor.Line, newline);
 
 				PrgEdit.Cursor.X = 0;
+
+				FormatProgramLine(currentLine, true);
 			}
-			else {
+			else if (IsTypableChar(key)) {
 				int ch = (int)key;
-				if (ch >= 32 && ch < 256) {
-					if (shift) {
-						ch = String::ShiftChar(ch);
-					}
-					int upperCh = toupper(ch);
-					ProgramLine* line = Program.Lines[PrgEdit.Cursor.Line];
-					if (PrgEdit.Cursor.X < line->Command.length()) {
-						line->Command[PrgEdit.Cursor.X] = upperCh;
-					}
-					else if (line->Command.length() < PrgEdit.MaxCommandLength) {
-						line->Command.push_back(upperCh);
-					}
-					if (PrgEdit.Cursor.X < line->Command.length()) {
-						PrgEdit.Cursor.X++;
-					}
+				if (shift) {
+					ch = String::ShiftChar(ch);
+				}
+				if (Key::CapsLock() || shift) {
+					ch = toupper(ch);
+				}
+				ProgramLine* line = Program.Lines[PrgEdit.Cursor.Line];
+				if (PrgEdit.Cursor.X < line->Command.length()) {
+					line->Command[PrgEdit.Cursor.X] = ch;
+				}
+				else if (line->Command.length() < PrgEdit.MaxCommandLength) {
+					line->Command.push_back(ch);
+				}
+				if (PrgEdit.Cursor.X < line->Command.length()) {
+					PrgEdit.Cursor.X++;
+				}
+				if (ch == SpecialChar.Space) {
+					FormatProgramLine(line, false);
 				}
 			}
 		}
+	}
+}
+
+void FormatProgramLine(ProgramLine* line, bool trim)
+{
+	if (trim) {
+		line->Command = String::Trim(line->Command);
+	}
+
+	if (String::EndsWith(line->Command, ":")) {
+		return;
+	}
+
+	int spaceIndex = line->Command.find_first_of(SpecialChar.Space);
+
+	if (spaceIndex > 0) {
+		for (int i = 0; i < spaceIndex; i++) {
+			line->Command[i] = toupper(line->Command[i]);
+		}
+	}
+	else {
+		line->Command = String::ToUpper(line->Command);
 	}
 }
 
