@@ -6,6 +6,7 @@
 #include "SharedObjects.h"
 #include "ProgramEditor.h"
 #include "Program.h"
+#include "FileOperations.h"
 
 struct {
 	bool Running;
@@ -244,17 +245,17 @@ void InterpretCurrentLine()
 		RunProgramEditor();
 		ClearScreen();
 	}
-	else if (cmd == "saveprog") {
+	else if (cmd == "save") {
 		if (argc == 1) {
-			SaveProgram(args[0]);
+			SaveEverything(args[0]);
 		}
 		else {
 			error = ShellError.WrongNumArgs;
 		}
 	}
-	else if (cmd == "loadprog") {
+	else if (cmd == "load") {
 		if (argc == 1) {
-			LoadProgram(args[0]);
+			LoadEverything(args[0]);
 		}
 		else {
 			error = ShellError.WrongNumArgs;
@@ -295,21 +296,4 @@ void PrintFiles(std::string pattern)
 			UpdateEntireScreen();
 		}
 	}
-}
-
-void SaveProgram(std::string filename)
-{
-	std::string fileContents = "";
-	Program* prog = GetProgram();
-	for (int i = 0; i < prog->Lines.size(); i++) {
-		fileContents.append(prog->Lines[i]->Command);
-		fileContents.append("\n");
-	}
-	File::WriteText(filename, fileContents);
-}
-
-void LoadProgram(std::string filename)
-{
-	auto lines = File::ReadLines(filename);
-	SetProgramLines(lines);
 }
