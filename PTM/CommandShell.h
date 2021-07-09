@@ -15,3 +15,5 @@ ShellCommand ParseCommandLine(std::string commandLine);
 void InterpretCurrentLine();
 void SetWorkingDir(std::string dir);
 void PrintFiles(std::string pattern);
+void SaveProgram(std::string filename);
+void LoadProgram(std::string filename);

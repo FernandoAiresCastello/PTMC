@@ -27,6 +27,9 @@ struct {
 #define ERR_ILLEGAL_ADDRESS "Illegal address"
 #define ERR_STACK_EMPTY "Stack empty"
 
+#define POP Machine.Stack.top(); Machine.Stack.pop()
+#define PUSH(x) Machine.Stack.push(x)
+
 void InitTileMachine()
 {
 	Machine.Memory = new int[Machine.MemorySize];
@@ -171,6 +174,10 @@ int GetCommandByteCode(std::string& command)
 	if (command == "MGET") return 0x04;
 	if (command == "PUTC") return 0x05;
 	if (command == "REFR") return 0x06;
+	if (command == "ADD") return 0x07;
+	if (command == "SUB") return 0x08;
+	if (command == "JP") return 0x09;
+	if (command == "BRK") return 0xfd;
 	if (command == "HALT") return 0xfe;
 	if (command == "EXIT") return 0xff;
 
@@ -181,15 +188,19 @@ void ExecuteCompiledProgramLine(CompiledProgramLine& line)
 {
 	switch (line.Command) {
 
-		case 0x00: Cmd_Nop(line); break;
-		case 0x01: Cmd_Push(line); break;
-		case 0x02: Cmd_Pop(line); break;
-		case 0x03: Cmd_Mset(line); break;
-		case 0x04: Cmd_Mget(line); break;
-		case 0x05: Cmd_Putc(line); break;
-		case 0x06: Cmd_Refr(line); break;
-		case 0xfe: Cmd_Halt(line); break;
-		case 0xff: Cmd_Exit(line); break;
+		case 0x00: C_Nop(); break;
+		case 0x01: C_Push(); break;
+		case 0x02: C_Pop(); break;
+		case 0x03: C_Mset(); break;
+		case 0x04: C_Mget(); break;
+		case 0x05: C_Putc(); break;
+		case 0x06: C_Refr(); break;
+		case 0x07: C_Add(); break;
+		case 0x08: C_Sub(); break;
+		case 0xfd: C_Brk(); break;
+		case 0xfe: C_Halt(); break;
+		case 0xff: C_Exit(); break;
+		case 0x09: C_Jp(); break;
 		
 		default:
 			SetError(ERR_INVALID_COMMAND);
@@ -202,9 +213,15 @@ void SetError(std::string error)
 	Machine.Error = String::Format("%i:%s", Machine.Line->SourceLineNumber, error.c_str());
 }
 
-void Cmd_Nop(CompiledProgramLine& line)
+void BranchTo(std::string label)
 {
-	if (line.HasParam) {
+	Machine.Branching = true;
+	Machine.ProgramPtr = Machine.ProgramLabels[label];
+}
+
+void C_Nop()
+{
+	if (Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
 		return;
 	}
@@ -212,19 +229,19 @@ void Cmd_Nop(CompiledProgramLine& line)
 	// no operation
 }
 
-void Cmd_Push(CompiledProgramLine& line)
+void C_Push()
 {
-	if (!line.HasParam) {
+	if (!Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
 		return;
 	}
 
-	Machine.Stack.push(line.ParamNumber);
+	PUSH(Machine.Line->ParamNumber);
 }
 
-void Cmd_Pop(CompiledProgramLine& line)
+void C_Pop()
 {
-	if (line.HasParam) {
+	if (Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
 		return;
 	}
@@ -236,13 +253,13 @@ void Cmd_Pop(CompiledProgramLine& line)
 	Machine.Stack.pop();
 }
 
-void Cmd_Mset(CompiledProgramLine& line)
+void C_Mset()
 {
-	if (!line.HasParam) {
+	if (!Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
 		return;
 	}
-	if (line.ParamNumber < 0 || line.ParamNumber >= Machine.MemorySize) {
+	if (Machine.Line->ParamNumber < 0 || Machine.Line->ParamNumber >= Machine.MemorySize) {
 		SetError(ERR_ILLEGAL_ADDRESS);
 		return;
 	}
@@ -251,27 +268,36 @@ void Cmd_Mset(CompiledProgramLine& line)
 		return;
 	}
 
-	Machine.Memory[line.ParamNumber] = Machine.Stack.top();
-	Machine.Stack.pop();
+	Machine.Memory[Machine.Line->ParamNumber] = POP;
 }
 
-void Cmd_Mget(CompiledProgramLine& line)
+void C_Mget()
 {
-	if (!line.HasParam) {
+	if (!Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
 		return;
 	}
-	if (line.ParamNumber < 0 || line.ParamNumber >= Machine.MemorySize) {
+	if (Machine.Line->ParamNumber < 0 || Machine.Line->ParamNumber >= Machine.MemorySize) {
 		SetError(ERR_ILLEGAL_ADDRESS);
 		return;
 	}
 
-	Machine.Stack.push(Machine.Memory[line.ParamNumber]);
+	PUSH(Machine.Memory[Machine.Line->ParamNumber]);
 }
 
-void Cmd_Halt(CompiledProgramLine& line)
+void C_Brk()
 {
-	if (line.HasParam) {
+	if (Machine.Line->HasParam) {
+		SetError(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	__debugbreak();
+}
+
+void C_Halt()
+{
+	if (Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
 		return;
 	}
@@ -279,9 +305,9 @@ void Cmd_Halt(CompiledProgramLine& line)
 	Machine.Halted = true;
 }
 
-void Cmd_Exit(CompiledProgramLine& line)
+void C_Exit()
 {
-	if (line.HasParam) {
+	if (Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
 		return;
 	}
@@ -289,9 +315,9 @@ void Cmd_Exit(CompiledProgramLine& line)
 	Machine.Running = false;
 }
 
-void Cmd_Putc(CompiledProgramLine& line)
+void C_Putc()
 {
-	if (line.HasParam) {
+	if (Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
 		return;
 	}
@@ -300,21 +326,63 @@ void Cmd_Putc(CompiledProgramLine& line)
 		return;
 	}
 
-	static int bgc = Machine.Stack.top(); Machine.Stack.pop();
-	static int fgc = Machine.Stack.top(); Machine.Stack.pop();
-	static int ch = Machine.Stack.top(); Machine.Stack.pop();
-	static int y = Machine.Stack.top(); Machine.Stack.pop();
-	static int x = Machine.Stack.top(); Machine.Stack.pop();
+	int bgc = POP;
+	int fgc = POP;
+	int ch = POP;
+	int y = POP;
+	int x = POP;
 	
 	PutChar(ch, x, y, fgc, bgc);
 }
 
-void Cmd_Refr(CompiledProgramLine& line)
+void C_Refr()
 {
-	if (line.HasParam) {
+	if (Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
 		return;
 	}
 
 	RefreshScreen();
+}
+
+void C_Add()
+{
+	if (Machine.Line->HasParam) {
+		SetError(ERR_SYNTAX_ERROR);
+		return;
+	}
+	if (Machine.Stack.size() < 2) {
+		SetError(ERR_STACK_EMPTY);
+		return;
+	}
+
+	int b = POP;
+	int a = POP;
+	PUSH(a + b);
+}
+
+void C_Sub()
+{
+	if (Machine.Line->HasParam) {
+		SetError(ERR_SYNTAX_ERROR);
+		return;
+	}
+	if (Machine.Stack.size() < 2) {
+		SetError(ERR_STACK_EMPTY);
+		return;
+	}
+
+	int b = POP;
+	int a = POP;
+	PUSH(a - b);
+}
+
+void C_Jp()
+{
+	if (!Machine.Line->HasParam) {
+		SetError(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	BranchTo(Machine.Line->ParamString);
 }

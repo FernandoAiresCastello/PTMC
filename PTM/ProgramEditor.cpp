@@ -54,6 +54,11 @@ void InitProgramEditor()
 
 void DestroyProgramEditor()
 {
+	DestroyProgram();
+}
+
+void DestroyProgram()
+{
 	for (int i = 0; i < Program.Lines.size(); i++) {
 		ProgramLine* line = Program.Lines[i];
 		delete line;
@@ -362,4 +367,12 @@ void PrintProgramEditor()
 struct Program* GetProgram()
 {
 	return &Program;
+}
+
+void SetProgramLines(std::vector<std::string> lines)
+{
+	DestroyProgram();
+	for (int i = 0; i < lines.size(); i++) {
+		AddProgramLine(lines[i]);
+	}
 }
