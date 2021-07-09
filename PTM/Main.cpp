@@ -2,23 +2,26 @@
 #include <TBRLGPT.h>
 #include "SharedObjects.h"
 #include "SharedScreen.h"
-#include "ProgramEditor.h"
 #include "CommandShell.h"
+#include "ProgramEditor.h"
+#include "TileMachine.h"
 using namespace TBRLGPT;
 
 int main(int argc, char** argv)
 {
 	InitSharedObjects();
-	InitScreen();
+	InitSharedScreen();
 	InitCommandShell();
 	InitProgramEditor();
+	InitTileMachine();
 
 	RunCommandShell();
 
 	DestroySharedObjects();
-	DestroyScreen();
+	DestroySharedScreen();
 	DestroyCommandShell();
 	DestroyProgramEditor();
+	DestroyTileMachine();
 
 	return 0;
 }

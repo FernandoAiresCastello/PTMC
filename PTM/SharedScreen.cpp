@@ -26,10 +26,14 @@ struct {
 
 } Screen;
 
-void InitScreen()
+void InitSharedScreen()
 {
-	Screen.Gr = new Graphics(256, 192, 800, 600, false);
-	Screen.Gr->SetWindowTitle("PTM - Programmable Tile Machine");
+	const int width = 160;
+	const int height = 144;
+	const int zoom = 4;
+
+	Screen.Gr = new Graphics(width, height, zoom * width, zoom * height, false);
+	Screen.Gr->SetWindowTitle(APPLICATION_NAME);
 	Screen.Cols = Screen.Gr->Cols;
 	Screen.Rows = Screen.Gr->Rows;
 	Screen.Ctx = new UIContext(Screen.Gr, 0xffffff, 0xff0000);
@@ -55,7 +59,7 @@ void InitScreen()
 	UpdateEntireScreen();
 }
 
-void DestroyScreen()
+void DestroySharedScreen()
 {
 	Screen.Ctx->Chars = NULL;
 	Screen.Ctx->Pal = NULL;
@@ -63,6 +67,21 @@ void DestroyScreen()
 	Screen.Ctx = NULL;
 	delete Screen.Gr;
 	Screen.Gr = NULL;
+}
+
+Graphics* GetSharedGraphics()
+{
+	return Screen.Gr;
+}
+
+Map* GetSharedScreenBuffer()
+{
+	return Screen.Buf;
+}
+
+int GetScreenBufferWidth()
+{
+	return Screen.Buf->GetWidth();
 }
 
 int GetScreenBufferHeight()
@@ -242,15 +261,35 @@ void PrintLine(std::string text)
 
 void PrintOnBottomRightBorder(std::string text)
 {
-	Screen.Ctx->ForeColor = Screen.Pal->Get(Screen.Color.Fg)->ToInteger();
-	Screen.Ctx->BackColor = Screen.Pal->Get(Screen.Color.Border)->ToInteger();
-	Screen.Ctx->Print(Screen.Gr->Cols - text.length(), Screen.Gr->Rows - 1, text);
+	PrintOnBottomRightBorder(text, Screen.Color.Fg, Screen.Color.Border);
 }
 
 void PrintOnBottomLeftBorder(std::string text)
 {
-	Screen.Ctx->ForeColor = Screen.Pal->Get(Screen.Color.Fg)->ToInteger();
-	Screen.Ctx->BackColor = Screen.Pal->Get(Screen.Color.Border)->ToInteger();
+	PrintOnBottomLeftBorder(text, Screen.Color.Fg, Screen.Color.Border);
+}
+
+void PrintOnBottomRightBorder(std::string text, int fgc)
+{
+	PrintOnBottomRightBorder(text, fgc, Screen.Color.Border);
+}
+
+void PrintOnBottomLeftBorder(std::string text, int fgc)
+{
+	PrintOnBottomLeftBorder(text, fgc, Screen.Color.Border);
+}
+
+void PrintOnBottomRightBorder(std::string text, int fgc, int bgc)
+{
+	Screen.Ctx->ForeColor = Screen.Pal->Get(fgc)->ToInteger();
+	Screen.Ctx->BackColor = Screen.Pal->Get(bgc)->ToInteger();
+	Screen.Ctx->Print(Screen.Gr->Cols - text.length(), Screen.Gr->Rows - 1, text);
+}
+
+void PrintOnBottomLeftBorder(std::string text, int fgc, int bgc)
+{
+	Screen.Ctx->ForeColor = Screen.Pal->Get(fgc)->ToInteger();
+	Screen.Ctx->BackColor = Screen.Pal->Get(bgc)->ToInteger();
 	Screen.Ctx->Print(0, Screen.Gr->Rows - 1, text);
 }
 
@@ -268,6 +307,14 @@ void PutChar(int ch)
 		under->Index = ch;
 		CursorMove(1, 0);
 	}
+}
+
+void PutChar(int ch, int x, int y, int fgc, int bgc)
+{
+	ObjectChar& oc = Screen.Buf->GetObject(x, y, 0)->GetAnimation().GetFrame(0);
+	oc.Index = ch;
+	oc.ForeColorIx = fgc;
+	oc.BackColorIx = bgc;
 }
 
 Object* GetScreenBufferObject(int x, int y)

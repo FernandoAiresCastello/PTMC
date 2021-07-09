@@ -17,9 +17,9 @@ struct ShellCommand {
 };
 
 struct {
-	const std::string NotImplemented = "Command not implemented";
+	const std::string NotImplemented = "Not implemented";
 	const std::string SyntaxError = "Syntax error";
-	const std::string WrongNumArgs = "Wrong number of arguments";
+	const std::string WrongNumArgs = "Wrong arguments";
 } ShellError;
 
 void InitCommandShell()
@@ -54,14 +54,7 @@ void RunCommandShell()
 			bool ctrl = Key::Ctrl();
 			bool shift = Key::Shift();
 
-			if (key == SDLK_ESCAPE) {
-				Shell.Running = false;
-				break;
-			}
-			else if (key == SDLK_F1) {
-				// menu??? help???
-			}
-			else if (key == SDLK_RETURN && alt) {
+			if (key == SDLK_RETURN && alt) {
 				ToggleFullscreen();
 			}
 			else if (key == SDLK_RIGHT) {
@@ -122,14 +115,11 @@ void RunCommandShell()
 
 void Debug()
 {
-	PrintLine("Hello Debug!");
 }
 
 void PrintIntro()
 {
-	PrintLine("Programmable Tile Machine");
-	PrintLine("Command Shell");
-	PrintLine("Version 0.1");
+	PrintLine(APPLICATION_NAME);
 	PrintLine("Ok");
 }
 
@@ -252,9 +242,6 @@ void InterpretCurrentLine()
 	else if (cmd == "prog") {
 		RunProgramEditor();
 		ClearScreen();
-	}
-	else if (cmd == "list") {
-		error = ShellError.NotImplemented;
 	}
 	else {
 		syntaxError = true;

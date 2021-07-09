@@ -6,11 +6,14 @@
     <ClCompile Include="ProgramEditor.cpp" />
     <ClCompile Include="SharedScreen.cpp" />
     <ClCompile Include="SharedObjects.cpp" />
+    <ClCompile Include="TileMachine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommandShell.h" />
     <ClInclude Include="ProgramEditor.h" />
     <ClInclude Include="SharedScreen.h" />
     <ClInclude Include="SharedObjects.h" />
+    <ClInclude Include="TileMachine.h" />
+    <ClInclude Include="Program.h" />
   </ItemGroup>
 </Project>

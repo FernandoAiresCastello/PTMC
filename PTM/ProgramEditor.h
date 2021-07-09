@@ -4,6 +4,7 @@
 #include <TBRLGPT.h>
 using namespace TBRLGPT;
 
+struct Program;
 struct ProgramLine;
 
 void InitProgramEditor();
@@ -12,3 +13,4 @@ void RunProgramEditor();
 void AddProgramLine(std::string command);
 void FormatProgramLine(ProgramLine* line, bool trim);
 void PrintProgramEditor();
+struct Program* GetProgram();

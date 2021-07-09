@@ -1,17 +1,13 @@
 #include "ProgramEditor.h"
 #include "SharedScreen.h"
+#include "Program.h"
+#include "TileMachine.h"
 
-struct ProgramLine {
-	std::string Command;
-};
-
-struct {
-	std::vector<ProgramLine*> Lines;
-} Program;
+struct Program Program;
 
 struct {
 
-	const int MaxCommandLength = 28;
+	int MaxCommandLength;
 
 	struct {
 		int Line;
@@ -29,12 +25,15 @@ struct {
 		int Command;
 		int Params;
 		int Label;
+		int Info;
+		int Error;
 	} Color;
 
 } PrgEdit;
 
 void InitProgramEditor()
 {
+	PrgEdit.MaxCommandLength = GetScreenBufferWidth() - 2;
 	PrgEdit.Cursor.Line = 0;
 	PrgEdit.Cursor.X = 0;
 	PrgEdit.Cursor.Y = 0;
@@ -45,6 +44,8 @@ void InitProgramEditor()
 	PrgEdit.Color.Command = 27;
 	PrgEdit.Color.Params = 1;
 	PrgEdit.Color.Label = 43;
+	PrgEdit.Color.Info = 4;
+	PrgEdit.Color.Error = 11;
 
 	if (Program.Lines.empty()) {
 		AddProgramLine("");
@@ -74,7 +75,11 @@ void RunProgramEditor()
 		SDL_Event e = { 0 };
 		SDL_PollEvent(&e);
 
-		if (e.type == SDL_KEYDOWN) {
+		if (e.type == SDL_QUIT) {
+			progEditRunning = false;
+			return;
+		}
+		else if (e.type == SDL_KEYDOWN) {
 			SDL_Keycode key = e.key.keysym.sym;
 			bool alt = Key::Alt();
 			bool ctrl = Key::Ctrl();
@@ -239,10 +244,20 @@ void RunProgramEditor()
 				}
 
 				Program.Lines.insert(Program.Lines.begin() + PrgEdit.Cursor.Line, newline);
-
 				PrgEdit.Cursor.X = 0;
-
 				FormatProgramLine(currentLine, true);
+			}
+			else if (key == SDLK_F5) {
+				RunProgram(&Program);
+				std::string error = GetTileMachineError();
+				if (!error.empty()) {
+					PrintProgramEditor();
+					DrawScreenBuffer();
+					DrawScreenBorder();
+					PrintOnBottomLeftBorder(error, PrgEdit.Color.Error);
+					UpdateEntireScreen();
+					Key::WaitAny();
+				}
 			}
 			else if (IsTypableChar(key)) {
 				int ch = (int)key;
@@ -340,6 +355,11 @@ void PrintProgramEditor()
 
 	std::string info = String::Format("%i/%i", PrgEdit.Cursor.Line + 1, Program.Lines.size());
 
-	PrintOnBottomLeftBorder("F1:Menu");
-	PrintOnBottomRightBorder(info);
+	PrintOnBottomLeftBorder("F1:Menu", PrgEdit.Color.Info);
+	PrintOnBottomRightBorder(info, PrgEdit.Color.Info);
+}
+
+struct Program* GetProgram()
+{
+	return &Program;
 }

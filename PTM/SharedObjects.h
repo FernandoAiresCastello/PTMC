@@ -4,8 +4,12 @@
 #include <TBRLGPT.h>
 using namespace TBRLGPT;
 
+#define APPLICATION_NAME "PTM 1.0"
+
 void InitSharedObjects();
 void DestroySharedObjects();
 Project* GetSharedProject();
+Charset* GetSharedCharset();
+Palette* GetSharedPalette();
 void SetSharedDirectory(std::string path);
 std::string GetSharedDirectory();

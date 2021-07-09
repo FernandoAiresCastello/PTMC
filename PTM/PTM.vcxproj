@@ -131,12 +131,15 @@
     <ClCompile Include="ProgramEditor.cpp" />
     <ClCompile Include="SharedObjects.cpp" />
     <ClCompile Include="SharedScreen.cpp" />
+    <ClCompile Include="TileMachine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommandShell.h" />
+    <ClInclude Include="Program.h" />
     <ClInclude Include="ProgramEditor.h" />
     <ClInclude Include="SharedObjects.h" />
     <ClInclude Include="SharedScreen.h" />
+    <ClInclude Include="TileMachine.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

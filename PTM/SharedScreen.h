@@ -21,8 +21,11 @@ struct DefaultColor {
 	static const int Border = 50;
 };
 
-void InitScreen();
-void DestroyScreen();
+void InitSharedScreen();
+void DestroySharedScreen();
+Graphics* GetSharedGraphics();
+Map* GetSharedScreenBuffer();
+int GetScreenBufferWidth();
 int GetScreenBufferHeight();
 int GetScreenBackColor();
 int GetScreenForeColor();
@@ -49,7 +52,12 @@ void Print(std::string text, int x, int y, int fgc, int bgc);
 void PrintLine(std::string text);
 void PrintOnBottomRightBorder(std::string text);
 void PrintOnBottomLeftBorder(std::string text);
+void PrintOnBottomRightBorder(std::string text, int fgc);
+void PrintOnBottomLeftBorder(std::string text, int fgc);
+void PrintOnBottomRightBorder(std::string text, int fgc, int bgc);
+void PrintOnBottomLeftBorder(std::string text, int fgc, int bgc);
 void PutChar(int ch);
+void PutChar(int ch, int x, int y, int fgc, int bgc);
 Object* GetScreenBufferObject(int x, int y);
 bool IsTypableChar(int ch);
 void ShowCursor(bool show);

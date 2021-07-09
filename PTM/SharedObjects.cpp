@@ -9,7 +9,7 @@ void InitSharedObjects()
 {
 	SharedObject.Proj = new Project();
 	SharedObject.Proj->Load("ptm.tgpro");
-	SharedObject.WorkingDir = ".";;
+	SharedObject.WorkingDir = ".";
 }
 
 void DestroySharedObjects()
@@ -21,6 +21,16 @@ void DestroySharedObjects()
 Project* GetSharedProject()
 {
 	return SharedObject.Proj;
+}
+
+Charset* GetSharedCharset()
+{
+	return SharedObject.Proj->GetCharset();
+}
+
+Palette* GetSharedPalette()
+{
+	return SharedObject.Proj->GetPalette();
 }
 
 std::string GetSharedDirectory()
