@@ -1,4 +1,4 @@
-#include "FileOperations.h"
+#include "Filesystem.h"
 #include "Program.h"
 #include "ProgramEditor.h"
 #include "SharedScreen.h"
@@ -19,6 +19,19 @@ void CreateWorkingDir()
 std::string GetWorkingDir()
 {
 	return WorkingDir;
+}
+
+void PrintFiles(std::string pattern)
+{
+	auto files = File::List(GetWorkingDir(), "*" + pattern, true);
+	for (int i = 0; i < files.size(); i++) {
+		std::string& file = files[i];
+		if (file != "." && file != ".." && !File::IsDirectory(file)) {
+			PrintLine(file);
+			DrawScreenBuffer();
+			UpdateEntireScreen();
+		}
+	}
 }
 
 void DeleteFile(std::string filename)

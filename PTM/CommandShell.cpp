@@ -1,12 +1,10 @@
-#include <vector>
-#include <string>
 #include <algorithm>
 #include "CommandShell.h"
 #include "SharedScreen.h"
 #include "SharedObjects.h"
 #include "ProgramEditor.h"
 #include "Program.h"
-#include "FileOperations.h"
+#include "Filesystem.h"
 
 struct {
 	bool Running;
@@ -273,17 +271,4 @@ void InterpretCurrentLine()
 	}
 
 	PrintLine("Ok");
-}
-
-void PrintFiles(std::string pattern)
-{
-	auto files = File::List(GetWorkingDir(), "*" + pattern, true);
-	for (int i = 0; i < files.size(); i++) {
-		std::string& file = files[i];
-		if (file != "." && file != ".." && !File::IsDirectory(file)) {
-			PrintLine(file);
-			DrawScreenBuffer();
-			UpdateEntireScreen();
-		}
-	}
 }

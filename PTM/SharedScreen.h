@@ -73,3 +73,4 @@ void CursorMove(int dx, int dy);
 void CursorMoveToStartOfLine();
 void CursorMoveToEndOfLine();
 void ScrollBufferUp();
+Graphics* GetScreenGraphics();

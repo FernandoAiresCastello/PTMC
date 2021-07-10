@@ -126,7 +126,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="FileOperations.cpp" />
+    <ClCompile Include="Filesystem.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="CommandShell.cpp" />
     <ClCompile Include="ProgramEditor.cpp" />
@@ -136,7 +136,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommandShell.h" />
-    <ClInclude Include="FileOperations.h" />
+    <ClInclude Include="Filesystem.h" />
     <ClInclude Include="Program.h" />
     <ClInclude Include="ProgramEditor.h" />
     <ClInclude Include="SharedObjects.h" />

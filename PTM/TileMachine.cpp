@@ -1,13 +1,10 @@
 #include <map>
 #include <stack>
+#include <vector>
 #include "TileMachine.h"
 #include "SharedScreen.h"
-#include "Program.h"
 
 struct {
-	
-	int* Memory = NULL;
-	const int MemorySize = 65536;
 	std::string Error = "";
 	std::vector<CompiledProgramLine> Program;
 	int ProgramPtr = 0;
@@ -18,7 +15,9 @@ struct {
 	bool Running = false;
 	bool Halted = false;
 	std::stack<int> Stack;
-
+	Graphics* Gr;
+	Charset* Chars;
+	Palette* Pal;
 } Machine;
 
 #define ERR_PROGRAM_EMPTY "Program empty"
@@ -27,24 +26,32 @@ struct {
 #define ERR_END_OF_PROGRAM "End of program"
 #define ERR_ILLEGAL_ADDRESS "Illegal address"
 #define ERR_STACK_EMPTY "Stack empty"
+#define ERR_LABEL_NOT_FOUND "Label not found"
+#define ERR_DEF_NOT_FOUND "Def not found"
 
 #define POP Machine.Stack.top(); Machine.Stack.pop()
 #define PUSH(x) Machine.Stack.push(x)
 
 void InitTileMachine()
 {
-	Machine.Memory = new int[Machine.MemorySize];
+	Machine.Gr = GetScreenGraphics();
+	Machine.Chars = new Charset();
+	Machine.Chars->InitDefaultCharset();
+	Machine.Pal = new Palette();
+	Machine.Pal->InitDefaultColors();
 }
 
 void DestroyTileMachine()
 {
-	delete[] Machine.Memory;
+	delete Machine.Chars;
+	delete Machine.Pal;
 }
 
 void RestartTileMachine()
 {
 	Machine.Program.clear();
 	Machine.ProgramLabels.clear();
+	Machine.Defs.clear();
 	Machine.ProgramPtr = 0;
 	Machine.Error = "";
 	Machine.Running = true;
@@ -52,6 +59,8 @@ void RestartTileMachine()
 	while (!Machine.Stack.empty()) {
 		Machine.Stack.pop();
 	}
+	ClearMachineScreen();
+	RefreshMachineScreen();
 }
 
 std::string GetTileMachineError()
@@ -59,11 +68,14 @@ std::string GetTileMachineError()
 	return Machine.Error;
 }
 
-void RefreshScreen()
+void ClearMachineScreen()
 {
-	DrawScreenBorder();
-	DrawScreenBuffer();
-	UpdateEntireScreen();
+	Machine.Gr->Clear(0);
+}
+
+void RefreshMachineScreen()
+{
+	Machine.Gr->Update();
 }
 
 void CompileAndRunProgram(Program* prog)
@@ -109,7 +121,7 @@ void CompileAndRunProgram(Program* prog)
 		if (parts.size() > 1) {
 			hasParam = true;
 			std::string param = parts[1];
-			if (Machine.Defs.find(param) != Machine.Defs.end()) {
+			if (HasDef(param)) {
 				param = Machine.Defs[param];
 			}
 			paramString = param;
@@ -139,9 +151,6 @@ void ExecuteCompiledProgram()
 		return;
 	}
 
-	ClearScreen();
-	RefreshScreen();
-	
 	while (Machine.Running) {
 
 		SDL_Event e = { 0 };
@@ -184,19 +193,18 @@ void ExecuteCompiledProgram()
 int GetCommandByteCode(std::string& command)
 {
 	if (command == "NOP") return 0x00;
+	if (command == "PUSH") return 0x01;
+	if (command == "POP") return 0x02;
+
+	if (command == "REFR") return 0x07;
+	if (command == "ADD") return 0x08;
+	if (command == "SUB") return 0x09;
+	if (command == "JP") return 0x0a;
+	if (command == "WAIT") return 0x0b;
+
 	if (command == "BRK") return 0xfd;
 	if (command == "HALT") return 0xfe;
 	if (command == "EXIT") return 0xff;
-	if (command == "PUSH") return 0x01;
-	if (command == "POP") return 0x02;
-	if (command == "POKE") return 0x03;
-	if (command == "PEEK") return 0x04;
-	if (command == "PUTC") return 0x05;
-	if (command == "REFR") return 0x06;
-	if (command == "ADD") return 0x07;
-	if (command == "SUB") return 0x08;
-	if (command == "JP") return 0x09;
-	if (command == "WAIT") return 0x0a;
 
 	return -1;
 }
@@ -208,17 +216,16 @@ void ExecuteCompiledProgramLine(CompiledProgramLine& line)
 		case 0x00: C_Nop(); break;
 		case 0x01: C_Push(); break;
 		case 0x02: C_Pop(); break;
-		case 0x03: C_Mset(); break;
-		case 0x04: C_Mget(); break;
-		case 0x05: C_Putc(); break;
-		case 0x06: C_Refr(); break;
-		case 0x07: C_Add(); break;
-		case 0x08: C_Sub(); break;
+
+		case 0x07: C_Refr(); break;
+		case 0x08: C_Add(); break;
+		case 0x09: C_Sub(); break;
+		case 0x0a: C_Jp(); break;
+		case 0x0b: C_Wait(); break;
+
 		case 0xfd: C_Brk(); break;
 		case 0xfe: C_Halt(); break;
 		case 0xff: C_Exit(); break;
-		case 0x09: C_Jp(); break;
-		case 0x0a: C_Wait(); break;
 		
 		default:
 			SetError(ERR_INVALID_COMMAND);
@@ -233,8 +240,23 @@ void SetError(std::string error)
 
 void BranchTo(std::string label)
 {
-	Machine.Branching = true;
-	Machine.ProgramPtr = Machine.ProgramLabels[label];
+	if (HasLabel(label)) {
+		Machine.Branching = true;
+		Machine.ProgramPtr = Machine.ProgramLabels[label];
+	}
+	else {
+		SetError(ERR_LABEL_NOT_FOUND);
+	}
+}
+
+bool HasLabel(std::string label)
+{
+	return Machine.ProgramLabels.find(label) != Machine.ProgramLabels.end();
+}
+
+bool HasDef(std::string def)
+{
+	return Machine.Defs.find(def) != Machine.Defs.end();
 }
 
 void C_Nop()
@@ -271,38 +293,6 @@ void C_Pop()
 	Machine.Stack.pop();
 }
 
-void C_Mset()
-{
-	if (!Machine.Line->HasParam) {
-		SetError(ERR_SYNTAX_ERROR);
-		return;
-	}
-	if (Machine.Line->ParamNumber < 0 || Machine.Line->ParamNumber >= Machine.MemorySize) {
-		SetError(ERR_ILLEGAL_ADDRESS);
-		return;
-	}
-	if (Machine.Stack.empty()) {
-		SetError(ERR_STACK_EMPTY);
-		return;
-	}
-
-	Machine.Memory[Machine.Line->ParamNumber] = POP;
-}
-
-void C_Mget()
-{
-	if (!Machine.Line->HasParam) {
-		SetError(ERR_SYNTAX_ERROR);
-		return;
-	}
-	if (Machine.Line->ParamNumber < 0 || Machine.Line->ParamNumber >= Machine.MemorySize) {
-		SetError(ERR_ILLEGAL_ADDRESS);
-		return;
-	}
-
-	PUSH(Machine.Memory[Machine.Line->ParamNumber]);
-}
-
 void C_Brk()
 {
 	if (Machine.Line->HasParam) {
@@ -333,26 +323,6 @@ void C_Exit()
 	Machine.Running = false;
 }
 
-void C_Putc()
-{
-	if (Machine.Line->HasParam) {
-		SetError(ERR_SYNTAX_ERROR);
-		return;
-	}
-	if (Machine.Stack.size() < 5) {
-		SetError(ERR_STACK_EMPTY);
-		return;
-	}
-
-	int bgc = POP;
-	int fgc = POP;
-	int ch = POP;
-	int y = POP;
-	int x = POP;
-	
-	PutChar(ch, x, y, fgc, bgc);
-}
-
 void C_Refr()
 {
 	if (Machine.Line->HasParam) {
@@ -360,7 +330,7 @@ void C_Refr()
 		return;
 	}
 
-	RefreshScreen();
+	RefreshMachineScreen();
 }
 
 void C_Add()

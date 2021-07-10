@@ -461,3 +461,8 @@ void ScrollBufferUp()
 	ClearLine(Screen.Buf->GetHeight() - 1);
 	Locate(0, Screen.Cursor.Y);
 }
+
+Graphics* GetScreenGraphics()
+{
+	return Screen.Gr;
+}
