@@ -28,8 +28,11 @@ struct {
 
 void InitSharedScreen()
 {
-	const int width = 160;
-	const int height = 144;
+	const int borderSize = 8;
+	const int width = borderSize + 160;
+	const int height = borderSize + 144;
+	//const int width = borderSize + 256;
+	//const int height = borderSize + 192;
 	const int zoom = 4;
 
 	Screen.Gr = new Graphics(width, height, zoom * width, zoom * height, false);

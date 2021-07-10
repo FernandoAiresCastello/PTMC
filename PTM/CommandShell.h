@@ -13,5 +13,4 @@ void Debug();
 void PrintIntro();
 ShellCommand ParseCommandLine(std::string commandLine);
 void InterpretCurrentLine();
-void SetWorkingDir(std::string dir);
 void PrintFiles(std::string pattern);

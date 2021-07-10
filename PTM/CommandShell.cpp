@@ -222,14 +222,6 @@ void InterpretCurrentLine()
 			error = ShellError.WrongNumArgs;
 		}
 	}
-	else if (cmd == "chdir") {
-		if (argc == 1) {
-			SetWorkingDir(args[0]);
-		}
-		else {
-			error = ShellError.WrongNumArgs;
-		}
-	}
 	else if (cmd == "files") {
 		if (argc == 0) {
 			PrintFiles("");
@@ -244,6 +236,14 @@ void InterpretCurrentLine()
 	else if (cmd == "prog") {
 		RunProgramEditor();
 		ClearScreen();
+	}
+	else if (cmd == "rm") {
+		if (argc == 1) {
+			DeleteFile(args[0]);
+		}
+		else {
+			error = ShellError.WrongNumArgs;
+		}
 	}
 	else if (cmd == "save") {
 		if (argc == 1) {
@@ -275,19 +275,9 @@ void InterpretCurrentLine()
 	PrintLine("Ok");
 }
 
-void SetWorkingDir(std::string dir)
-{
-	if (File::Exists(dir)) {
-		SetSharedDirectory(dir);
-	}
-	else {
-		PrintLine("Path not found");
-	}
-}
-
 void PrintFiles(std::string pattern)
 {
-	auto files = File::List(GetSharedDirectory(), "*" + pattern, true);
+	auto files = File::List(GetWorkingDir(), "*" + pattern, true);
 	for (int i = 0; i < files.size(); i++) {
 		std::string& file = files[i];
 		if (file != "." && file != ".." && !File::IsDirectory(file)) {

@@ -25,6 +25,8 @@ struct {
 		int Command;
 		int Params;
 		int Label;
+		int Directive;
+		int Comment;
 		int Info;
 		int Error;
 	} Color;
@@ -44,6 +46,8 @@ void InitProgramEditor()
 	PrgEdit.Color.Command = 27;
 	PrgEdit.Color.Params = 1;
 	PrgEdit.Color.Label = 43;
+	PrgEdit.Color.Directive = 67;
+	PrgEdit.Color.Comment = 3;
 	PrgEdit.Color.Info = 4;
 	PrgEdit.Color.Error = 11;
 
@@ -253,7 +257,7 @@ void RunProgramEditor()
 				FormatProgramLine(currentLine, true);
 			}
 			else if (key == SDLK_F5) {
-				RunProgram(&Program);
+				CompileAndRunProgram(&Program);
 				std::string error = GetTileMachineError();
 				if (!error.empty()) {
 					PrintProgramEditor();
@@ -299,11 +303,13 @@ void AddProgramLine(std::string command)
 
 void FormatProgramLine(ProgramLine* line, bool trim)
 {
-	if (trim) {
+	if (trim)
 		line->Command = String::Trim(line->Command);
-	}
 
-	if (String::EndsWith(line->Command, ":")) {
+	if (String::EndsWith(line->Command, ':') ||
+		String::StartsWith(line->Command, '.') ||
+		String::StartsWith(line->Command, '#')) {
+
 		return;
 	}
 
@@ -330,15 +336,23 @@ void PrintProgramEditor()
 			ProgramLine* line = Program.Lines[i];
 			std::string command = line->Command;
 
-			if (String::EndsWith(String::Trim(command), ":")) {
+			if (String::EndsWith(String::Trim(command), ':')) {
 				Print(command, col1, row, PrgEdit.Color.Label, GetScreenBackColor());
+			}
+			else if (String::StartsWith(String::Trim(command), '#')) {
+				Print(command, col1, row, PrgEdit.Color.Comment, GetScreenBackColor());
 			}
 			else {
 				int spaceIndex = command.find_first_of(' ');
 				if (spaceIndex > 0) {
 					std::string name = command.substr(0, spaceIndex);
 					std::string params = command.substr(spaceIndex);
-					Print(name, col1, row, PrgEdit.Color.Command, GetScreenBackColor());
+					if (String::StartsWith(name, '.')) {
+						Print(name, col1, row, PrgEdit.Color.Directive, GetScreenBackColor());
+					}
+					else {
+						Print(name, col1, row, PrgEdit.Color.Command, GetScreenBackColor());
+					}
 					Print(params, col1 + name.length(), row, PrgEdit.Color.Params, GetScreenBackColor());
 				}
 				else {
@@ -360,8 +374,8 @@ void PrintProgramEditor()
 
 	std::string info = String::Format("%i/%i", PrgEdit.Cursor.Line + 1, Program.Lines.size());
 
-	PrintOnBottomLeftBorder("F1:Menu", PrgEdit.Color.Info);
-	PrintOnBottomRightBorder(info, PrgEdit.Color.Info);
+	PrintOnBottomLeftBorder(info, PrgEdit.Color.Info);
+	PrintOnBottomRightBorder("F1:Menu", PrgEdit.Color.Info);
 }
 
 struct Program* GetProgram()

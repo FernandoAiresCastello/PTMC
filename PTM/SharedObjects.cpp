@@ -1,44 +1,30 @@
 #include "SharedObjects.h"
 
-struct {
-	Project* Proj;
-	std::string WorkingDir;
-} SharedObject;
+Project* Proj;
 
 void InitSharedObjects()
 {
-	SharedObject.Proj = new Project();
-	SharedObject.Proj->Load("ptm.tgpro");
-	SharedObject.WorkingDir = ".";
+	Proj = new Project();
+	Proj->Load("ptm.tgpro");
 }
 
 void DestroySharedObjects()
 {
-	delete SharedObject.Proj;
-	SharedObject.Proj = NULL;
+	delete Proj;
+	Proj = NULL;
 }
 
 Project* GetSharedProject()
 {
-	return SharedObject.Proj;
+	return Proj;
 }
 
 Charset* GetSharedCharset()
 {
-	return SharedObject.Proj->GetCharset();
+	return Proj->GetCharset();
 }
 
 Palette* GetSharedPalette()
 {
-	return SharedObject.Proj->GetPalette();
-}
-
-std::string GetSharedDirectory()
-{
-	return SharedObject.WorkingDir;
-}
-
-void SetSharedDirectory(std::string path)
-{
-	SharedObject.WorkingDir = path;
+	return Proj->GetPalette();
 }

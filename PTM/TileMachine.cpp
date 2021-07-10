@@ -12,6 +12,7 @@ struct {
 	std::vector<CompiledProgramLine> Program;
 	int ProgramPtr = 0;
 	CompiledProgramLine* Line = NULL;
+	std::map<std::string, std::string> Defs;
 	std::map<std::string, int> ProgramLabels;
 	bool Branching = false;
 	bool Running = false;
@@ -65,7 +66,7 @@ void RefreshScreen()
 	UpdateEntireScreen();
 }
 
-void RunProgram(Program* prog)
+void CompileAndRunProgram(Program* prog)
 {
 	RestartTileMachine();
 
@@ -73,7 +74,9 @@ void RunProgram(Program* prog)
 
 	for (int i = 0; i < prog->Lines.size(); i++) {
 		ProgramLine* line = prog->Lines[i];
-		std::vector<std::string> parts = String::Split(line->Command, ' ');
+		auto parts = String::Split(line->Command, ' ');
+		
+		// skip empty lines
 		if (parts.empty()) {
 			continue;
 		}
@@ -81,10 +84,19 @@ void RunProgram(Program* prog)
 		if (command.empty()) {
 			continue;
 		}
-
+		// skip comments
+		if (String::StartsWith(command, '#')) {
+			continue;
+		}
+		// collect then skip labels
 		if (String::EndsWith(command, ':')) {
 			std::string label = String::RemoveLast(command);
 			Machine.ProgramLabels[label] = actualLineIndex;
+			continue;
+		}
+		// collect then skip defs
+		if (String::StartsWith(command, ".def")) {
+			Machine.Defs[parts[1]] = parts[2];
 			continue;
 		}
 
@@ -96,8 +108,12 @@ void RunProgram(Program* prog)
 
 		if (parts.size() > 1) {
 			hasParam = true;
-			paramString = parts[1];
-			paramNumber = String::ToInt(parts[1]);
+			std::string param = parts[1];
+			if (Machine.Defs.find(param) != Machine.Defs.end()) {
+				param = Machine.Defs[param];
+			}
+			paramString = param;
+			paramNumber = String::ToInt(param);
 		}
 
 		CompiledProgramLine cl;
@@ -168,18 +184,19 @@ void ExecuteCompiledProgram()
 int GetCommandByteCode(std::string& command)
 {
 	if (command == "NOP") return 0x00;
+	if (command == "BRK") return 0xfd;
+	if (command == "HALT") return 0xfe;
+	if (command == "EXIT") return 0xff;
 	if (command == "PUSH") return 0x01;
 	if (command == "POP") return 0x02;
-	if (command == "MSET") return 0x03;
-	if (command == "MGET") return 0x04;
+	if (command == "POKE") return 0x03;
+	if (command == "PEEK") return 0x04;
 	if (command == "PUTC") return 0x05;
 	if (command == "REFR") return 0x06;
 	if (command == "ADD") return 0x07;
 	if (command == "SUB") return 0x08;
 	if (command == "JP") return 0x09;
-	if (command == "BRK") return 0xfd;
-	if (command == "HALT") return 0xfe;
-	if (command == "EXIT") return 0xff;
+	if (command == "WAIT") return 0x0a;
 
 	return -1;
 }
@@ -201,6 +218,7 @@ void ExecuteCompiledProgramLine(CompiledProgramLine& line)
 		case 0xfe: C_Halt(); break;
 		case 0xff: C_Exit(); break;
 		case 0x09: C_Jp(); break;
+		case 0x0a: C_Wait(); break;
 		
 		default:
 			SetError(ERR_INVALID_COMMAND);
@@ -385,4 +403,14 @@ void C_Jp()
 	}
 
 	BranchTo(Machine.Line->ParamString);
+}
+
+void C_Wait()
+{
+	if (!Machine.Line->HasParam) {
+		SetError(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	Util::Pause(Machine.Line->ParamNumber);
 }

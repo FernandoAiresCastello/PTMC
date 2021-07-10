@@ -11,5 +11,3 @@ void DestroySharedObjects();
 Project* GetSharedProject();
 Charset* GetSharedCharset();
 Palette* GetSharedPalette();
-void SetSharedDirectory(std::string path);
-std::string GetSharedDirectory();
