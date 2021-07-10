@@ -78,6 +78,32 @@ void RefreshMachineScreen()
 	Machine.Gr->Update();
 }
 
+void SetError(std::string error)
+{
+	Machine.Error = String::Format("%i:%s", Machine.Line->SourceLineNumber, error.c_str());
+}
+
+void BranchTo(std::string label)
+{
+	if (HasLabel(label)) {
+		Machine.Branching = true;
+		Machine.ProgramPtr = Machine.ProgramLabels[label];
+	}
+	else {
+		SetError(ERR_LABEL_NOT_FOUND);
+	}
+}
+
+bool HasLabel(std::string label)
+{
+	return Machine.ProgramLabels.find(label) != Machine.ProgramLabels.end();
+}
+
+bool HasDef(std::string def)
+{
+	return Machine.Defs.find(def) != Machine.Defs.end();
+}
+
 void CompileAndRunProgram(Program* prog)
 {
 	RestartTileMachine();
@@ -213,19 +239,19 @@ void ExecuteCompiledProgramLine(CompiledProgramLine& line)
 {
 	switch (line.Command) {
 
-		case 0x00: C_Nop(); break;
-		case 0x01: C_Push(); break;
-		case 0x02: C_Pop(); break;
+		case 0x00: _0x00(); break;
+		case 0x01: _0x01(); break;
+		case 0x02: _0x02(); break;
 
-		case 0x07: C_Refr(); break;
-		case 0x08: C_Add(); break;
-		case 0x09: C_Sub(); break;
-		case 0x0a: C_Jp(); break;
-		case 0x0b: C_Wait(); break;
+		case 0x07: _0x07(); break;
+		case 0x08: _0x08(); break;
+		case 0x09: _0x09(); break;
+		case 0x0a: _0x0a(); break;
+		case 0x0b: _0x0b(); break;
 
-		case 0xfd: C_Brk(); break;
-		case 0xfe: C_Halt(); break;
-		case 0xff: C_Exit(); break;
+		case 0xfd: _0xfd(); break;
+		case 0xfe: _0xfe(); break;
+		case 0xff: _0xff(); break;
 		
 		default:
 			SetError(ERR_INVALID_COMMAND);
@@ -233,33 +259,7 @@ void ExecuteCompiledProgramLine(CompiledProgramLine& line)
 	}
 }
 
-void SetError(std::string error)
-{
-	Machine.Error = String::Format("%i:%s", Machine.Line->SourceLineNumber, error.c_str());
-}
-
-void BranchTo(std::string label)
-{
-	if (HasLabel(label)) {
-		Machine.Branching = true;
-		Machine.ProgramPtr = Machine.ProgramLabels[label];
-	}
-	else {
-		SetError(ERR_LABEL_NOT_FOUND);
-	}
-}
-
-bool HasLabel(std::string label)
-{
-	return Machine.ProgramLabels.find(label) != Machine.ProgramLabels.end();
-}
-
-bool HasDef(std::string def)
-{
-	return Machine.Defs.find(def) != Machine.Defs.end();
-}
-
-void C_Nop()
+void _0x00()
 {
 	if (Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
@@ -269,7 +269,7 @@ void C_Nop()
 	// no operation
 }
 
-void C_Push()
+void _0x01()
 {
 	if (!Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
@@ -279,7 +279,7 @@ void C_Push()
 	PUSH(Machine.Line->ParamNumber);
 }
 
-void C_Pop()
+void _0x02()
 {
 	if (Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
@@ -293,7 +293,7 @@ void C_Pop()
 	Machine.Stack.pop();
 }
 
-void C_Brk()
+void _0xfd()
 {
 	if (Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
@@ -303,7 +303,7 @@ void C_Brk()
 	__debugbreak();
 }
 
-void C_Halt()
+void _0xfe()
 {
 	if (Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
@@ -313,7 +313,7 @@ void C_Halt()
 	Machine.Halted = true;
 }
 
-void C_Exit()
+void _0xff()
 {
 	if (Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
@@ -323,7 +323,7 @@ void C_Exit()
 	Machine.Running = false;
 }
 
-void C_Refr()
+void _0x07()
 {
 	if (Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
@@ -333,7 +333,7 @@ void C_Refr()
 	RefreshMachineScreen();
 }
 
-void C_Add()
+void _0x08()
 {
 	if (Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
@@ -349,7 +349,7 @@ void C_Add()
 	PUSH(a + b);
 }
 
-void C_Sub()
+void _0x09()
 {
 	if (Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
@@ -365,7 +365,7 @@ void C_Sub()
 	PUSH(a - b);
 }
 
-void C_Jp()
+void _0x0a()
 {
 	if (!Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
@@ -375,7 +375,7 @@ void C_Jp()
 	BranchTo(Machine.Line->ParamString);
 }
 
-void C_Wait()
+void _0x0b()
 {
 	if (!Machine.Line->HasParam) {
 		SetError(ERR_SYNTAX_ERROR);
