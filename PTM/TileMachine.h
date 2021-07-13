@@ -1,6 +1,30 @@
 #pragma once
+#include <map>
+#include <stack>
+#include <vector>
 #include <string>
 #include "Program.h"
+#include "GameData.h"
+#include <TBRLGPT.h>
+using namespace TBRLGPT;
+
+struct Machine {
+	std::string Error = "";
+	std::vector<CompiledProgramLine> Program;
+	int ProgramPtr = 0;
+	CompiledProgramLine* Line = NULL;
+	std::map<std::string, std::string> Defs;
+	std::map<std::string, int> ProgramLabels;
+	bool Branching = false;
+	bool Running = false;
+	bool Halted = false;
+	std::stack<int> Stack;
+	Graphics* Gr;
+	int BackColor = 0;
+	GameData* GameData;
+};
+
+extern struct Machine* Machine;
 
 void InitTileMachine();
 void DestroyTileMachine();
@@ -13,22 +37,16 @@ void BranchTo(std::string label);
 bool HasLabel(std::string label);
 bool HasDef(std::string def);
 void CompileAndRunProgram(Program* prog);
-int GetCommandByteCode(std::string& command);
 void ExecuteCompiledProgram();
-void ExecuteCompiledProgramLine(CompiledProgramLine& line);
 
-// Command implementation
+#define ERR_PROGRAM_EMPTY "Program empty"
+#define ERR_SYNTAX_ERROR "Syntax error"
+#define ERR_INVALID_COMMAND "Invalid command"
+#define ERR_END_OF_PROGRAM "End of program"
+#define ERR_ILLEGAL_ADDRESS "Illegal address"
+#define ERR_STACK_EMPTY "Stack empty"
+#define ERR_LABEL_NOT_FOUND "Label not found"
+#define ERR_DEF_NOT_FOUND "Def not found"
 
-void _0x00();
-void _0x01();
-void _0x02();
-
-void _0x07();
-void _0x08();
-void _0x09();
-void _0x0a();
-void _0x0b();
-
-void _0xfd();
-void _0xfe();
-void _0xff();
+#define POP Machine->Stack.top(); Machine->Stack.pop()
+#define PUSH(x) Machine->Stack.push(x)

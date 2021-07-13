@@ -15,7 +15,7 @@ struct Program {
 struct CompiledProgramLine {
 	int SourceLineNumber;
 	int ActualLineIndex;
-	int Command;
+	std::string Command;
 	bool HasParam;
 	std::string ParamString;
 	int ParamNumber;

@@ -3,61 +3,40 @@
 #include <vector>
 #include "TileMachine.h"
 #include "SharedScreen.h"
+#include "SharedObjects.h"
+#include "GameData.h"
+#include "Commands.h"
+#include <TBRLGPT.h>
+using namespace TBRLGPT;
 
-struct {
-	std::string Error = "";
-	std::vector<CompiledProgramLine> Program;
-	int ProgramPtr = 0;
-	CompiledProgramLine* Line = NULL;
-	std::map<std::string, std::string> Defs;
-	std::map<std::string, int> ProgramLabels;
-	bool Branching = false;
-	bool Running = false;
-	bool Halted = false;
-	std::stack<int> Stack;
-	Graphics* Gr;
-	Charset* Chars;
-	Palette* Pal;
-} Machine;
-
-#define ERR_PROGRAM_EMPTY "Program empty"
-#define ERR_SYNTAX_ERROR "Syntax error"
-#define ERR_INVALID_COMMAND "Invalid command"
-#define ERR_END_OF_PROGRAM "End of program"
-#define ERR_ILLEGAL_ADDRESS "Illegal address"
-#define ERR_STACK_EMPTY "Stack empty"
-#define ERR_LABEL_NOT_FOUND "Label not found"
-#define ERR_DEF_NOT_FOUND "Def not found"
-
-#define POP Machine.Stack.top(); Machine.Stack.pop()
-#define PUSH(x) Machine.Stack.push(x)
+struct Machine* Machine = NULL;
 
 void InitTileMachine()
 {
-	Machine.Gr = GetScreenGraphics();
-	Machine.Chars = new Charset();
-	Machine.Chars->InitDefaultCharset();
-	Machine.Pal = new Palette();
-	Machine.Pal->InitDefaultColors();
+	Machine = new struct Machine();
+
+	Machine->Gr = GetScreenGraphics();
+	Machine->GameData = new GameData(GetSharedCharset(), GetSharedPalette());
+
+	InitCommandTable();
 }
 
 void DestroyTileMachine()
 {
-	delete Machine.Chars;
-	delete Machine.Pal;
+	delete Machine->GameData;
 }
 
 void RestartTileMachine()
 {
-	Machine.Program.clear();
-	Machine.ProgramLabels.clear();
-	Machine.Defs.clear();
-	Machine.ProgramPtr = 0;
-	Machine.Error = "";
-	Machine.Running = true;
-	Machine.Halted = false;
-	while (!Machine.Stack.empty()) {
-		Machine.Stack.pop();
+	Machine->Program.clear();
+	Machine->ProgramLabels.clear();
+	Machine->Defs.clear();
+	Machine->ProgramPtr = 0;
+	Machine->Error = "";
+	Machine->Running = true;
+	Machine->Halted = false;
+	while (!Machine->Stack.empty()) {
+		Machine->Stack.pop();
 	}
 	ClearMachineScreen();
 	RefreshMachineScreen();
@@ -65,29 +44,29 @@ void RestartTileMachine()
 
 std::string GetTileMachineError()
 {
-	return Machine.Error;
+	return Machine->Error;
 }
 
 void ClearMachineScreen()
 {
-	Machine.Gr->Clear(0);
+	Machine->Gr->Clear(Machine->BackColor);
 }
 
 void RefreshMachineScreen()
 {
-	Machine.Gr->Update();
+	Machine->Gr->Update();
 }
 
 void SetError(std::string error)
 {
-	Machine.Error = String::Format("%i:%s", Machine.Line->SourceLineNumber, error.c_str());
+	Machine->Error = String::Format("%i:%s", Machine->Line->SourceLineNumber, error.c_str());
 }
 
 void BranchTo(std::string label)
 {
 	if (HasLabel(label)) {
-		Machine.Branching = true;
-		Machine.ProgramPtr = Machine.ProgramLabels[label];
+		Machine->Branching = true;
+		Machine->ProgramPtr = Machine->ProgramLabels[label];
 	}
 	else {
 		SetError(ERR_LABEL_NOT_FOUND);
@@ -96,12 +75,12 @@ void BranchTo(std::string label)
 
 bool HasLabel(std::string label)
 {
-	return Machine.ProgramLabels.find(label) != Machine.ProgramLabels.end();
+	return Machine->ProgramLabels.find(label) != Machine->ProgramLabels.end();
 }
 
 bool HasDef(std::string def)
 {
-	return Machine.Defs.find(def) != Machine.Defs.end();
+	return Machine->Defs.find(def) != Machine->Defs.end();
 }
 
 void CompileAndRunProgram(Program* prog)
@@ -129,17 +108,16 @@ void CompileAndRunProgram(Program* prog)
 		// collect then skip labels
 		if (String::EndsWith(command, ':')) {
 			std::string label = String::RemoveLast(command);
-			Machine.ProgramLabels[label] = actualLineIndex;
+			Machine->ProgramLabels[label] = actualLineIndex;
 			continue;
 		}
 		// collect then skip defs
 		if (String::StartsWith(command, ".def")) {
-			Machine.Defs[parts[1]] = parts[2];
+			Machine->Defs[parts[1]] = parts[2];
 			continue;
 		}
 
 		command = String::ToUpper(command);
-		int commandCode = GetCommandByteCode(command);
 		int paramNumber = 0;
 		std::string paramString = "";
 		bool hasParam = false;
@@ -148,7 +126,7 @@ void CompileAndRunProgram(Program* prog)
 			hasParam = true;
 			std::string param = parts[1];
 			if (HasDef(param)) {
-				param = Machine.Defs[param];
+				param = Machine->Defs[param];
 			}
 			paramString = param;
 			paramNumber = String::ToInt(param);
@@ -157,12 +135,12 @@ void CompileAndRunProgram(Program* prog)
 		CompiledProgramLine cl;
 		cl.SourceLineNumber = i + 1;
 		cl.ActualLineIndex = actualLineIndex;
-		cl.Command = commandCode;
+		cl.Command = command;
 		cl.HasParam = hasParam;
 		cl.ParamNumber = paramNumber;
 		cl.ParamString = paramString;
 
-		Machine.Program.push_back(cl);
+		Machine->Program.push_back(cl);
 
 		actualLineIndex++;
 	}
@@ -172,215 +150,53 @@ void CompileAndRunProgram(Program* prog)
 
 void ExecuteCompiledProgram()
 {
-	if (Machine.Program.empty()) {
-		Machine.Error = ERR_PROGRAM_EMPTY;
+	if (Machine->Program.empty()) {
+		Machine->Error = ERR_PROGRAM_EMPTY;
 		return;
 	}
 
-	while (Machine.Running) {
+	while (Machine->Running) {
 
 		SDL_Event e = { 0 };
 		SDL_PollEvent(&e);
 		if (e.type == SDL_QUIT) {
-			Machine.Running = false;
+			Machine->Running = false;
 			continue;
 		}
 		else if (e.type == SDL_KEYDOWN) {
 			SDL_Keycode key = e.key.keysym.sym;
 			if (key == SDLK_ESCAPE) {
-				Machine.Running = false;
+				Machine->Running = false;
 				continue;
 			}
 		}
 
-		if (Machine.Halted)
+		if (Machine->Halted)
 			continue;
 
-		Machine.Branching = false;
+		Machine->Branching = false;
 
-		Machine.Line = &Machine.Program[Machine.ProgramPtr];
-		ExecuteCompiledProgramLine(Machine.Program[Machine.ProgramPtr]);
+		Machine->Line = &Machine->Program[Machine->ProgramPtr];
+		std::string& cmd = Machine->Program[Machine->ProgramPtr].Command;
+		auto impl = Cmd[cmd];
+		if (impl) {
+			impl();
+		}
+		else {
+			SetError("Invalid command");
+		}
 
-		if (!Machine.Error.empty()) {
-			Machine.Running = false;
+		if (!Machine->Error.empty()) {
+			Machine->Running = false;
 			continue;
 		}
-		if (Machine.Running && !Machine.Halted && !Machine.Branching) {
-			Machine.ProgramPtr++;
+		if (Machine->Running && !Machine->Halted && !Machine->Branching) {
+			Machine->ProgramPtr++;
 		}
-		if (Machine.ProgramPtr >= Machine.Program.size()) {
-			Machine.Running = false;
-			Machine.Error = String::Format("%i:" ERR_END_OF_PROGRAM, 
-				Machine.Program[Machine.Program.size() - 1].SourceLineNumber + 1);
+		if (Machine->ProgramPtr >= Machine->Program.size()) {
+			Machine->Running = false;
+			Machine->Error = String::Format("%i:" ERR_END_OF_PROGRAM, 
+				Machine->Program[Machine->Program.size() - 1].SourceLineNumber + 1);
 		}
 	}
-}
-
-int GetCommandByteCode(std::string& command)
-{
-	if (command == "NOP") return 0x00;
-	if (command == "PUSH") return 0x01;
-	if (command == "POP") return 0x02;
-
-	if (command == "REFR") return 0x07;
-	if (command == "ADD") return 0x08;
-	if (command == "SUB") return 0x09;
-	if (command == "JP") return 0x0a;
-	if (command == "WAIT") return 0x0b;
-
-	if (command == "BRK") return 0xfd;
-	if (command == "HALT") return 0xfe;
-	if (command == "EXIT") return 0xff;
-
-	return -1;
-}
-
-void ExecuteCompiledProgramLine(CompiledProgramLine& line)
-{
-	switch (line.Command) {
-
-		case 0x00: _0x00(); break;
-		case 0x01: _0x01(); break;
-		case 0x02: _0x02(); break;
-
-		case 0x07: _0x07(); break;
-		case 0x08: _0x08(); break;
-		case 0x09: _0x09(); break;
-		case 0x0a: _0x0a(); break;
-		case 0x0b: _0x0b(); break;
-
-		case 0xfd: _0xfd(); break;
-		case 0xfe: _0xfe(); break;
-		case 0xff: _0xff(); break;
-		
-		default:
-			SetError(ERR_INVALID_COMMAND);
-			break;
-	}
-}
-
-void _0x00()
-{
-	if (Machine.Line->HasParam) {
-		SetError(ERR_SYNTAX_ERROR);
-		return;
-	}
-
-	// no operation
-}
-
-void _0x01()
-{
-	if (!Machine.Line->HasParam) {
-		SetError(ERR_SYNTAX_ERROR);
-		return;
-	}
-
-	PUSH(Machine.Line->ParamNumber);
-}
-
-void _0x02()
-{
-	if (Machine.Line->HasParam) {
-		SetError(ERR_SYNTAX_ERROR);
-		return;
-	}
-	if (Machine.Stack.empty()) {
-		SetError(ERR_STACK_EMPTY);
-		return;
-	}
-
-	Machine.Stack.pop();
-}
-
-void _0xfd()
-{
-	if (Machine.Line->HasParam) {
-		SetError(ERR_SYNTAX_ERROR);
-		return;
-	}
-
-	__debugbreak();
-}
-
-void _0xfe()
-{
-	if (Machine.Line->HasParam) {
-		SetError(ERR_SYNTAX_ERROR);
-		return;
-	}
-
-	Machine.Halted = true;
-}
-
-void _0xff()
-{
-	if (Machine.Line->HasParam) {
-		SetError(ERR_SYNTAX_ERROR);
-		return;
-	}
-
-	Machine.Running = false;
-}
-
-void _0x07()
-{
-	if (Machine.Line->HasParam) {
-		SetError(ERR_SYNTAX_ERROR);
-		return;
-	}
-
-	RefreshMachineScreen();
-}
-
-void _0x08()
-{
-	if (Machine.Line->HasParam) {
-		SetError(ERR_SYNTAX_ERROR);
-		return;
-	}
-	if (Machine.Stack.size() < 2) {
-		SetError(ERR_STACK_EMPTY);
-		return;
-	}
-
-	int b = POP;
-	int a = POP;
-	PUSH(a + b);
-}
-
-void _0x09()
-{
-	if (Machine.Line->HasParam) {
-		SetError(ERR_SYNTAX_ERROR);
-		return;
-	}
-	if (Machine.Stack.size() < 2) {
-		SetError(ERR_STACK_EMPTY);
-		return;
-	}
-
-	int b = POP;
-	int a = POP;
-	PUSH(a - b);
-}
-
-void _0x0a()
-{
-	if (!Machine.Line->HasParam) {
-		SetError(ERR_SYNTAX_ERROR);
-		return;
-	}
-
-	BranchTo(Machine.Line->ParamString);
-}
-
-void _0x0b()
-{
-	if (!Machine.Line->HasParam) {
-		SetError(ERR_SYNTAX_ERROR);
-		return;
-	}
-
-	Util::Pause(Machine.Line->ParamNumber);
 }

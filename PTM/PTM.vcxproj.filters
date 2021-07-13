@@ -2,20 +2,78 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="CommandShell.cpp" />
-    <ClCompile Include="ProgramEditor.cpp" />
-    <ClCompile Include="SharedScreen.cpp" />
-    <ClCompile Include="SharedObjects.cpp" />
-    <ClCompile Include="TileMachine.cpp" />
-    <ClCompile Include="Filesystem.cpp" />
+    <ClCompile Include="CommandShell.cpp">
+      <Filter>User</Filter>
+    </ClCompile>
+    <ClCompile Include="Filesystem.cpp">
+      <Filter>User</Filter>
+    </ClCompile>
+    <ClCompile Include="ProgramEditor.cpp">
+      <Filter>User</Filter>
+    </ClCompile>
+    <ClCompile Include="SharedObjects.cpp">
+      <Filter>User</Filter>
+    </ClCompile>
+    <ClCompile Include="SharedScreen.cpp">
+      <Filter>User</Filter>
+    </ClCompile>
+    <ClCompile Include="GameData.cpp">
+      <Filter>Machine</Filter>
+    </ClCompile>
+    <ClCompile Include="TileMachine.cpp">
+      <Filter>Machine</Filter>
+    </ClCompile>
+    <ClCompile Include="GameObject.cpp">
+      <Filter>Machine</Filter>
+    </ClCompile>
+    <ClCompile Include="Commands.cpp">
+      <Filter>Machine</Filter>
+    </ClCompile>
+    <ClCompile Include="GameScene.cpp">
+      <Filter>Machine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CommandShell.h" />
-    <ClInclude Include="ProgramEditor.h" />
-    <ClInclude Include="SharedScreen.h" />
-    <ClInclude Include="SharedObjects.h" />
-    <ClInclude Include="TileMachine.h" />
-    <ClInclude Include="Program.h" />
-    <ClInclude Include="Filesystem.h" />
+    <ClInclude Include="CommandShell.h">
+      <Filter>User</Filter>
+    </ClInclude>
+    <ClInclude Include="Filesystem.h">
+      <Filter>User</Filter>
+    </ClInclude>
+    <ClInclude Include="Program.h">
+      <Filter>User</Filter>
+    </ClInclude>
+    <ClInclude Include="ProgramEditor.h">
+      <Filter>User</Filter>
+    </ClInclude>
+    <ClInclude Include="SharedObjects.h">
+      <Filter>User</Filter>
+    </ClInclude>
+    <ClInclude Include="SharedScreen.h">
+      <Filter>User</Filter>
+    </ClInclude>
+    <ClInclude Include="GameData.h">
+      <Filter>Machine</Filter>
+    </ClInclude>
+    <ClInclude Include="TileMachine.h">
+      <Filter>Machine</Filter>
+    </ClInclude>
+    <ClInclude Include="GameObject.h">
+      <Filter>Machine</Filter>
+    </ClInclude>
+    <ClInclude Include="Commands.h">
+      <Filter>Machine</Filter>
+    </ClInclude>
+    <ClInclude Include="GameScene.h">
+      <Filter>Machine</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="User">
+      <UniqueIdentifier>{842c3aa0-5941-435d-95cb-9a9ebf34801a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Machine">
+      <UniqueIdentifier>{21c20d12-8326-4281-94dd-07efa643af27}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

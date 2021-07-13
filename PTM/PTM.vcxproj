@@ -126,7 +126,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Commands.cpp" />
     <ClCompile Include="Filesystem.cpp" />
+    <ClCompile Include="GameData.cpp" />
+    <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="GameScene.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="CommandShell.cpp" />
     <ClCompile Include="ProgramEditor.cpp" />
@@ -136,7 +140,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommandShell.h" />
+    <ClInclude Include="Commands.h" />
     <ClInclude Include="Filesystem.h" />
+    <ClInclude Include="GameData.h" />
+    <ClInclude Include="GameObject.h" />
+    <ClInclude Include="GameScene.h" />
     <ClInclude Include="Program.h" />
     <ClInclude Include="ProgramEditor.h" />
     <ClInclude Include="SharedObjects.h" />
