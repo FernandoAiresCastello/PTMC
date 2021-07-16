@@ -107,6 +107,16 @@ int GetScreenBorderColor()
 	return Screen.Color.Border;
 }
 
+int GetCursorX()
+{
+	return Screen.Cursor.X;
+}
+
+int GetCursorY()
+{
+	return Screen.Cursor.Y;
+}
+
 void ToggleFullscreen()
 {
 	Screen.Gr->ToggleFullscreen();
@@ -234,6 +244,18 @@ std::string GetLine(int index)
 	return line;
 }
 
+std::vector<Object> GetLineObjects(int index)
+{
+	std::vector<Object> line;
+	for (int x = 0; x < Screen.Buf->GetWidth(); x++) {
+		Object* o = Screen.Buf->GetObject(x, index, 0);
+		Object copy;
+		copy.SetEqual(*o);
+		line.push_back(copy);
+	}
+	return line;
+}
+
 void Print(std::string text)
 {
 	Screen.Buf->SetStringOfObjects(
@@ -241,7 +263,7 @@ void Print(std::string text)
 		Screen.Color.Fg, Screen.Color.Bg,
 		Screen.Cursor.X, Screen.Cursor.Y, 0);
 
-	int newX = Screen.Cursor.X += text.length();
+	int newX = Screen.Cursor.X + text.length();
 
 	Locate(newX, Screen.Cursor.Y);
 }
@@ -260,6 +282,17 @@ void PrintLine(std::string text)
 {
 	Print(text);
 	Crlf();
+}
+
+void PrintObjects(std::vector<Object> objects, int x, int y)
+{
+	for (int i = 0; i < objects.size(); i++) {
+		Screen.Buf->SetObject(objects[i], x, y, 0);
+		x++;
+		if (x >= Screen.Buf->GetWidth() - 2) {
+			break;
+		}
+	}
 }
 
 void PrintOnBottomRightBorder(std::string text)
@@ -318,6 +351,23 @@ void PutChar(int ch, int x, int y, int fgc, int bgc)
 	oc.Index = ch;
 	oc.ForeColorIx = fgc;
 	oc.BackColorIx = bgc;
+}
+
+void TypeChar(int ch)
+{
+	TypeChar(ch, GetScreenForeColor(), GetScreenBackColor());
+}
+
+void TypeChar(int ch, int fgc, int bgc)
+{
+	PutChar(ch, GetCursorX(), GetCursorY(), fgc, bgc);
+
+	if (GetCursorX() < GetScreenBufferWidth() - 2) {
+		CursorMove(1, 0);
+	}
+	else {
+		//Crlf();
+	}
 }
 
 Object* GetScreenBufferObject(int x, int y)
@@ -455,8 +505,8 @@ void CursorMoveToEndOfLine()
 void ScrollBufferUp()
 {
 	for (int y = 1; y < Screen.Buf->GetHeight(); y++) {
-		std::string line = GetLine(y);
-		Print(line, 0, y - 1);
+		auto line = GetLineObjects(y);
+		PrintObjects(line, 0, y - 1);
 	}
 	ClearLine(Screen.Buf->GetHeight() - 1);
 	Locate(0, Screen.Cursor.Y);

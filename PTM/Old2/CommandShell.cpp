@@ -20,6 +20,7 @@ struct {
 	const std::string NotImplemented = "Not implemented";
 	const std::string SyntaxError = "Syntax error";
 	const std::string WrongNumArgs = "Wrong arguments";
+	const std::string OutOfRange = "Out of range";
 } ShellError;
 
 void InitCommandShell()
@@ -259,6 +260,28 @@ void InterpretCurrentLine()
 			error = ShellError.WrongNumArgs;
 		}
 	}
+	else if (cmd == "charset") {
+		if (argc == 0) {
+			PrintCharset(0, Charset::Size - 1);
+		}
+		else if (argc == 1) {
+			PrintCharset(String::ToInt(args[0]), Charset::Size - 1);
+		}
+		else if (argc == 2) {
+			PrintCharset(String::ToInt(args[0]), String::ToInt(args[1]));
+		}
+	}
+	else if (cmd == "palette") {
+		if (argc == 0) {
+			PrintPalette(0, Palette::Size - 1);
+		}
+		else if (argc == 1) {
+			PrintPalette(String::ToInt(args[0]), Palette::Size - 1);
+		}
+		else if (argc == 2) {
+			PrintPalette(String::ToInt(args[0]), String::ToInt(args[1]));
+		}
+	}
 	else {
 		syntaxError = true;
 	}
@@ -271,4 +294,34 @@ void InterpretCurrentLine()
 	}
 
 	PrintLine("Ok");
+}
+
+void PrintCharset(int first, int last)
+{
+	if (first < 0 || first >= Charset::Size || last < 0 || last >= Charset::Size) {
+		PrintLine(ShellError.OutOfRange);
+		return;
+	}
+
+	for (int i = first; i <= last && i < Charset::Size; i++) {
+		TypeChar(i);
+	}
+
+	Crlf();
+	DrawScreenBuffer();
+	UpdateEntireScreen();
+}
+
+void PrintPalette(int first, int last)
+{
+	if (first < 0 || first >= Palette::Size || last < 0 || last >= Palette::Size) {
+		PrintLine(ShellError.OutOfRange);
+		return;
+	}
+
+	for (int i = first; i <= last && i < Palette::Size; i++)
+		TypeChar(0, i, i);
+
+	Crlf();
+	UpdateEntireScreen();
 }

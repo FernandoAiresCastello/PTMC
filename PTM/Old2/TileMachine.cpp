@@ -14,10 +14,10 @@ struct Machine* Machine = NULL;
 void InitTileMachine()
 {
 	Machine = new struct Machine();
-
 	Machine->Gr = GetScreenGraphics();
-	Machine->GameData = new GameData(GetSharedCharset(), GetSharedPalette());
-
+	Machine->GameData = new GameData();
+	Machine->GameData->SetCharset(GetSharedCharset());
+	Machine->GameData->SetPalette(GetSharedPalette());
 	InitCommandTable();
 }
 
@@ -86,6 +86,7 @@ bool HasDef(std::string def)
 void CompileAndRunProgram(Program* prog)
 {
 	RestartTileMachine();
+	Machine->GameData->SetProgram(prog);
 
 	int actualLineIndex = 0;
 
