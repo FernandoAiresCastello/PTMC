@@ -126,7 +126,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CommandParam.cpp" />
+    <ClCompile Include="CommandParamType.cpp" />
+    <ClCompile Include="CommandShell.cpp" />
+    <ClCompile Include="Datafile.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Program.cpp" />
+    <ClCompile Include="ProgramLine.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CommandParam.h" />
+    <ClInclude Include="CommandParamType.h" />
+    <ClInclude Include="CommandShell.h" />
+    <ClInclude Include="Datafile.h" />
+    <ClInclude Include="Program.h" />
+    <ClInclude Include="ProgramLine.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
