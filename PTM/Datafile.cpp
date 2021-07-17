@@ -3,7 +3,9 @@
 Datafile::Datafile()
 {
 	Chars = new Charset();
+	Chars->InitDefaultCharset();
 	Pal = new Palette();
+	Pal->InitDefaultColors();
 	Prog = new Program();
 }
 
