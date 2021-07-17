@@ -13,12 +13,15 @@ Machine::Machine()
 	ProgramPtr = 0;
 	Branch = false;
 	Error = "";
-
+	DefaultChars = new Charset();
+	DefaultChars->InitDefaultCharset();
 	InitCommandMap();
 }
 
 Machine::~Machine()
 {
+	delete DefaultChars;
+	delete Debugger;
 }
 
 void Machine::Run(Datafile* data, Graphics* gr)
@@ -26,6 +29,7 @@ void Machine::Run(Datafile* data, Graphics* gr)
 	Running = true;
 	Prog = data->GetProgram();
 	Gr = gr;
+	Debugger = new class Debugger(data, gr);
 	
 	while (Running) {
 		
@@ -89,19 +93,18 @@ void Machine::OnKeyPress(SDL_Keycode key)
 
 void Machine::Abort(std::string error)
 {
-	Charset* tempChars = new Charset();
-	tempChars->InitDefaultCharset();
+	const int fgc = 0xffffff;
+	const int bgc = 0xff0000;
 
-	Gr->Clear(0xff0000);
-	Gr->Print(tempChars, 1, 1, 0xffffff, 0xff0000, error);
+	ClearScreen(0xff0000);
+	Print(error, 1, 1, 0xffffff, 0xff0000);
 	
 	if (Line != NULL) {
-		Gr->Print(tempChars, 1, 3, 0xffffff, 0xff0000, String::Format("At line %i:", Line->SourceLineNumber));
-		Gr->Print(tempChars, 1, 5, 0xffffff, 0xff0000, Line->SourceLine);
+		Print(String::Format("At line %i:", Line->SourceLineNumber), 1, 3, fgc, bgc);
+		Print(Line->SourceLine, 1, 5, fgc, bgc);
 	}
 
-	Gr->Update();
-	delete tempChars;
+	UpdateScreen();
 	Halt();
 }
 
@@ -110,6 +113,21 @@ void Machine::Halt()
 	while (Running) {
 		ProcessEvents();
 	}
+}
+
+void Machine::Print(std::string text, int x, int y, int fgc, int bgc)
+{
+	Gr->Print(DefaultChars, x, y, fgc, bgc, text);
+}
+
+void Machine::ClearScreen(int bgc)
+{
+	Gr->Clear(bgc);
+}
+
+void Machine::UpdateScreen()
+{
+	Gr->Update();
 }
 
 void Machine::PushString(std::string value)
@@ -188,6 +206,17 @@ void Machine::InitCommandMap()
 	CMD("EXIT", C_Exit);
 	CMD("VAR", C_Var);
 	CMD("HALT", C_Halt);
+	CMD("DEBUG", C_Debug);
+}
+
+void Machine::C_Debug()
+{
+	if (Line->HasParams()) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	Debugger->Run();
 }
 
 void Machine::C_Halt()

@@ -10,6 +10,7 @@
 #include "Datafile.h"
 #include "Variable.h"
 #include "StackElement.h"
+#include "Debugger.h"
 using namespace TBRLGPT;
 
 class Machine
@@ -31,11 +32,16 @@ private:
 	std::stack<StackElement> Stack;
 	std::map<std::string, Variable> Vars;
 	Graphics* Gr;
+	Charset* DefaultChars;
+	Debugger* Debugger;
 
 	void ProcessEvents();
 	void OnKeyPress(SDL_Keycode key);
 	void Abort(std::string error);
 	void Halt();
+	void Print(std::string text, int x, int y, int fgc, int bgc);
+	void ClearScreen(int bgc);
+	void UpdateScreen();
 	void PushString(std::string value);
 	void PushNumber(int value);
 	std::string PopString();
@@ -52,4 +58,5 @@ private:
 	void C_Push();
 	void C_Exit();
 	void C_Var();
+	void C_Debug();
 };

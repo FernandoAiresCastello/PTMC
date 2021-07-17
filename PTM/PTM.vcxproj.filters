@@ -29,6 +29,9 @@
     <ClCompile Include="StackElement.cpp">
       <Filter>Machine</Filter>
     </ClCompile>
+    <ClCompile Include="Debugger.cpp">
+      <Filter>Machine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommandParam.h">
@@ -56,6 +59,9 @@
       <Filter>Machine</Filter>
     </ClInclude>
     <ClInclude Include="StackElement.h">
+      <Filter>Machine</Filter>
+    </ClInclude>
+    <ClInclude Include="Debugger.h">
       <Filter>Machine</Filter>
     </ClInclude>
   </ItemGroup>
