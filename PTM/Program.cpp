@@ -73,34 +73,59 @@ ProgramLine* Program::ParseLine(std::string src, int sourceLineNumber, int actua
 	ProgramLine* line = new ProgramLine();
 	line->LineNumber = actualLineNumber;
 	line->SourceLineNumber = sourceLineNumber;
+	line->SourceLine = src;
+
+	// === Parse command ===
 
 	int ixFirstSpace = src.find(' ');
 	line->Command = String::ToUpper(String::Trim(src.substr(0, ixFirstSpace)));
-	
 	if (ixFirstSpace < 0)
 		return line;
 
-	std::string rawParams = String::Trim(src.substr(ixFirstSpace));
+	// === Parse params ===
 
-	std::string literalString = "";
-	if (String::Contains(rawParams, "\"")) {
-		// debug
-		/*if (String::Contains(rawParams, "\"\"")) {
-			__debugbreak();
-		}*/
-		// enddebug
-		int ixOpenQuote = rawParams.find('\"');
-		int ixCloseQuote = rawParams.find('\"', ixOpenQuote + 1);
-		std::string temp = rawParams.substr(ixOpenQuote, ixCloseQuote);
-		literalString = String::Replace(temp, "\"", "");
-		if (!literalString.empty())
-			rawParams = String::Replace(rawParams, literalString, "");
+	std::string rawParams = String::Trim(src.substr(ixFirstSpace));
+	std::string rawParamBuf = "";
+	std::vector<std::string> rawParamList;
+	bool quote = false;
+
+	for (int i = 0; i < rawParams.length(); i++) {
+		char ch = rawParams[i];
+		if (ch == '\"') {
+			rawParamBuf.push_back(ch);
+			if (quote) {
+				quote = false;
+				std::string trimmedRawParam = String::Trim(rawParamBuf);
+				if (!trimmedRawParam.empty())
+					rawParamList.push_back(trimmedRawParam);
+				rawParamBuf = "";
+			}
+			else {
+				quote = true;
+			}
+			continue;
+		}
+		else if (ch == ',') {
+			std::string trimmedRawParam = String::Trim(rawParamBuf);
+			if (!trimmedRawParam.empty())
+				rawParamList.push_back(trimmedRawParam);
+			rawParamBuf = "";
+			continue;
+		}
+		else {
+			rawParamBuf.push_back(ch);
+		}
 	}
 
-	auto rawParamList = String::Split(rawParams, ',');
+	std::string trimmedRawParam = String::Trim(rawParamBuf);
+	if (!trimmedRawParam.empty())
+		rawParamList.push_back(trimmedRawParam);
+
+	// === Interpret param types ===
+
 	for (auto& rawParam : rawParamList) {
 		CommandParam param;
-		param.String = String::Trim(rawParam);
+		param.String = rawParam;
 
 		if (String::IsNumber(param.String)) {
 			param.Type = CommandParamType::NumberLiteral;
@@ -120,9 +145,9 @@ ProgramLine* Program::ParseLine(std::string src, int sourceLineNumber, int actua
 			param.Type = CommandParamType::Variable;
 			param.String = String::Skip(param.String, 1);
 		}
-		else if (param.String == "\"\"") {
+		else if (String::StartsWith(param.String, "\"") && String::EndsWith(param.String, "\"")) {
 			param.Type = CommandParamType::StringLiteral;
-			param.String = literalString;
+			param.String = String::RemoveFirstAndLast(param.String);
 		}
 		else {
 			param.Type = CommandParamType::Label;
@@ -130,6 +155,6 @@ ProgramLine* Program::ParseLine(std::string src, int sourceLineNumber, int actua
 
 		line->AddParam(param);
 	}
-	
+
 	return line;
 }

@@ -2,7 +2,7 @@
 
 #define CMD(cmd,impl) Cmd[cmd] = &Machine::impl;
 
-#define ERR_END_OF_PROGRAM "Execution pointer past end of program"
+#define ERR_END_OF_PROGRAM "End of program"
 #define ERR_INVALID_COMMAND "Invalid command"
 #define ERR_SYNTAX_ERROR "Syntax error"
 #define ERR_STACK_EMPTY "Stack empty"
@@ -23,26 +23,31 @@ Machine::~Machine()
 
 void Machine::Run(Datafile* data, Graphics* gr)
 {
-	Program* prog = data->GetProgram();
-	Gr = gr;
-
 	Running = true;
+	Prog = data->GetProgram();
+	Gr = gr;
+	
 	while (Running) {
 		
 		Error = "";
+		ProcessEvents();
 
-		if (ProgramPtr >= prog->GetSize()) {
-			SetError(ERR_END_OF_PROGRAM);
+		if (!Running)
+			break;
+
+		if (ProgramPtr >= Prog->GetSize()) {
+			Line = NULL;
+			Abort(ERR_END_OF_PROGRAM);
 			break;
 		}
 
-		Line = prog->GetLine(ProgramPtr);
+		Line = Prog->GetLine(ProgramPtr);
 		auto& impl = Cmd[Line->Command];
 		if (impl != NULL) {
 			((*this).*impl)();
 		}
 		else {
-			SetError(ERR_INVALID_COMMAND);
+			Abort(ERR_INVALID_COMMAND);
 			break;
 		}
 
@@ -57,11 +62,54 @@ void Machine::Run(Datafile* data, Graphics* gr)
 	}
 }
 
-void Machine::SetError(std::string error)
+void Machine::ProcessEvents()
 {
-	Error = String::Format("%i: %s", Line->SourceLineNumber, error.c_str());
-	Running = false;
-	Util::Error(Error);
+	SDL_Event e = { 0 };
+	SDL_PollEvent(&e);
+
+	if (e.type == SDL_QUIT)
+		Running = false;
+	else if (e.type == SDL_KEYDOWN)
+		OnKeyPress(e.key.keysym.sym);
+}
+
+void Machine::OnKeyPress(SDL_Keycode key)
+{
+	bool shift = Key::Shift();
+	bool ctrl = Key::Ctrl();
+	bool alt = Key::Alt();
+
+	if (alt) {
+		if (key == SDLK_RETURN) {
+			Gr->ToggleFullscreen();
+			Gr->Update();
+		}
+	}
+}
+
+void Machine::Abort(std::string error)
+{
+	Charset* tempChars = new Charset();
+	tempChars->InitDefaultCharset();
+
+	Gr->Clear(0xff0000);
+	Gr->Print(tempChars, 1, 1, 0xffffff, 0xff0000, error);
+	
+	if (Line != NULL) {
+		Gr->Print(tempChars, 1, 3, 0xffffff, 0xff0000, String::Format("At line %i:", Line->SourceLineNumber));
+		Gr->Print(tempChars, 1, 5, 0xffffff, 0xff0000, Line->SourceLine);
+	}
+
+	Gr->Update();
+	delete tempChars;
+	Halt();
+}
+
+void Machine::Halt()
+{
+	while (Running) {
+		ProcessEvents();
+	}
 }
 
 void Machine::PushString(std::string value)
@@ -83,7 +131,7 @@ void Machine::PushNumber(int value)
 std::string Machine::PopString()
 {
 	if (Stack.empty()) {
-		SetError(ERR_STACK_EMPTY);
+		Abort(ERR_STACK_EMPTY);
 		return "";
 	}
 
@@ -95,7 +143,7 @@ std::string Machine::PopString()
 int Machine::PopNumber()
 {
 	if (Stack.empty()) {
-		SetError(ERR_STACK_EMPTY);
+		Abort(ERR_STACK_EMPTY);
 		return 0;
 	}
 
@@ -139,16 +187,27 @@ void Machine::InitCommandMap()
 	CMD("PUSH", C_Push);
 	CMD("EXIT", C_Exit);
 	CMD("VAR", C_Var);
+	CMD("HALT", C_Halt);
+}
+
+void Machine::C_Halt()
+{
+	if (Line->HasParams()) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	Halt();
 }
 
 void Machine::C_Var()
 {
 	if (!Line->HasParams(2)) {
-		SetError(ERR_SYNTAX_ERROR);
+		Abort(ERR_SYNTAX_ERROR);
 		return;
 	}
 	if (Line->GetParam(0)->Type != CommandParamType::Variable) {
-		SetError(ERR_SYNTAX_ERROR);
+		Abort(ERR_SYNTAX_ERROR);
 		return;
 	}
 
@@ -165,7 +224,7 @@ void Machine::C_Var()
 void Machine::C_Exit()
 {
 	if (Line->HasParams()) {
-		SetError(ERR_SYNTAX_ERROR);
+		Abort(ERR_SYNTAX_ERROR);
 		return;
 	}
 
@@ -175,7 +234,7 @@ void Machine::C_Exit()
 void Machine::C_Push()
 {
 	if (!Line->HasParams()) {
-		SetError(ERR_SYNTAX_ERROR);
+		Abort(ERR_SYNTAX_ERROR);
 		return;
 	}
 
@@ -187,7 +246,7 @@ void Machine::C_Push()
 		else if (param->Type == CommandParamType::Variable)
 			PushString(GetVarAsString(param->String));
 		else {
-			SetError(ERR_SYNTAX_ERROR);
+			Abort(ERR_SYNTAX_ERROR);
 			return;
 		}
 	}
@@ -196,7 +255,7 @@ void Machine::C_Push()
 void Machine::C_Nop()
 {
 	if (Line->HasParams()) {
-		SetError(ERR_SYNTAX_ERROR);
+		Abort(ERR_SYNTAX_ERROR);
 		return;
 	}
 }
@@ -204,7 +263,7 @@ void Machine::C_Nop()
 void Machine::C_Brk()
 {
 	if (Line->HasParams()) {
-		SetError(ERR_SYNTAX_ERROR);
+		Abort(ERR_SYNTAX_ERROR);
 		return;
 	}
 

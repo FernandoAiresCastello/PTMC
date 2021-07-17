@@ -22,6 +22,7 @@ public:
 
 private:
 	bool Running;
+	Program* Prog;
 	int ProgramPtr;
 	std::map<std::string, void (Machine::*)(void)> Cmd;
 	ProgramLine* Line;
@@ -31,7 +32,10 @@ private:
 	std::map<std::string, Variable> Vars;
 	Graphics* Gr;
 
-	void SetError(std::string error);
+	void ProcessEvents();
+	void OnKeyPress(SDL_Keycode key);
+	void Abort(std::string error);
+	void Halt();
 	void PushString(std::string value);
 	void PushNumber(int value);
 	std::string PopString();
@@ -44,6 +48,7 @@ private:
 
 	void C_Nop();
 	void C_Brk();
+	void C_Halt();
 	void C_Push();
 	void C_Exit();
 	void C_Var();

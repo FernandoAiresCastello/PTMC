@@ -1,4 +1,6 @@
 #include "ProgramLine.h"
+#include <TBRLGPT.h>
+using namespace TBRLGPT;
 
 ProgramLine::ProgramLine()
 {

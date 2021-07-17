@@ -11,6 +11,7 @@ public:
 	std::vector<CommandParam*> Params;
 	int LineNumber;
 	int SourceLineNumber;
+	std::string SourceLine;
 
 	ProgramLine();
 	~ProgramLine();
