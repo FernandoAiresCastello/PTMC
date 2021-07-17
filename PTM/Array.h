@@ -13,6 +13,7 @@ public:
 	void Add(StringOrNumber value);
 	void Set(int index, StringOrNumber value);
 	StringOrNumber& Get(int index);
+	int GetSize();
 
 private:
 	std::vector<StringOrNumber> Elements;

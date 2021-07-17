@@ -22,3 +22,8 @@ StringOrNumber& Array::Get(int index)
 {
 	return Elements[index];
 }
+
+int Array::GetSize()
+{
+	return Elements.size();
+}

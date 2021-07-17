@@ -10,6 +10,7 @@ using namespace TBRLGPT;
 #define ERR_STACK_EMPTY "Stack empty"
 #define ERR_CALL_STACK_EMPTY "Call stack empty"
 #define ERR_LABEL_NOT_FOUND "Label not found"
+#define ERR_ARRAY_OUT_OF_BOUNDS "Out of array bounds"
 
 Machine::Machine()
 {
@@ -32,6 +33,7 @@ Machine::~Machine()
 void Machine::Run(Datafile* data, Graphics* gr)
 {
 	Running = true;
+	Data = data;
 	Prog = data->GetProgram();
 	Gr = gr;
 	Debugger = new class Debugger(data, gr);
@@ -104,11 +106,11 @@ void Machine::Abort(std::string error)
 	const int bgc = 0xff0000;
 
 	ClearScreen(0xff0000);
-	Print(error, 1, 1, 0xffffff, 0xff0000);
+	DefaultPrint(error, 1, 1, 0xffffff, 0xff0000);
 	
 	if (Line != NULL) {
-		Print(String::Format("At line %i:", Line->SourceLineNumber), 1, 3, fgc, bgc);
-		Print(Line->SourceLine, 1, 5, fgc, bgc);
+		DefaultPrint(String::Format("At line %i:", Line->SourceLineNumber), 1, 3, fgc, bgc);
+		DefaultPrint(Line->SourceLine, 1, 5, fgc, bgc);
 	}
 
 	UpdateScreen();
@@ -159,14 +161,28 @@ void Machine::Return()
 	Branch = true;
 }
 
-void Machine::Print(std::string text, int x, int y, int fgc, int bgc)
+void Machine::DefaultPrint(std::string text, int x, int y, int fgc, int bgc)
 {
 	Gr->Print(DefaultChars, x, y, fgc, bgc, text);
 }
 
-void Machine::PutChar(int ch, int x, int y, int fgc, int bgc)
+void Machine::DefaultPutChar(int ch, int x, int y, int fgc, int bgc)
 {
 	Gr->PutChar(DefaultChars, ch, x, y, fgc, bgc);
+}
+
+void Machine::Print(std::string text, int x, int y, int fgc, int bgc)
+{
+	Gr->Print(Data->GetCharset(), x, y, 
+		Data->GetPalette()->Get(fgc)->ToInteger(), 
+		Data->GetPalette()->Get(bgc)->ToInteger(), text);
+}
+
+void Machine::PutChar(int ch, int x, int y, int fgc, int bgc)
+{
+	Gr->PutChar(Data->GetCharset(), ch, x, y,
+		Data->GetPalette()->Get(fgc)->ToInteger(),
+		Data->GetPalette()->Get(bgc)->ToInteger());
 }
 
 void Machine::ClearScreen(int bgc)
@@ -288,9 +304,9 @@ void Machine::InitCommandMap()
 	CMD("PAUSE", C_Pause);
 	CMD("PUTC", C_PutChar);
 	CMD("ARRAY", C_MakeArray);
-	CMD("ARRP", C_AddArrayElement);
-	CMD("ARRS", C_SetArrayElement);
-	CMD("ARRG", C_GetArrayElement);
+	CMD("AADD", C_AddArrayElement);
+	CMD("ASET", C_SetArrayElement);
+	CMD("AGET", C_GetArrayElement);
 }
 
 void Machine::C_MakeArray()
@@ -338,6 +354,11 @@ void Machine::C_SetArrayElement()
 
 	Array& array = Arrays[Line->NextParam()->String];
 	int index = ResolveNumber(Line->NextParam());
+	if (index < 0 || index >= array.GetSize()) {
+		Abort(ERR_ARRAY_OUT_OF_BOUNDS);
+		return;
+	}
+
 	StringOrNumber value;
 	if (Line->GetParam(2)->Type == CommandParamType::NumberLiteral ||
 		Line->GetParam(2)->Type == CommandParamType::StringLiteral) {
@@ -366,6 +387,11 @@ void Machine::C_GetArrayElement()
 
 	Array& array = Arrays[Line->NextParam()->String];
 	int index = ResolveNumber(Line->NextParam());
+	if (index < 0 || index >= array.GetSize()) {
+		Abort(ERR_ARRAY_OUT_OF_BOUNDS);
+		return;
+	}
+
 	SetVar(Line->NextParam()->String, array.Get(index).StringValue);
 }
 
@@ -416,7 +442,9 @@ void Machine::C_ClearScreen()
 		return;
 	}
 
-	Gr->Clear(ResolveNumber(Line->GetParam(0)));
+	int palIndex = ResolveNumber(Line->GetParam(0));
+	int color = Data->GetPalette()->Get(palIndex)->ToInteger();
+	Gr->Clear(color);
 }
 
 void Machine::C_UpdateScreen()

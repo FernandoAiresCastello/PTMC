@@ -14,6 +14,8 @@ public:
 
 	Program* GetProgram();
 	void SetProgram(Program* prog);
+	Charset* GetCharset();
+	Palette* GetPalette();
 
 private:
 	Charset* Chars;

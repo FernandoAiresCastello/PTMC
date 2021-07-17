@@ -35,3 +35,13 @@ void Datafile::SetProgram(Program* prog)
 {
 	Prog = prog;
 }
+
+Charset* Datafile::GetCharset()
+{
+	return Chars;
+}
+
+Palette* Datafile::GetPalette()
+{
+	return Pal;
+}

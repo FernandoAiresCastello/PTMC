@@ -23,6 +23,7 @@ public:
 	void Run(Datafile* data, Graphics* gr);
 
 private:
+	Datafile* Data;
 	bool Running;
 	Program* Prog;
 	int ProgramPtr;
@@ -45,6 +46,8 @@ private:
 	void Goto(std::string label);
 	void Call(std::string label);
 	void Return();
+	void DefaultPrint(std::string text, int x, int y, int fgc, int bgc);
+	void DefaultPutChar(int ch, int x, int y, int fgc, int bgc);
 	void Print(std::string text, int x, int y, int fgc, int bgc);
 	void PutChar(int ch, int x, int y, int fgc, int bgc);
 	void ClearScreen(int bgc);
