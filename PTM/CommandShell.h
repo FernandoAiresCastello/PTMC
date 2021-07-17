@@ -32,6 +32,7 @@ private:
 	void SetForeColor(int color);
 	void SetBackColor(int color);
 	void SetBorderColor(int color);
+	void FollowCursorInsideView();
 	void UpdateCursor();
 	ObjectChar& GetCursorFrame(int frame);
 	ObjectChar& GetObjectFrame(SceneObject* o, int frame);
@@ -50,6 +51,8 @@ private:
 	std::vector<SceneObject*> GetObjectsInLine(int line);
 	std::string GetStringInLine(int line);
 	int GetLastXInLine(int line);
+	int GetLastX();
+	int GetLastY();
 	SceneObject* GetObject(int x, int y);
 	std::string GetObjectType(int x, int y);
 	bool HasObject(int x, int y);

@@ -39,6 +39,7 @@ void CommandShell::Run()
 	PrintIntro();
 
 	while (Running) {
+		FollowCursorInsideView();
 		UpdateCursor();
 		Draw();
 		Gr->Update();
@@ -87,6 +88,19 @@ void CommandShell::SetBackColor(int color)
 void CommandShell::SetBorderColor(int color)
 {
 	BorderColor = color;
+}
+
+void CommandShell::FollowCursorInsideView()
+{
+	const int maxX = View->GetScrollX() + View->GetWidth() - 1;
+	const int maxY = View->GetScrollY() + View->GetHeight() - 1;
+
+	if (Cursor->GetX() > maxX) {
+		View->Scroll(1, 0);
+	}
+	if (Cursor->GetY() > maxY) {
+		View->Scroll(0, 1);
+	}
 }
 
 void CommandShell::UpdateCursor()
@@ -203,16 +217,42 @@ void CommandShell::OnKeyPress(SDL_Keycode key)
 			break;
 		}
 		case SDLK_END: {
-			int lastX = GetLastXInLine(Cursor->GetY());
-			if (lastX < 0)
-				break;
-			Cursor->SetX(lastX + 1);
-			if (Cursor->GetX() > Gr->Cols - 3) {
-				while (Cursor->GetX() != View->GetScrollX()) {
-					View->Scroll(1, 0);
+			if (ctrl) {
+				int lastY = GetLastY();
+				if (lastY < 0)
+					break;
+				Cursor->SetY(lastY);
+				if (Cursor->GetY() > Gr->Rows - 3) {
+					while (Cursor->GetY() != View->GetScrollY()) {
+						View->Scroll(0, 1);
+					}
+					for (int i = 0; i < Gr->Rows - 3; i++) {
+						View->Scroll(0, -1);
+					}
 				}
-				for (int i = 0; i < Gr->Cols - 3; i++) {
-					View->Scroll(-1, 0);
+				int lastX = GetLastXInLine(Cursor->GetY());
+				Cursor->SetX(lastX + 1);
+				if (Cursor->GetX() > Gr->Cols - 3) {
+					while (Cursor->GetX() != View->GetScrollX()) {
+						View->Scroll(1, 0);
+					}
+					for (int i = 0; i < Gr->Cols - 3; i++) {
+						View->Scroll(-1, 0);
+					}
+				}
+			}
+			else {
+				int lastX = GetLastXInLine(Cursor->GetY());
+				if (lastX < 0)
+					break;
+				Cursor->SetX(lastX + 1);
+				if (Cursor->GetX() > Gr->Cols - 3) {
+					while (Cursor->GetX() != View->GetScrollX()) {
+						View->Scroll(1, 0);
+					}
+					for (int i = 0; i < Gr->Cols - 3; i++) {
+						View->Scroll(-1, 0);
+					}
 				}
 			}
 			break;
@@ -343,6 +383,7 @@ void CommandShell::Crlf()
 {
 	Cursor->SetX(0);
 	Cursor->SetY(Cursor->GetY() + 1);
+	View->SetScroll(0, View->GetScrollY());
 }
 
 void CommandShell::ClearScreen()
@@ -389,7 +430,6 @@ std::string CommandShell::GetStringInLine(int line)
 int CommandShell::GetLastXInLine(int line)
 {
 	int lastX = -1;
-
 	for (auto& it : Scrbuf->GetObjects()) {
 		SceneObject* o = it.second;
 		if (o->GetY() == line && o->GetX() > lastX && o->GetLayer() == 0) {
@@ -398,6 +438,32 @@ int CommandShell::GetLastXInLine(int line)
 	}
 
 	return lastX;
+}
+
+int CommandShell::GetLastX()
+{
+	int lastX = -1;
+	for (auto& it : Scrbuf->GetObjects()) {
+		SceneObject* o = it.second;
+		if (o->GetX() > lastX && o->GetLayer() == 0) {
+			lastX = o->GetX();
+		}
+	}
+
+	return lastX;
+}
+
+int CommandShell::GetLastY()
+{
+	int lastY = -1;
+	for (auto& it : Scrbuf->GetObjects()) {
+		SceneObject* o = it.second;
+		if (o->GetY() > lastY && o->GetLayer() == 0) {
+			lastY = o->GetY();
+		}
+	}
+
+	return lastY;
 }
 
 SceneObject* CommandShell::GetObject(int x, int y)
