@@ -27,7 +27,10 @@ ProgramLine* Program::GetLine(int line)
 
 int Program::GetLabelTarget(std::string label)
 {
-	return Labels[label];
+	if (Labels.find(label) != Labels.end())
+		return Labels[label];
+
+	return -1;
 }
 
 int Program::GetSize()

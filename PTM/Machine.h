@@ -30,6 +30,7 @@ private:
 	bool Branch;
 	std::string Error;
 	std::stack<StackElement> Stack;
+	std::stack<int> CallStack;
 	std::map<std::string, Variable> Vars;
 	Graphics* Gr;
 	Charset* DefaultChars;
@@ -39,6 +40,9 @@ private:
 	void OnKeyPress(SDL_Keycode key);
 	void Abort(std::string error);
 	void Halt();
+	void Goto(std::string label);
+	void Call(std::string label);
+	void Return();
 	void Print(std::string text, int x, int y, int fgc, int bgc);
 	void ClearScreen(int bgc);
 	void UpdateScreen();
@@ -59,4 +63,7 @@ private:
 	void C_Exit();
 	void C_Var();
 	void C_Debug();
+	void C_Call();
+	void C_Goto();
+	void C_Return();
 };

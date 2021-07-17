@@ -58,3 +58,8 @@ bool ProgramLine::HasParams(int count)
 {
 	return Params.size() == count;
 }
+
+void ProgramLine::ResetParamIndex()
+{
+	ParamIndex = 0;
+}

@@ -22,6 +22,7 @@ public:
 	CommandParam* NextParam();
 	bool HasParams();
 	bool HasParams(int count);
+	void ResetParamIndex();
 
 private:
 	int ParamIndex;

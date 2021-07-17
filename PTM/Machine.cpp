@@ -6,6 +6,8 @@
 #define ERR_INVALID_COMMAND "Invalid command"
 #define ERR_SYNTAX_ERROR "Syntax error"
 #define ERR_STACK_EMPTY "Stack empty"
+#define ERR_CALL_STACK_EMPTY "Call stack empty"
+#define ERR_LABEL_NOT_FOUND "Label not found"
 
 Machine::Machine()
 {
@@ -46,6 +48,8 @@ void Machine::Run(Datafile* data, Graphics* gr)
 		}
 
 		Line = Prog->GetLine(ProgramPtr);
+		Line->ResetParamIndex();
+
 		auto& impl = Cmd[Line->Command];
 		if (impl != NULL) {
 			((*this).*impl)();
@@ -113,6 +117,43 @@ void Machine::Halt()
 	while (Running) {
 		ProcessEvents();
 	}
+}
+
+void Machine::Goto(std::string label)
+{
+	int target = Prog->GetLabelTarget(label);
+	if (target < 0) {
+		Abort(ERR_LABEL_NOT_FOUND);
+		return;
+	}
+
+	ProgramPtr = target;
+	Branch = true;
+}
+
+void Machine::Call(std::string label)
+{
+	int target = Prog->GetLabelTarget(label);
+	if (target < 0) {
+		Abort(ERR_LABEL_NOT_FOUND);
+		return;
+	}
+
+	CallStack.push(ProgramPtr);
+	ProgramPtr = target;
+	Branch = true;
+}
+
+void Machine::Return()
+{
+	if (CallStack.empty()) {
+		Abort(ERR_CALL_STACK_EMPTY);
+		return;
+	}
+
+	ProgramPtr = CallStack.top() + 1;
+	CallStack.pop();
+	Branch = true;
 }
 
 void Machine::Print(std::string text, int x, int y, int fgc, int bgc)
@@ -207,6 +248,47 @@ void Machine::InitCommandMap()
 	CMD("VAR", C_Var);
 	CMD("HALT", C_Halt);
 	CMD("DEBUG", C_Debug);
+	CMD("CALL", C_Call);
+	CMD("GOTO", C_Goto);
+	CMD("RET", C_Return);
+}
+
+void Machine::C_Goto()
+{
+	if (!Line->HasParams(1)) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+	if (Line->GetParam(0)->Type != CommandParamType::Label) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	Goto(Line->GetParam(0)->String);
+}
+
+void Machine::C_Call()
+{
+	if (!Line->HasParams(1)) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+	if (Line->GetParam(0)->Type != CommandParamType::Label) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	Call(Line->GetParam(0)->String);
+}
+
+void Machine::C_Return()
+{
+	if (Line->HasParams()) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	Return();
 }
 
 void Machine::C_Debug()
