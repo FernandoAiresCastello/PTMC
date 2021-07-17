@@ -12,6 +12,7 @@ int main(int argc, char** argv)
 	const int zoom = 3;
 
 	Graphics* gr = new Graphics(w, h, zoom * w, zoom * h, false);
+	gr->SetWindowTitle("PTM");
 	Datafile* data = new Datafile();
 	CommandShell* sh = new CommandShell(gr, data);
 	sh->Run();

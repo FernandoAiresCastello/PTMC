@@ -15,7 +15,7 @@
       <Filter>Program</Filter>
     </ClCompile>
     <ClCompile Include="CommandShell.cpp">
-      <Filter>CommandShell</Filter>
+      <Filter>Editors</Filter>
     </ClCompile>
     <ClCompile Include="Datafile.cpp">
       <Filter>File</Filter>
@@ -35,6 +35,9 @@
     <ClCompile Include="StringOrNumber.cpp">
       <Filter>Machine</Filter>
     </ClCompile>
+    <ClCompile Include="EditorBase.cpp">
+      <Filter>Editors</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommandParam.h">
@@ -50,7 +53,7 @@
       <Filter>Program</Filter>
     </ClInclude>
     <ClInclude Include="CommandShell.h">
-      <Filter>CommandShell</Filter>
+      <Filter>Editors</Filter>
     </ClInclude>
     <ClInclude Include="Datafile.h">
       <Filter>File</Filter>
@@ -70,19 +73,22 @@
     <ClInclude Include="StringOrNumber.h">
       <Filter>Machine</Filter>
     </ClInclude>
+    <ClInclude Include="EditorBase.h">
+      <Filter>Editors</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Program">
       <UniqueIdentifier>{2f8d3f3b-9c1e-4b42-869d-f927e03cd733}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="CommandShell">
-      <UniqueIdentifier>{00faa453-26c8-4a0f-b3da-11897b878fad}</UniqueIdentifier>
     </Filter>
     <Filter Include="File">
       <UniqueIdentifier>{5f6edd6f-8659-43d8-8b14-64a1ced19cb6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Machine">
       <UniqueIdentifier>{b2483a15-59ca-4559-8c70-80c22beaa1cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Editors">
+      <UniqueIdentifier>{00faa453-26c8-4a0f-b3da-11897b878fad}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
