@@ -9,8 +9,9 @@
 #include "ProgramLine.h"
 #include "Datafile.h"
 #include "Variable.h"
-#include "StackElement.h"
+#include "StringOrNumber.h"
 #include "Debugger.h"
+#include "Array.h"
 using namespace TBRLGPT;
 
 class Machine
@@ -29,9 +30,10 @@ private:
 	ProgramLine* Line;
 	bool Branch;
 	std::string Error;
-	std::stack<StackElement> Stack;
+	std::stack<StringOrNumber> Stack;
 	std::stack<int> CallStack;
 	std::map<std::string, Variable> Vars;
+	std::map<std::string, Array> Arrays;
 	Graphics* Gr;
 	Charset* DefaultChars;
 	Debugger* Debugger;
@@ -44,6 +46,7 @@ private:
 	void Call(std::string label);
 	void Return();
 	void Print(std::string text, int x, int y, int fgc, int bgc);
+	void PutChar(int ch, int x, int y, int fgc, int bgc);
 	void ClearScreen(int bgc);
 	void UpdateScreen();
 	void PushString(std::string value);
@@ -71,4 +74,11 @@ private:
 	void C_Print();
 	void C_UpdateScreen();
 	void C_ClearScreen();
+	void C_Random();
+	void C_Pause();
+	void C_PutChar();
+	void C_MakeArray();
+	void C_AddArrayElement();
+	void C_SetArrayElement();
+	void C_GetArrayElement();
 };

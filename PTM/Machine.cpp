@@ -1,4 +1,6 @@
 #include "Machine.h"
+#include <TBRLGPT.h>
+using namespace TBRLGPT;
 
 #define CMD(cmd,impl) Cmd[cmd] = &Machine::impl;
 
@@ -17,6 +19,7 @@ Machine::Machine()
 	Error = "";
 	DefaultChars = new Charset();
 	DefaultChars->InitDefaultCharset();
+	Util::Randomize();
 	InitCommandMap();
 }
 
@@ -161,6 +164,11 @@ void Machine::Print(std::string text, int x, int y, int fgc, int bgc)
 	Gr->Print(DefaultChars, x, y, fgc, bgc, text);
 }
 
+void Machine::PutChar(int ch, int x, int y, int fgc, int bgc)
+{
+	Gr->PutChar(DefaultChars, ch, x, y, fgc, bgc);
+}
+
 void Machine::ClearScreen(int bgc)
 {
 	Gr->Clear(bgc);
@@ -173,7 +181,7 @@ void Machine::UpdateScreen()
 
 void Machine::PushString(std::string value)
 {
-	StackElement element;
+	StringOrNumber element;
 	element.StringValue = value;
 	element.NumberValue = String::ToInt(value);
 	Stack.push(element);
@@ -181,7 +189,7 @@ void Machine::PushString(std::string value)
 
 void Machine::PushNumber(int value)
 {
-	StackElement element;
+	StringOrNumber element;
 	element.StringValue = String::ToString(value);
 	element.NumberValue = value;
 	Stack.push(element);
@@ -194,7 +202,7 @@ std::string Machine::PopString()
 		return "";
 	}
 
-	StackElement element = Stack.top();
+	StringOrNumber element = Stack.top();
 	Stack.pop();
 	return element.StringValue;
 }
@@ -206,7 +214,7 @@ int Machine::PopNumber()
 		return 0;
 	}
 
-	StackElement element = Stack.top();
+	StringOrNumber element = Stack.top();
 	Stack.pop();
 	return element.NumberValue;
 }
@@ -276,6 +284,129 @@ void Machine::InitCommandMap()
 	CMD("PRINT", C_Print);
 	CMD("REFR", C_UpdateScreen);
 	CMD("CLS", C_ClearScreen);
+	CMD("RND", C_Random);
+	CMD("PAUSE", C_Pause);
+	CMD("PUTC", C_PutChar);
+	CMD("ARRAY", C_MakeArray);
+	CMD("ARRP", C_AddArrayElement);
+	CMD("ARRS", C_SetArrayElement);
+	CMD("ARRG", C_GetArrayElement);
+}
+
+void Machine::C_MakeArray()
+{
+	if (!Line->HasParams(1)) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+	if (Line->GetParam(0)->Type != CommandParamType::Variable) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	Arrays[Line->GetParam(0)->String] = Array();
+}
+
+void Machine::C_AddArrayElement()
+{
+	if (!Line->HasParams(2)) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+	if (Line->GetParam(0)->Type != CommandParamType::Variable) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	Array& array = Arrays[Line->NextParam()->String];
+	StringOrNumber value;
+	value.StringValue = Line->GetParam(1)->String;
+	value.NumberValue = Line->GetParam(1)->Number;
+	array.Add(value);
+}
+
+void Machine::C_SetArrayElement()
+{
+	if (!Line->HasParams(3)) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+	if (Line->GetParam(0)->Type != CommandParamType::Variable) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	Array& array = Arrays[Line->NextParam()->String];
+	int index = ResolveNumber(Line->NextParam());
+	StringOrNumber value;
+	if (Line->GetParam(2)->Type == CommandParamType::NumberLiteral ||
+		Line->GetParam(2)->Type == CommandParamType::StringLiteral) {
+		value.StringValue = Line->GetParam(2)->String;
+		value.NumberValue = Line->GetParam(2)->Number;
+	}
+	else {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	array.Set(index, value);
+}
+
+void Machine::C_GetArrayElement()
+{
+	if (!Line->HasParams(3)) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+	if (Line->GetParam(0)->Type != CommandParamType::Variable ||
+		Line->GetParam(2)->Type != CommandParamType::Variable) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	Array& array = Arrays[Line->NextParam()->String];
+	int index = ResolveNumber(Line->NextParam());
+	SetVar(Line->NextParam()->String, array.Get(index).StringValue);
+}
+
+void Machine::C_PutChar()
+{
+	if (!Line->HasParams(5)) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	int ch = ResolveNumber(Line->GetParam(0));
+	int x = ResolveNumber(Line->GetParam(1));
+	int y = ResolveNumber(Line->GetParam(2));
+	int fgc = ResolveNumber(Line->GetParam(3));
+	int bgc = ResolveNumber(Line->GetParam(4));
+
+	PutChar(ch, x, y, fgc, bgc);
+}
+
+void Machine::C_Pause()
+{
+	if (!Line->HasParams(1)) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	Util::Pause(ResolveNumber(Line->NextParam()));
+}
+
+void Machine::C_Random()
+{
+	if (!Line->HasParams(3)) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	int min = ResolveNumber(Line->GetParam(1));
+	int max = ResolveNumber(Line->GetParam(2));
+	int value = Util::Random(min, max);
+
+	SetVar(Line->NextParam()->String, value);
 }
 
 void Machine::C_ClearScreen()

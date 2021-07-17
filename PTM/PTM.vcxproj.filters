@@ -26,10 +26,13 @@
     <ClCompile Include="Variable.cpp">
       <Filter>Machine</Filter>
     </ClCompile>
-    <ClCompile Include="StackElement.cpp">
+    <ClCompile Include="Debugger.cpp">
       <Filter>Machine</Filter>
     </ClCompile>
-    <ClCompile Include="Debugger.cpp">
+    <ClCompile Include="Array.cpp">
+      <Filter>Machine</Filter>
+    </ClCompile>
+    <ClCompile Include="StringOrNumber.cpp">
       <Filter>Machine</Filter>
     </ClCompile>
   </ItemGroup>
@@ -58,10 +61,13 @@
     <ClInclude Include="Variable.h">
       <Filter>Machine</Filter>
     </ClInclude>
-    <ClInclude Include="StackElement.h">
+    <ClInclude Include="Debugger.h">
       <Filter>Machine</Filter>
     </ClInclude>
-    <ClInclude Include="Debugger.h">
+    <ClInclude Include="Array.h">
+      <Filter>Machine</Filter>
+    </ClInclude>
+    <ClInclude Include="StringOrNumber.h">
       <Filter>Machine</Filter>
     </ClInclude>
   </ItemGroup>

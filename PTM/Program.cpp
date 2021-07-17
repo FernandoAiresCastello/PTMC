@@ -151,6 +151,7 @@ ProgramLine* Program::ParseLine(std::string src, int sourceLineNumber, int actua
 		else if (String::StartsWith(param.String, "\"") && String::EndsWith(param.String, "\"")) {
 			param.Type = CommandParamType::StringLiteral;
 			param.String = String::RemoveFirstAndLast(param.String);
+			param.Number = String::ToInt(param.String);
 		}
 		else {
 			param.Type = CommandParamType::Label;
