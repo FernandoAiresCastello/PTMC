@@ -2,6 +2,7 @@
 #include "CommandShell.h"
 
 #define CHAR_LAYER 0
+#define ERR_SYNTAX_ERROR "Syntax error"
 
 CommandShell::CommandShell(Graphics* gr, Datafile* data)
 {
@@ -66,7 +67,7 @@ void CommandShell::SetForeColor(int color)
 	for (auto& it : Scrbuf->GetObjects()) {
 		Object* o = it.second->GetObj();
 		if (o->HasPropertyValue("type", "plain")) {
-			o->GetAnimation().GetFrame(0).ForeColorIx = color;
+			GetObjectFrame(o, 0).ForeColorIx = color;
 		}
 	}
 }
@@ -75,6 +76,12 @@ void CommandShell::SetBackColor(int color)
 {
 	BackColor = color;
 	Scrbuf->SetBackObject(ObjectChar(0, color, color));
+	for (auto& it : Scrbuf->GetObjects()) {
+		Object* o = it.second->GetObj();
+		if (o->HasPropertyValue("type", "plain")) {
+			GetObjectFrame(o, 0).BackColorIx = color;
+		}
+	}
 }
 
 void CommandShell::SetBorderColor(int color)
@@ -88,20 +95,40 @@ void CommandShell::UpdateCursor()
 
 	if (o != NULL) {
 		if (Insert)
-			Cursor->GetObj()->GetAnimation().GetFrame(0).Index = 220;
+			GetCursorFrame(0).Index = 220;
 		else
-			Cursor->GetObj()->GetAnimation().GetFrame(0).Index = o->GetObj()->GetAnimation().GetFrame(0).Index;
+			GetCursorFrame(0).Index = GetObjectFrame(o, 0).Index;
 
-		Cursor->GetObj()->GetAnimation().GetFrame(1).Index = o->GetObj()->GetAnimation().GetFrame(0).Index;
+		GetCursorFrame(1).Index = GetObjectFrame(o, 0).Index;
 	}
 	else {
 		if (Insert)
-			Cursor->GetObj()->GetAnimation().GetFrame(0).Index = 220;
+			GetCursorFrame(0).Index = 220;
 		else
-			Cursor->GetObj()->GetAnimation().GetFrame(0).Index = 0;
+			GetCursorFrame(0).Index = 0;
 
-		Cursor->GetObj()->GetAnimation().GetFrame(1).Index = 0;
+		GetCursorFrame(1).Index = 0;
 	}
+
+	GetCursorFrame(0).ForeColorIx = ForeColor;
+	GetCursorFrame(0).BackColorIx = BackColor;
+	GetCursorFrame(1).ForeColorIx = BackColor;
+	GetCursorFrame(1).BackColorIx = ForeColor;
+}
+
+ObjectChar& CommandShell::GetCursorFrame(int frame)
+{
+	return GetObjectFrame(Cursor, frame);
+}
+
+ObjectChar& CommandShell::GetObjectFrame(SceneObject* o, int frame)
+{
+	return o->GetObj()->GetAnimation().GetFrame(frame);
+}
+
+ObjectChar& CommandShell::GetObjectFrame(Object* o, int frame)
+{
+	return o->GetAnimation().GetFrame(frame);
 }
 
 void CommandShell::OnKeyPress(SDL_Keycode key)
@@ -353,7 +380,7 @@ std::string CommandShell::GetStringInLine(int line)
 	std::string str = "";
 	auto objs = GetObjectsInLine(line);
 	for (auto& o : objs) {
-		str.push_back(o->GetObj()->GetAnimation().GetFrame(0).Index);
+		str.push_back(GetObjectFrame(o, 0).Index);
 	}
 
 	return String::Trim(str);
@@ -422,15 +449,45 @@ void CommandShell::TypeEnter()
 void CommandShell::InterpretLine(std::string line)
 {
 	int ixFirstSpace = line.find(' ');
-	std::string command = String::ToLower(ixFirstSpace >= 0 ? line.substr(0, ixFirstSpace) : line);
+	std::string cmd = String::ToLower(ixFirstSpace >= 0 ? line.substr(0, ixFirstSpace) : line);
+	std::string rawParams = ixFirstSpace >= 0 ? line.substr(ixFirstSpace) : "";
+	auto params = String::Split(rawParams, ',');
+	std::string error = "";
 
-	if (line == "exit") {
+	if (cmd == "exit") {
 		Running = false;
 		return;
 	}
-	else {
-		TypeStringCrlf("Syntax error");
+	else if (cmd == "fgcolor") {
+		if (params.size() != 1) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			SetForeColor(String::ToInt(params[0]));
+		}
 	}
+	else if (cmd == "bgcolor") {
+		if (params.size() != 1) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			SetBackColor(String::ToInt(params[0]));
+		}
+	}
+	else if (cmd == "bdcolor") {
+		if (params.size() != 1) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			SetBorderColor(String::ToInt(params[0]));
+		}
+	}
+	else {
+		error = ERR_SYNTAX_ERROR;
+	}
+
+	if (!error.empty())
+		TypeStringCrlf(error);
 
 	Ok();
 }

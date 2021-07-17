@@ -33,6 +33,9 @@ private:
 	void SetBackColor(int color);
 	void SetBorderColor(int color);
 	void UpdateCursor();
+	ObjectChar& GetCursorFrame(int frame);
+	ObjectChar& GetObjectFrame(SceneObject* o, int frame);
+	ObjectChar& GetObjectFrame(Object* o, int frame);
 	void OnKeyPress(SDL_Keycode key);
 	void TypePlainChar(int ch);
 	void TypeBackspace();
