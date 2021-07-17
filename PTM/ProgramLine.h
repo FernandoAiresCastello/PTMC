@@ -16,6 +16,7 @@ public:
 	~ProgramLine();
 
 	void AddParam(CommandParam param);
+	std::vector<CommandParam*>& GetParams();
 	CommandParam* NextParam();
 	bool HasParams();
 	bool HasParams(int count);

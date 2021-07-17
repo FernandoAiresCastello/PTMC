@@ -30,6 +30,11 @@ int Program::GetLabelTarget(std::string label)
 	return Labels[label];
 }
 
+int Program::GetSize()
+{
+	return Lines.size();
+}
+
 void Program::Load(std::string file)
 {
 	Parse(File::ReadText(file));

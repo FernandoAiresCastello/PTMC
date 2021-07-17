@@ -26,6 +26,11 @@ void ProgramLine::AddParam(CommandParam param)
 	Params.push_back(newParam);
 }
 
+std::vector<CommandParam*>& ProgramLine::GetParams()
+{
+	return Params;
+}
+
 CommandParam* ProgramLine::NextParam()
 {
 	if (ParamIndex >= 0 && ParamIndex < Params.size()) {

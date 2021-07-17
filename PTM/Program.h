@@ -14,6 +14,7 @@ public:
 	void Clear();
 	ProgramLine* GetLine(int line);
 	int GetLabelTarget(std::string label);
+	int GetSize();
 	void Load(std::string file);
 	void Parse(std::string src);
 

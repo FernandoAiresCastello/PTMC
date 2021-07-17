@@ -12,6 +12,9 @@ public:
 	Datafile();
 	~Datafile();
 
+	Program* GetProgram();
+	void SetProgram(Program* prog);
+
 private:
 	Charset* Chars;
 	Palette* Pal;

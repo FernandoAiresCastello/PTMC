@@ -25,3 +25,13 @@ Datafile::~Datafile()
 	}
 	ObjTemplates.clear();
 }
+
+Program* Datafile::GetProgram()
+{
+	return Prog;
+}
+
+void Datafile::SetProgram(Program* prog)
+{
+	Prog = prog;
+}
