@@ -82,44 +82,54 @@ ProgramLine* Program::ParseLine(std::string src, int sourceLineNumber, int actua
 
 	std::string rawParams = String::Trim(src.substr(ixFirstSpace));
 
+	std::string literalString = "";
 	if (String::Contains(rawParams, "\"")) {
+		// debug
+		/*if (String::Contains(rawParams, "\"\"")) {
+			__debugbreak();
+		}*/
+		// enddebug
+		int ixOpenQuote = rawParams.find('\"');
+		int ixCloseQuote = rawParams.find('\"', ixOpenQuote + 1);
+		std::string temp = rawParams.substr(ixOpenQuote, ixCloseQuote);
+		literalString = String::Replace(temp, "\"", "");
+		if (!literalString.empty())
+			rawParams = String::Replace(rawParams, literalString, "");
+	}
+
+	auto rawParamList = String::Split(rawParams, ',');
+	for (auto& rawParam : rawParamList) {
 		CommandParam param;
-		param.Type = CommandParamType::StringLiteral;
-		param.String = String::RemoveFirstAndLast(rawParams);
-		param.Number = 0;
+		param.String = String::Trim(rawParam);
+
+		if (String::IsNumber(param.String)) {
+			param.Type = CommandParamType::NumberLiteral;
+			param.Number = String::ToInt(param.String);
+		}
+		else if (String::StartsWith(param.String, "0x")) {
+			param.Type = CommandParamType::NumberLiteral;
+			param.Number = String::ToInt(param.String);
+			param.String = String::ToString(param.Number);
+		}
+		else if (String::StartsWith(param.String, "0b")) {
+			param.Type = CommandParamType::NumberLiteral;
+			param.Number = String::BinaryToInt(param.String);
+			param.String = String::ToString(param.Number);
+		}
+		else if (String::StartsWith(param.String, "$")) {
+			param.Type = CommandParamType::Variable;
+			param.String = String::Skip(param.String, 1);
+		}
+		else if (param.String == "\"\"") {
+			param.Type = CommandParamType::StringLiteral;
+			param.String = literalString;
+		}
+		else {
+			param.Type = CommandParamType::Label;
+		}
+
 		line->AddParam(param);
 	}
-	else {
-		auto rawParamList = String::Split(rawParams, ',');
-		for (auto& rawParam : rawParamList) {
-			CommandParam param;
-			param.String = String::Trim(rawParam);
-
-			if (String::IsNumber(param.String)) {
-				param.Type = CommandParamType::NumberLiteral;
-				param.Number = String::ToInt(param.String);
-			}
-			else if (String::StartsWith(param.String, "0x")) {
-				param.Type = CommandParamType::NumberLiteral;
-				param.Number = String::ToInt(param.String);
-				param.String = String::ToString(param.Number);
-			}
-			else if (String::StartsWith(param.String, "0b")) {
-				param.Type = CommandParamType::NumberLiteral;
-				param.Number = String::BinaryToInt(param.String);
-				param.String = String::ToString(param.Number);
-			}
-			else if (String::StartsWith(param.String, "$")) {
-				param.Type = CommandParamType::Variable;
-				param.String = String::Skip(param.String, 1);
-			}
-			else {
-				param.Type = CommandParamType::Label;
-			}
-
-			line->AddParam(param);
-		}
-	}
-
+	
 	return line;
 }

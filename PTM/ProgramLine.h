@@ -17,6 +17,7 @@ public:
 
 	void AddParam(CommandParam param);
 	std::vector<CommandParam*>& GetParams();
+	CommandParam* GetParam(int index);
 	CommandParam* NextParam();
 	bool HasParams();
 	bool HasParams(int count);

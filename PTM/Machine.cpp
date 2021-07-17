@@ -1,5 +1,7 @@
 #include "Machine.h"
 
+#define CMD(cmd,impl) Cmd[cmd] = &Machine::impl;
+
 #define ERR_END_OF_PROGRAM "Execution pointer past end of program"
 #define ERR_INVALID_COMMAND "Invalid command"
 #define ERR_SYNTAX_ERROR "Syntax error"
@@ -19,9 +21,10 @@ Machine::~Machine()
 {
 }
 
-void Machine::Run(Datafile* data)
+void Machine::Run(Datafile* data, Graphics* gr)
 {
 	Program* prog = data->GetProgram();
+	Gr = gr;
 
 	Running = true;
 	while (Running) {
@@ -45,17 +48,13 @@ void Machine::Run(Datafile* data)
 
 		if (!Error.empty())
 			break;
+		if (!Running)
+			break;
 		if (Branch)
 			Branch = false;
 		else
 			ProgramPtr++;
 	}
-}
-
-void Machine::InitCommandMap()
-{
-	Cmd["NOP"] = &Machine::C_Nop;
-	Cmd["PUSH"] = &Machine::C_Push;
 }
 
 void Machine::SetError(std::string error)
@@ -65,31 +64,112 @@ void Machine::SetError(std::string error)
 	Util::Error(Error);
 }
 
-void Machine::Push(CommandParam* param)
+void Machine::PushString(std::string value)
 {
-	Stack.push(param);
+	StackElement element;
+	element.StringValue = value;
+	element.NumberValue = String::ToInt(value);
+	Stack.push(element);
 }
 
-CommandParam* Machine::Pop()
+void Machine::PushNumber(int value)
+{
+	StackElement element;
+	element.StringValue = String::ToString(value);
+	element.NumberValue = value;
+	Stack.push(element);
+}
+
+std::string Machine::PopString()
 {
 	if (Stack.empty()) {
 		SetError(ERR_STACK_EMPTY);
-		return NULL;
+		return "";
 	}
 
-	CommandParam* param = Stack.top();
+	StackElement element = Stack.top();
 	Stack.pop();
-	return param;
+	return element.StringValue;
 }
 
-void Machine::C_Nop()
+int Machine::PopNumber()
+{
+	if (Stack.empty()) {
+		SetError(ERR_STACK_EMPTY);
+		return 0;
+	}
+
+	StackElement element = Stack.top();
+	Stack.pop();
+	return element.NumberValue;
+}
+
+void Machine::SetVar(std::string name, std::string value)
+{
+	Variable var;
+	var.Name = name;
+	var.StringValue = value;
+	var.NumberValue = String::ToInt(value);
+	Vars[name] = var;
+}
+
+void Machine::SetVar(std::string name, int value)
+{
+	Variable var;
+	var.Name = name;
+	var.StringValue = String::ToString(value);
+	var.NumberValue = value;
+	Vars[name] = var;
+}
+
+std::string Machine::GetVarAsString(std::string name)
+{
+	return Vars[name].StringValue;
+}
+
+int Machine::GetVarAsNumber(std::string name)
+{
+	return Vars[name].NumberValue;
+}
+
+void Machine::InitCommandMap()
+{
+	CMD("NOP", C_Nop);
+	CMD("BRK", C_Brk);
+	CMD("PUSH", C_Push);
+	CMD("EXIT", C_Exit);
+	CMD("VAR", C_Var);
+}
+
+void Machine::C_Var()
+{
+	if (!Line->HasParams(2)) {
+		SetError(ERR_SYNTAX_ERROR);
+		return;
+	}
+	if (Line->GetParam(0)->Type != CommandParamType::Variable) {
+		SetError(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	std::string name = Line->NextParam()->String;
+	CommandParam* valueParam = Line->NextParam();
+	if (valueParam->Type == CommandParamType::NumberLiteral)
+		SetVar(name, valueParam->Number);
+	else if (valueParam->Type == CommandParamType::StringLiteral)
+		SetVar(name, valueParam->String);
+	if (valueParam->Type == CommandParamType::Variable)
+		SetVar(name, GetVarAsString(valueParam->String));
+}
+
+void Machine::C_Exit()
 {
 	if (Line->HasParams()) {
 		SetError(ERR_SYNTAX_ERROR);
 		return;
 	}
 
-	// No operation
+	Running = false;
 }
 
 void Machine::C_Push()
@@ -99,6 +179,34 @@ void Machine::C_Push()
 		return;
 	}
 
-	for (CommandParam* param : Line->GetParams())
-		Push(param);
+	for (CommandParam* param : Line->GetParams()) {
+		if (param->Type == CommandParamType::NumberLiteral)
+			PushNumber(param->Number);
+		else if (param->Type == CommandParamType::StringLiteral)
+			PushString(param->String);
+		else if (param->Type == CommandParamType::Variable)
+			PushString(GetVarAsString(param->String));
+		else {
+			SetError(ERR_SYNTAX_ERROR);
+			return;
+		}
+	}
+}
+
+void Machine::C_Nop()
+{
+	if (Line->HasParams()) {
+		SetError(ERR_SYNTAX_ERROR);
+		return;
+	}
+}
+
+void Machine::C_Brk()
+{
+	if (Line->HasParams()) {
+		SetError(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	__debugbreak();
 }

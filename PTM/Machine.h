@@ -4,10 +4,12 @@
 #include <string>
 #include <vector>
 #include <stack>
+#include <TBRLGPT.h>
 #include "Program.h"
 #include "ProgramLine.h"
 #include "Datafile.h"
-#include <TBRLGPT.h>
+#include "Variable.h"
+#include "StackElement.h"
 using namespace TBRLGPT;
 
 class Machine
@@ -16,7 +18,7 @@ public:
 	Machine();
 	~Machine();
 
-	void Run(Datafile* data);
+	void Run(Datafile* data, Graphics* gr);
 
 private:
 	bool Running;
@@ -25,13 +27,24 @@ private:
 	ProgramLine* Line;
 	bool Branch;
 	std::string Error;
-	std::stack<CommandParam*> Stack;
+	std::stack<StackElement> Stack;
+	std::map<std::string, Variable> Vars;
+	Graphics* Gr;
 
-	void InitCommandMap();
 	void SetError(std::string error);
-	void Push(CommandParam* param);
-	CommandParam* Pop();
-	
+	void PushString(std::string value);
+	void PushNumber(int value);
+	std::string PopString();
+	int PopNumber();
+	void SetVar(std::string name, std::string value);
+	void SetVar(std::string name, int value);
+	std::string GetVarAsString(std::string name);
+	int GetVarAsNumber(std::string name);
+	void InitCommandMap();
+
 	void C_Nop();
+	void C_Brk();
 	void C_Push();
+	void C_Exit();
+	void C_Var();
 };

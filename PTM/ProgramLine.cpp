@@ -31,6 +31,11 @@ std::vector<CommandParam*>& ProgramLine::GetParams()
 	return Params;
 }
 
+CommandParam* ProgramLine::GetParam(int index)
+{
+	return Params[index];
+}
+
 CommandParam* ProgramLine::NextParam()
 {
 	if (ParamIndex >= 0 && ParamIndex < Params.size()) {

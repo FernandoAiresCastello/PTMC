@@ -23,6 +23,12 @@
     <ClCompile Include="Machine.cpp">
       <Filter>Machine</Filter>
     </ClCompile>
+    <ClCompile Include="Variable.cpp">
+      <Filter>Machine</Filter>
+    </ClCompile>
+    <ClCompile Include="StackElement.cpp">
+      <Filter>Machine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommandParam.h">
@@ -44,6 +50,12 @@
       <Filter>File</Filter>
     </ClInclude>
     <ClInclude Include="Machine.h">
+      <Filter>Machine</Filter>
+    </ClInclude>
+    <ClInclude Include="Variable.h">
+      <Filter>Machine</Filter>
+    </ClInclude>
+    <ClInclude Include="StackElement.h">
       <Filter>Machine</Filter>
     </ClInclude>
   </ItemGroup>
