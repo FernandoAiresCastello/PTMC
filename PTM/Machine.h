@@ -54,6 +54,8 @@ private:
 	void SetVar(std::string name, int value);
 	std::string GetVarAsString(std::string name);
 	int GetVarAsNumber(std::string name);
+	int ResolveNumber(CommandParam* param);
+	std::string ResolveString(CommandParam* param);
 	void InitCommandMap();
 
 	void C_Nop();
@@ -66,4 +68,7 @@ private:
 	void C_Call();
 	void C_Goto();
 	void C_Return();
+	void C_Print();
+	void C_UpdateScreen();
+	void C_ClearScreen();
 };

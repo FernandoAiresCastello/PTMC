@@ -239,6 +239,28 @@ int Machine::GetVarAsNumber(std::string name)
 	return Vars[name].NumberValue;
 }
 
+int Machine::ResolveNumber(CommandParam* param)
+{
+	if (param->Type == CommandParamType::NumberLiteral)
+		return param->Number;
+	if (param->Type == CommandParamType::Variable)
+		return GetVarAsNumber(param->String);
+
+	Abort(ERR_SYNTAX_ERROR);
+	return 0;
+}
+
+std::string Machine::ResolveString(CommandParam* param)
+{
+	if (param->Type == CommandParamType::StringLiteral)
+		return param->String;
+	if (param->Type == CommandParamType::Variable)
+		return GetVarAsString(param->String);
+
+	Abort(ERR_SYNTAX_ERROR);
+	return "";
+}
+
 void Machine::InitCommandMap()
 {
 	CMD("NOP", C_Nop);
@@ -251,6 +273,45 @@ void Machine::InitCommandMap()
 	CMD("CALL", C_Call);
 	CMD("GOTO", C_Goto);
 	CMD("RET", C_Return);
+	CMD("PRINT", C_Print);
+	CMD("REFR", C_UpdateScreen);
+	CMD("CLS", C_ClearScreen);
+}
+
+void Machine::C_ClearScreen()
+{
+	if (!Line->HasParams(1)) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	Gr->Clear(ResolveNumber(Line->GetParam(0)));
+}
+
+void Machine::C_UpdateScreen()
+{
+	if (Line->HasParams()) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	Gr->Update();
+}
+
+void Machine::C_Print()
+{
+	if (!Line->HasParams(5)) {
+		Abort(ERR_SYNTAX_ERROR);
+		return;
+	}
+
+	std::string text = ResolveString(Line->GetParam(0));
+	int x = ResolveNumber(Line->GetParam(1));
+	int y = ResolveNumber(Line->GetParam(2));
+	int fgc = ResolveNumber(Line->GetParam(3));
+	int bgc = ResolveNumber(Line->GetParam(4));
+
+	Print(text, x, y, fgc, bgc);
 }
 
 void Machine::C_Goto()
