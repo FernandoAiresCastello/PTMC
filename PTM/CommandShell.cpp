@@ -25,19 +25,22 @@ void CommandShell::OnLoop()
 {
 	SceneObject* o = GetObjectUnderCursor();
 	if (o == NULL) {
-		BottomBorderText = "";
+		BottomBorderText = "Null";
 		return;
 	}
 
-	if (GetObjectType(Cursor->GetX(), Cursor->GetY()) == "charset") {
+	const std::string type = GetObjectType(Cursor->GetX(), Cursor->GetY());
+
+	if (type == "")
+		BottomBorderText = "No type";
+	else if (type == "plain")
+		BottomBorderText = "Plain char";
+	else if (type == "charset")
 		BottomBorderText = String::Format("Charset:%i", GetObjectFrame(o, 0).Index);
-	}
-	else if (GetObjectType(Cursor->GetX(), Cursor->GetY()) == "palette") {
+	else if (type == "palette")
 		BottomBorderText = String::Format("Palette:%i", GetObjectFrame(o, 0).ForeColorIx);
-	}
-	else {
-		BottomBorderText = "";
-	}
+	else
+		BottomBorderText = "Unrecognized type: " + type;
 }
 
 void CommandShell::TypeEnter()
@@ -62,7 +65,7 @@ void CommandShell::TypeEnter()
 			Draw();
 			editor->Draw();
 			Gr->Update();
-			editor->HandleKeyEvents();
+			editor->HandleEvents();
 		}
 		delete editor;
 	}
@@ -137,6 +140,14 @@ void CommandShell::InterpretLine(std::string line)
 		ProgEditor->SetBorderColor(BorderColor);
 		ProgEditor->Run();
 	}
+	else if (cmd == "char") {
+		if (params.size() != 1) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			PrintCharset(String::ToInt(params[0]), String::ToInt(params[0]));
+		}
+	}
 	else if (cmd == "charset") {
 		if (params.size() != 2) {
 			error = ERR_SYNTAX_ERROR;
@@ -145,12 +156,32 @@ void CommandShell::InterpretLine(std::string line)
 			PrintCharset(String::ToInt(params[0]), String::ToInt(params[1]));
 		}
 	}
+	else if (cmd == "pal") {
+		if (params.size() != 1) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			PrintPalette(String::ToInt(params[0]), String::ToInt(params[0]));
+		}
+	}
 	else if (cmd == "palette") {
 		if (params.size() != 2) {
 			error = ERR_SYNTAX_ERROR;
 		}
 		else {
 			PrintPalette(String::ToInt(params[0]), String::ToInt(params[1]));
+		}
+	}
+	else if (cmd == "setpal") {
+		if (params.size() != 4) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			int i = String::ToInt(params[0]);
+			int r = String::ToInt(params[1]);
+			int g = String::ToInt(params[2]);
+			int b = String::ToInt(params[3]);
+			Data->GetPalette()->Set(i, r, g, b);
 		}
 	}
 	else {
@@ -180,7 +211,7 @@ void CommandShell::PrintCharset(int first, int last)
 
 void CommandShell::PrintPalette(int first, int last)
 {
-	for (int i = first; i < last; i++) {
+	for (int i = first; i <= last; i++) {
 		Object o;
 		o.GetAnimation().Clear();
 		o.GetAnimation().AddFrame(ObjectChar(0, i, i));

@@ -26,6 +26,7 @@ EditorBase::EditorBase(Graphics* gr, Datafile* data)
 	Insert = false;
 	AllowClearBuffer = true;
 	AllowExitOnEscape = false;
+	ClearClipboard();
 }
 
 EditorBase::~EditorBase()
@@ -306,6 +307,20 @@ void EditorBase::OnKeyPress(SDL_Keycode key)
 		TypeDelete();
 		break;
 	}
+	case SDLK_c: {
+		if (ctrl)
+			CopyChar();
+		else
+			TypePlainChar(key);
+		break;
+	}
+	case SDLK_v: {
+		if (ctrl)
+			PasteChar();
+		else
+			TypePlainChar(key);
+		break;
+	}
 	default: {
 		if (key >= 0 && key <= 255) {
 			TypePlainChar(key);
@@ -371,7 +386,7 @@ void EditorBase::TypeBackspace()
 {
 	if (Cursor->GetX() > 0) {
 		Cursor->Move(-1, 0);
-		DeleteChar(Cursor->GetX(), Cursor->GetY());
+		DeleteCharUnderCursor();
 		if (Insert) {
 			auto line = GetObjectsInLine(Cursor->GetY(), Cursor->GetX() + 1);
 			for (auto& o : line) {
@@ -383,16 +398,16 @@ void EditorBase::TypeBackspace()
 
 void EditorBase::TypeDelete()
 {
-	DeleteChar(Cursor->GetX(), Cursor->GetY());
+	DeleteCharUnderCursor();
 	auto line = GetObjectsInLine(Cursor->GetY(), Cursor->GetX() + 1);
 	for (auto& o : line) {
 		o->Move(-1, 0);
 	}
 }
 
-void EditorBase::DeleteChar(int x, int y)
+void EditorBase::DeleteCharUnderCursor()
 {
-	Scrbuf->RemoveObject(GetObject(x, y));
+	Scrbuf->RemoveObject(GetObject(Cursor->GetX(), Cursor->GetY()));
 }
 
 void EditorBase::TypeString(std::string str)
@@ -556,4 +571,30 @@ void EditorBase::PrintOnBottomBorder()
 	Gr->Print(Data->GetCharset(), 0, Gr->Rows - 1,
 		Data->GetPalette()->Get(BorderTextColor)->ToInteger(),
 		Data->GetPalette()->Get(BorderColor)->ToInteger(), BottomBorderText);
+}
+
+void EditorBase::CopyChar()
+{
+	if (GetObjectUnderCursor() != NULL) {
+		if (Clipboard == NULL)
+			Clipboard = new SceneObject();
+
+		Clipboard->SetEqual(GetObjectUnderCursor());
+	}
+	else {
+		ClearClipboard();
+	}
+}
+
+void EditorBase::PasteChar()
+{
+	if (Clipboard != NULL)
+		TypeObject(*Clipboard->GetObj());
+	else
+		DeleteCharUnderCursor();
+}
+
+void EditorBase::ClearClipboard()
+{
+	Clipboard = NULL;
 }

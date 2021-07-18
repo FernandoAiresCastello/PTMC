@@ -1,11 +1,15 @@
 #include <SDL.h>
-#include "Program.h"
+#include <TBRLGPT.h>
 #include "Machine.h"
 #include "Datafile.h"
 #include "CommandShell.h"
+using namespace TBRLGPT;
 
 int main(int argc, char** argv)
 {
+	if (!File::ExistsFolder("files"))
+		File::CreateFolder("files");
+
 	const int border = 8;
 	const int w = 256 + border;
 	const int h = 192 + border;

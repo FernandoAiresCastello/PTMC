@@ -16,7 +16,7 @@ public:
 	~CharEdit();
 
 	void Draw();
-	void HandleKeyEvents();
+	void HandleEvents();
 
 private:
 	EditorBase* BaseEditor;
@@ -24,12 +24,14 @@ private:
 	Datafile* Data;
 	int CharIndex;
 	char Buffer[64];
+	char OriginalPixels[64];
 	int CursorX;
 	int CursorY;
 
 	void ToggleCurrentPixel();
 	void SetCurrentPixel(int value);
 	void ClearChar();
-	void UpdateBuffer();
+	void InitPixelBuffer();
 	void UpdateChar();
+	void RevertChar();
 };

@@ -12,7 +12,7 @@ CharEdit::CharEdit(EditorBase* baseEditor, Graphics* gr, Datafile* data, int ch)
 	CharIndex = ch;
 	CursorX = 0;
 	CursorY = 0;
-	UpdateBuffer();
+	InitPixelBuffer();
 }
 
 CharEdit::~CharEdit()
@@ -91,7 +91,7 @@ void CharEdit::ClearChar()
 	UpdateChar();
 }
 
-void CharEdit::UpdateBuffer()
+void CharEdit::InitPixelBuffer()
 {
 	byte* pixels = Data->GetCharset()->Get(CharIndex);
 	int bufferIx = 0;
@@ -101,6 +101,7 @@ void CharEdit::UpdateBuffer()
 		for (int pos = Char::Width - 1; pos >= 0; pos--, bufferIx++) {
 			int pixelOn = (bits & (1 << pos));
 			Buffer[bufferIx] = pixelOn ? '1' : '0';
+			OriginalPixels[bufferIx] = Buffer[bufferIx];
 		}
 	}
 }
@@ -118,16 +119,31 @@ void CharEdit::UpdateChar()
 	}
 }
 
-void CharEdit::HandleKeyEvents()
+void CharEdit::RevertChar()
+{
+	for (int i = 0; i < 64; i++)
+		Buffer[i] = OriginalPixels[i];
+	
+	UpdateChar();
+}
+
+void CharEdit::HandleEvents()
 {
 	bool alt = Key::Alt();
 	bool shift = Key::Shift();
 
 	SDL_Event e = { 0 };
 	SDL_PollEvent(&e);
+	if (e.type == SDL_QUIT) {
+		Running = false;
+	}
 	if (e.type == SDL_KEYDOWN) {
 		SDL_Keycode key = e.key.keysym.sym;
-		if (key == SDLK_ESCAPE || key == SDLK_RETURN) {
+		if (key == SDLK_ESCAPE) {
+			Running = false;
+			RevertChar();
+		}
+		else if (key == SDLK_RETURN) {
 			Running = false;
 		}
 		else if (key == SDLK_RIGHT) {

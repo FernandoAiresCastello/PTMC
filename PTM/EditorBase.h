@@ -38,6 +38,7 @@ protected:
 	bool AllowClearBuffer;
 	std::string TopBorderText;
 	std::string BottomBorderText;
+	SceneObject* Clipboard;
 
 	virtual void OnStart();
 	virtual void OnLoop();
@@ -54,7 +55,7 @@ protected:
 	void TypeObject(Object o);
 	void TypeBackspace();
 	void TypeDelete();
-	void DeleteChar(int x, int y);
+	void DeleteCharUnderCursor();
 	void TypeString(std::string str);
 	void TypeStringCrlf(std::string str);
 	void PutPlainChar(int ch, int x, int y);
@@ -72,4 +73,7 @@ protected:
 	bool HasObject(int x, int y);
 	void PrintOnTopBorder();
 	void PrintOnBottomBorder();
+	void CopyChar();
+	void PasteChar();
+	void ClearClipboard();
 };
