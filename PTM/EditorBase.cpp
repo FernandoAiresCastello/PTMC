@@ -19,10 +19,13 @@ EditorBase::EditorBase(Graphics* gr, Datafile* data)
 	SetForeColor(1);
 	SetBackColor(52);
 	SetBorderColor(50);
+	BorderTextColor = 55;
 	Cursor->GetObj()->GetAnimation().Clear();
 	Cursor->GetObj()->GetAnimation().AddFrame(ObjectChar(0, ForeColor, BackColor));
 	Cursor->GetObj()->GetAnimation().AddFrame(ObjectChar(0, BackColor, ForeColor));
 	Insert = false;
+	AllowClearBuffer = true;
+	AllowExitOnEscape = false;
 }
 
 EditorBase::~EditorBase()
@@ -36,6 +39,7 @@ void EditorBase::Run()
 	OnStart();
 	Running = true;
 	while (Running) {
+		OnLoop();
 		FollowCursorInsideView();
 		UpdateCursor();
 		Draw();
@@ -57,6 +61,10 @@ void EditorBase::OnStart()
 {
 }
 
+void EditorBase::OnLoop()
+{
+}
+
 void EditorBase::TypeEnter()
 {
 }
@@ -65,6 +73,8 @@ void EditorBase::Draw()
 {
 	Gr->Clear(Data->GetPalette()->Get(BorderColor)->ToInteger());
 	View->Draw();
+	PrintOnTopBorder();
+	PrintOnBottomBorder();
 }
 
 void EditorBase::SetForeColor(int color)
@@ -72,7 +82,7 @@ void EditorBase::SetForeColor(int color)
 	ForeColor = color;
 	for (auto& it : Scrbuf->GetObjects()) {
 		Object* o = it.second->GetObj();
-		if (o->HasPropertyValue("type", "plain")) {
+		if (o->HasPropertyValue("type", "plain") || o->HasPropertyValue("type", "charset")) {
 			GetObjectFrame(o, 0).ForeColorIx = color;
 		}
 	}
@@ -84,7 +94,7 @@ void EditorBase::SetBackColor(int color)
 	Scrbuf->SetBackObject(ObjectChar(0, color, color));
 	for (auto& it : Scrbuf->GetObjects()) {
 		Object* o = it.second->GetObj();
-		if (o->HasPropertyValue("type", "plain")) {
+		if (o->HasPropertyValue("type", "plain") || o->HasPropertyValue("type", "charset")) {
 			GetObjectFrame(o, 0).BackColorIx = color;
 		}
 	}
@@ -157,6 +167,11 @@ void EditorBase::OnKeyPress(SDL_Keycode key)
 	bool alt = Key::Alt();
 
 	switch (key) {
+	case SDLK_ESCAPE: {
+		if (AllowExitOnEscape)
+			Running = false;
+		break;
+	}
 	case SDLK_RETURN: {
 		if (alt) {
 			Gr->ToggleFullscreen();
@@ -209,7 +224,9 @@ void EditorBase::OnKeyPress(SDL_Keycode key)
 	}
 	case SDLK_HOME: {
 		if (shift) {
-			ClearScreen();
+			if (AllowClearBuffer) {
+				ClearScreen();
+			}
 		}
 		if (ctrl) {
 			Cursor->SetPosition(0, 0);
@@ -275,7 +292,7 @@ void EditorBase::OnKeyPress(SDL_Keycode key)
 		break;
 	}
 	default: {
-		if (key == 32 || (key >= 0 && key <= 255 && isalnum(key))) {
+		if (key >= 0 && key <= 255) {
 			TypePlainChar(key);
 		}
 		break;
@@ -311,6 +328,26 @@ void EditorBase::TypePlainChar(int ch)
 	och.BackColorIx = BackColor;
 	o->GetObj()->GetAnimation().Clear();
 	o->GetObj()->GetAnimation().AddFrame(och);
+
+	Cursor->Move(1, 0);
+}
+
+void EditorBase::TypeObject(Object o)
+{
+	if (Insert) {
+		auto line = GetObjectsInLine(Cursor->GetY(), Cursor->GetX());
+		for (auto& o : line) {
+			o->Move(1, 0);
+		}
+	}
+
+	SceneObject* obj = GetObject(Cursor->GetX(), Cursor->GetY());
+	if (obj == NULL)
+		obj = new SceneObject();
+
+	obj->SetScene(Scrbuf);
+	obj->SetPosition(Cursor->GetX(), Cursor->GetY());
+	obj->GetObj()->SetEqual(o);
 
 	Cursor->Move(1, 0);
 }
@@ -476,6 +513,11 @@ SceneObject* EditorBase::GetObject(int x, int y)
 	return Scrbuf->GetObjectAt(x, y, CHAR_LAYER);
 }
 
+SceneObject* EditorBase::GetObjectUnderCursor()
+{
+	return GetObject(Cursor->GetX(), Cursor->GetY());
+}
+
 std::string EditorBase::GetObjectType(int x, int y)
 {
 	SceneObject* o = GetObject(x, y);
@@ -485,4 +527,18 @@ std::string EditorBase::GetObjectType(int x, int y)
 bool EditorBase::HasObject(int x, int y)
 {
 	return GetObject(x, y) != NULL;
+}
+
+void EditorBase::PrintOnTopBorder()
+{
+	Gr->Print(Data->GetCharset(), 0, 0,
+		Data->GetPalette()->Get(BorderTextColor)->ToInteger(),
+		Data->GetPalette()->Get(BorderColor)->ToInteger(), TopBorderText);
+}
+
+void EditorBase::PrintOnBottomBorder()
+{
+	Gr->Print(Data->GetCharset(), 0, Gr->Rows - 1,
+		Data->GetPalette()->Get(BorderTextColor)->ToInteger(),
+		Data->GetPalette()->Get(BorderColor)->ToInteger(), BottomBorderText);
 }

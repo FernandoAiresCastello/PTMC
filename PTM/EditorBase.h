@@ -15,6 +15,9 @@ public:
 	virtual ~EditorBase();
 
 	void Run();
+	void SetForeColor(int color);
+	void SetBackColor(int color);
+	void SetBorderColor(int color);
 
 protected:
 	Graphics* Gr;
@@ -25,16 +28,19 @@ protected:
 	int BorderColor;
 	int ForeColor;
 	int BackColor;
+	int BorderTextColor;
 	SceneObject* Cursor;
 	bool Insert;
+	bool AllowExitOnEscape;
+	bool AllowClearBuffer;
+	std::string TopBorderText;
+	std::string BottomBorderText;
 
 	virtual void OnStart();
+	virtual void OnLoop();
 	virtual void TypeEnter();
 
 	void Draw();
-	void SetForeColor(int color);
-	void SetBackColor(int color);
-	void SetBorderColor(int color);
 	void FollowCursorInsideView();
 	void UpdateCursor();
 	ObjectChar& GetCursorFrame(int frame);
@@ -42,6 +48,7 @@ protected:
 	ObjectChar& GetObjectFrame(Object* o, int frame);
 	void OnKeyPress(SDL_Keycode key);
 	void TypePlainChar(int ch);
+	void TypeObject(Object o);
 	void TypeBackspace();
 	void TypeDelete();
 	void DeleteChar(int x, int y);
@@ -57,6 +64,9 @@ protected:
 	int GetLastX();
 	int GetLastY();
 	SceneObject* GetObject(int x, int y);
+	SceneObject* GetObjectUnderCursor();
 	std::string GetObjectType(int x, int y);
 	bool HasObject(int x, int y);
+	void PrintOnTopBorder();
+	void PrintOnBottomBorder();
 };

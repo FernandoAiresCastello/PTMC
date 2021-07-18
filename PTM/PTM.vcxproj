@@ -136,6 +136,7 @@
     <ClCompile Include="Machine.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Program.cpp" />
+    <ClCompile Include="ProgramEditor.cpp" />
     <ClCompile Include="ProgramLine.cpp" />
     <ClCompile Include="StringOrNumber.cpp" />
     <ClCompile Include="Variable.cpp" />
@@ -150,6 +151,7 @@
     <ClInclude Include="EditorBase.h" />
     <ClInclude Include="Machine.h" />
     <ClInclude Include="Program.h" />
+    <ClInclude Include="ProgramEditor.h" />
     <ClInclude Include="ProgramLine.h" />
     <ClInclude Include="StringOrNumber.h" />
     <ClInclude Include="Variable.h" />

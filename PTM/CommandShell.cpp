@@ -3,19 +3,38 @@
 
 #define ERR_SYNTAX_ERROR "Syntax error"
 
-CommandShell::CommandShell(Graphics* gr, Datafile* data)
-	: EditorBase(gr, data)
+CommandShell::CommandShell(Graphics* gr, Datafile* data) : EditorBase(gr, data)
 {
+	ProgEditor = new ProgramEditor(gr, data);
 }
 
 CommandShell::~CommandShell()
 {
+	delete ProgEditor;
 }
-
 
 void CommandShell::OnStart()
 {
 	PrintIntro();
+}
+
+void CommandShell::OnLoop()
+{
+	SceneObject* o = GetObjectUnderCursor();
+	if (o == NULL) {
+		BottomBorderText = "";
+		return;
+	}
+
+	if (GetObjectType(Cursor->GetX(), Cursor->GetY()) == "charset") {
+		BottomBorderText = String::Format("Charset:%i", GetObjectFrame(o, 0).Index);
+	}
+	else if (GetObjectType(Cursor->GetX(), Cursor->GetY()) == "palette") {
+		BottomBorderText = String::Format("Palette:%i", GetObjectFrame(o, 0).ForeColorIx);
+	}
+	else {
+		BottomBorderText = "";
+	}
 }
 
 void CommandShell::TypeEnter()
@@ -31,6 +50,12 @@ void CommandShell::TypeEnter()
 		if (!line.empty()) {
 			InterpretLine(line);
 		}
+	}
+	else if (type == "charset") {
+		// todo
+	}
+	else if (type == "palette") {
+		// todo
 	}
 	else {
 		// todo
@@ -60,6 +85,16 @@ void CommandShell::InterpretLine(std::string line)
 		Running = false;
 		return;
 	}
+	else if (cmd == "color") {
+		if (params.size() != 3) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			SetForeColor(String::ToInt(params[0]));
+			SetBackColor(String::ToInt(params[1]));
+			SetBorderColor(String::ToInt(params[2]));
+		}
+	}
 	else if (cmd == "fgcolor") {
 		if (params.size() != 1) {
 			error = ERR_SYNTAX_ERROR;
@@ -84,6 +119,28 @@ void CommandShell::InterpretLine(std::string line)
 			SetBorderColor(String::ToInt(params[0]));
 		}
 	}
+	else if (cmd == "prog") {
+		ProgEditor->SetForeColor(ForeColor);
+		ProgEditor->SetBackColor(BackColor);
+		ProgEditor->SetBorderColor(BorderColor);
+		ProgEditor->Run();
+	}
+	else if (cmd == "charset") {
+		if (params.size() != 2) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			PrintCharset(String::ToInt(params[0]), String::ToInt(params[1]));
+		}
+	}
+	else if (cmd == "palette") {
+		if (params.size() != 2) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			PrintPalette(String::ToInt(params[0]), String::ToInt(params[1]));
+		}
+	}
 	else {
 		error = ERR_SYNTAX_ERROR;
 	}
@@ -92,4 +149,34 @@ void CommandShell::InterpretLine(std::string line)
 		TypeStringCrlf(error);
 
 	Ok();
+}
+
+void CommandShell::PrintCharset(int first, int last)
+{
+	for (int i = first; i <= last; i++) {
+		Object o;
+		o.GetAnimation().Clear();
+		o.GetAnimation().AddFrame(ObjectChar(i, ForeColor, BackColor));
+		o.SetProperty("type", "charset");
+		TypeObject(o);
+		if (Cursor->GetX() >= View->GetWidth() - 1) {
+			Crlf();
+		}
+	}
+	Crlf();
+}
+
+void CommandShell::PrintPalette(int first, int last)
+{
+	for (int i = first; i < last; i++) {
+		Object o;
+		o.GetAnimation().Clear();
+		o.GetAnimation().AddFrame(ObjectChar(0, i, i));
+		o.SetProperty("type", "palette");
+		TypeObject(o);
+		if (Cursor->GetX() >= View->GetWidth() - 1) {
+			Crlf();
+		}
+	}
+	Crlf();
 }
