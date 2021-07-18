@@ -65,18 +65,7 @@ void CommandShell::TypeEnter()
 	}
 	else if (type == "charset") {
 		int ch = GetObjectFrame(GetObjectUnderCursor(), 0).Index;
-		CharEdit* editor = new CharEdit(this, Gr, Data, ch);
-		editor->Running = true;
-		while (editor->Running) {
-			Draw();
-			editor->Draw();
-			Gr->Update();
-			editor->HandleEvents();
-		}
-		delete editor;
-	}
-	else if (type == "palette") {
-		// todo
+		EditChar(Gr, Data, ch);
 	}
 	else {
 		// todo
@@ -154,6 +143,14 @@ void CommandShell::InterpretLine(std::string line)
 		ProgEditor->SetBorderColor(BorderColor);
 		ProgEditor->Run();
 	}
+	else if (cmd == "editchar") {
+		if (params.size() != 1) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			(String::ToInt(params[0]), String::ToInt(params[0]));
+		}
+	}
 	else if (cmd == "char") {
 		if (params.size() != 1) {
 			error = ERR_SYNTAX_ERROR;
@@ -198,7 +195,7 @@ void CommandShell::InterpretLine(std::string line)
 			Data->GetPalette()->Set(i, r, g, b);
 		}
 	}
-	else if (cmd == "tile") {
+	else if (cmd == "copytile") {
 		if (params.size() != 3) {
 			error = ERR_SYNTAX_ERROR;
 		}
@@ -209,7 +206,7 @@ void CommandShell::InterpretLine(std::string line)
 			SetClipboardTile(i, fgc, bgc);
 		}
 	}
-	else if (cmd == "pushtp") {
+	else if (cmd == "pushtile") {
 		if (params.size() != 3) {
 			error = ERR_SYNTAX_ERROR;
 		}
@@ -220,12 +217,20 @@ void CommandShell::InterpretLine(std::string line)
 			PushTile(i, fgc, bgc);
 		}
 	}
-	else if (cmd == "tilestk") {
+	else if (cmd == "tiles") {
 		if (params.size() != 0) {
 			error = ERR_SYNTAX_ERROR;
 		}
 		else {
 			TypeTileStack();
+		}
+	}
+	else if (cmd == "poptiles") {
+		if (params.size() != 0) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			TileStack.clear();
 		}
 	}
 	else if (cmd == "settp") {

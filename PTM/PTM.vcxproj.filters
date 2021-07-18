@@ -44,6 +44,9 @@
     <ClCompile Include="CharEdit.cpp">
       <Filter>Editors</Filter>
     </ClCompile>
+    <ClCompile Include="Ui.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommandParam.h">
@@ -88,6 +91,9 @@
     <ClInclude Include="CharEdit.h">
       <Filter>Editors</Filter>
     </ClInclude>
+    <ClInclude Include="Ui.h">
+      <Filter>UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Program">
@@ -101,6 +107,9 @@
     </Filter>
     <Filter Include="Editors">
       <UniqueIdentifier>{00faa453-26c8-4a0f-b3da-11897b878fad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI">
+      <UniqueIdentifier>{e97dcfeb-fc98-41b1-b32a-17d531c39a13}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

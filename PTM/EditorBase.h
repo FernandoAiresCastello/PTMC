@@ -87,4 +87,5 @@ protected:
 	void PushTile(int ix, int fgc, int bgc);
 	void SetObjTemplate(std::string id);
 	void DeleteObjTemplate(std::string id);
+	void EditChar(Graphics* gr, Datafile* data, int ch);
 };

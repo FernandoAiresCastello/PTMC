@@ -1,17 +1,19 @@
 #include "CharEdit.h"
+#include "Ui.h"
 
 int CharEdit::X;
 int CharEdit::Y;
 
-CharEdit::CharEdit(EditorBase* baseEditor, Graphics* gr, Datafile* data, int ch)
+CharEdit::CharEdit(Graphics* gr, Datafile* data, int ch, int fgc, int bgc)
 {
-	BaseEditor = baseEditor;
 	Gr = gr;
 	Data = data;
-	Running = false;
 	CharIndex = ch;
+	ForeColor = fgc;
+	BackColor = bgc;
 	CursorX = 0;
 	CursorY = 0;
+	Running = false;
 	InitPixelBuffer();
 }
 
@@ -21,31 +23,14 @@ CharEdit::~CharEdit()
 
 void CharEdit::Draw()
 {
-	const int h = 196;
-	const int v = 179;
-	const int tl = 218;
-	const int tr = 191;
-	const int bl = 192;
-	const int br = 217;
+	Ui::DrawWindow(Data, Gr, X, Y, 8, 8, ForeColor, BackColor);
+
 	const int bit0 = 250;
 	const int bit1 = 219;
 	const int selBit0 = 250;
 	const int selBit1 = 254;
-	const int fgc = Data->GetPalette()->Get(BaseEditor->GetForeColor())->ToInteger();
-	const int bgc = Data->GetPalette()->Get(BaseEditor->GetBackColor())->ToInteger();
-
-	Gr->PutChar(Data->GetCharset(), tl, X + 0, Y + 0, fgc, bgc);
-	Gr->PutChar(Data->GetCharset(), tr, X + 9, Y + 0, fgc, bgc);
-	Gr->PutChar(Data->GetCharset(), bl, X + 0, Y + 9, fgc, bgc);
-	Gr->PutChar(Data->GetCharset(), br, X + 9, Y + 9, fgc, bgc);
-	for (int x = 1; x <= 8; x++) {
-		Gr->PutChar(Data->GetCharset(), h, X + x, Y + 0, fgc, bgc);
-		Gr->PutChar(Data->GetCharset(), h, X + x, Y + 9, fgc, bgc);
-	}
-	for (int y = 1; y <= 8; y++) {
-		Gr->PutChar(Data->GetCharset(), v, X + 0, Y + y, fgc, bgc);
-		Gr->PutChar(Data->GetCharset(), v, X + 9, Y + y, fgc, bgc);
-	}
+	const int fgc = Data->GetPalette()->Get(ForeColor)->ToInteger();
+	const int bgc = Data->GetPalette()->Get(BackColor)->ToInteger();
 
 	for (int y = 0; y < 8; y++) {
 		for (int x = 0; x < 8; x++) {

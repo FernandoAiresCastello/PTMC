@@ -1,5 +1,6 @@
 #include <algorithm>
 #include "EditorBase.h"
+#include "CharEdit.h"
 
 #define CHAR_LAYER 0
 
@@ -685,4 +686,17 @@ void EditorBase::SetObjTemplate(std::string id)
 void EditorBase::DeleteObjTemplate(std::string id)
 {
 	Data->DeleteObjTemplate(id);
+}
+
+void EditorBase::EditChar(Graphics* gr, Datafile* data, int ch)
+{
+	CharEdit* editor = new CharEdit(Gr, Data, ch, ForeColor, BackColor);
+	editor->Running = true;
+	while (editor->Running) {
+		Draw();
+		editor->Draw();
+		Gr->Update();
+		editor->HandleEvents();
+	}
+	delete editor;
 }

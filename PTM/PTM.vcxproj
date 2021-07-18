@@ -140,6 +140,7 @@
     <ClCompile Include="ProgramEditor.cpp" />
     <ClCompile Include="ProgramLine.cpp" />
     <ClCompile Include="StringOrNumber.cpp" />
+    <ClCompile Include="Ui.cpp" />
     <ClCompile Include="Variable.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -156,6 +157,7 @@
     <ClInclude Include="ProgramEditor.h" />
     <ClInclude Include="ProgramLine.h" />
     <ClInclude Include="StringOrNumber.h" />
+    <ClInclude Include="Ui.h" />
     <ClInclude Include="Variable.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

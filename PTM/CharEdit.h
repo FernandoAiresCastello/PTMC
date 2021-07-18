@@ -12,17 +12,18 @@ public:
 	static int X;
 	static int Y;
 
-	CharEdit(EditorBase* baseEditor, Graphics* gr, Datafile* data, int ch);
+	CharEdit(Graphics* gr, Datafile* data, int ch, int fgc, int bgc);
 	~CharEdit();
 
 	void Draw();
 	void HandleEvents();
 
 private:
-	EditorBase* BaseEditor;
 	Graphics* Gr;
 	Datafile* Data;
 	int CharIndex;
+	int ForeColor;
+	int BackColor;
 	char Buffer[64];
 	char OriginalPixels[64];
 	int CursorX;
