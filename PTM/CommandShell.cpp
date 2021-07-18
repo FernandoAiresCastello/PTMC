@@ -1,11 +1,14 @@
 #include <algorithm>
 #include "CommandShell.h"
+#include "CharEdit.h"
 
 #define ERR_SYNTAX_ERROR "Syntax error"
 
 CommandShell::CommandShell(Graphics* gr, Datafile* data) : EditorBase(gr, data)
 {
 	ProgEditor = new ProgramEditor(gr, data);
+	CharEdit::X = Gr->Cols / 2 - 5;
+	CharEdit::Y = Gr->Rows / 2 - 5;
 }
 
 CommandShell::~CommandShell()
@@ -52,7 +55,16 @@ void CommandShell::TypeEnter()
 		}
 	}
 	else if (type == "charset") {
-		// todo
+		int ch = GetObjectFrame(GetObjectUnderCursor(), 0).Index;
+		CharEdit* editor = new CharEdit(this, Gr, Data, ch);
+		editor->Running = true;
+		while (editor->Running) {
+			Draw();
+			editor->Draw();
+			Gr->Update();
+			editor->HandleKeyEvents();
+		}
+		delete editor;
 	}
 	else if (type == "palette") {
 		// todo

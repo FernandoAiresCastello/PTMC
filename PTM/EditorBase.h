@@ -18,6 +18,9 @@ public:
 	void SetForeColor(int color);
 	void SetBackColor(int color);
 	void SetBorderColor(int color);
+	int GetForeColor();
+	int GetBackColor();
+	int GetBorderColor();
 
 protected:
 	Graphics* Gr;

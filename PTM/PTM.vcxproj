@@ -127,6 +127,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Array.cpp" />
+    <ClCompile Include="CharEdit.cpp" />
     <ClCompile Include="CommandParam.cpp" />
     <ClCompile Include="CommandParamType.cpp" />
     <ClCompile Include="CommandShell.cpp" />
@@ -143,6 +144,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Array.h" />
+    <ClInclude Include="CharEdit.h" />
     <ClInclude Include="CommandParam.h" />
     <ClInclude Include="CommandParamType.h" />
     <ClInclude Include="CommandShell.h" />

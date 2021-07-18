@@ -105,6 +105,21 @@ void EditorBase::SetBorderColor(int color)
 	BorderColor = color;
 }
 
+int EditorBase::GetForeColor()
+{
+	return ForeColor;
+}
+
+int EditorBase::GetBackColor()
+{
+	return BackColor;
+}
+
+int EditorBase::GetBorderColor()
+{
+	return BorderColor;
+}
+
 void EditorBase::FollowCursorInsideView()
 {
 	const int maxX = View->GetScrollX() + View->GetWidth() - 1;

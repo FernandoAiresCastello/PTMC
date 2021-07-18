@@ -41,6 +41,9 @@
     <ClCompile Include="ProgramEditor.cpp">
       <Filter>Editors</Filter>
     </ClCompile>
+    <ClCompile Include="CharEdit.cpp">
+      <Filter>Editors</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommandParam.h">
@@ -80,6 +83,9 @@
       <Filter>Editors</Filter>
     </ClInclude>
     <ClInclude Include="ProgramEditor.h">
+      <Filter>Editors</Filter>
+    </ClInclude>
+    <ClInclude Include="CharEdit.h">
       <Filter>Editors</Filter>
     </ClInclude>
   </ItemGroup>
