@@ -18,9 +18,11 @@ public:
 	void SetForeColor(int color);
 	void SetBackColor(int color);
 	void SetBorderColor(int color);
+	void SetBorderTextColor(int color);
 	int GetForeColor();
 	int GetBackColor();
 	int GetBorderColor();
+	int GetBorderTextColor();
 
 protected:
 	Graphics* Gr;
@@ -55,7 +57,9 @@ protected:
 	void TypeObject(Object o);
 	void TypeBackspace();
 	void TypeDelete();
+	void TypeTab();
 	void DeleteCharUnderCursor();
+	void DeleteChar(int x, int y);
 	void TypeString(std::string str);
 	void TypeStringCrlf(std::string str);
 	void PutPlainChar(int ch, int x, int y);
@@ -74,6 +78,7 @@ protected:
 	void PrintOnTopBorder();
 	void PrintOnBottomBorder();
 	void CopyChar();
+	void SetClipboardTile(int ch, int fgc, int bgc);
 	void PasteChar();
 	void ClearClipboard();
 };

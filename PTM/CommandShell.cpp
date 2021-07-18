@@ -30,15 +30,18 @@ void CommandShell::OnLoop()
 	}
 
 	const std::string type = GetObjectType(Cursor->GetX(), Cursor->GetY());
+	const ObjectChar& ch = GetObjectFrame(o, 0);
 
 	if (type == "")
 		BottomBorderText = "No type";
 	else if (type == "plain")
 		BottomBorderText = "Plain char";
+	else if (type == "tile")
+		BottomBorderText = String::Format("Tile:%i,%i,%i", ch.Index, ch.ForeColorIx, ch.BackColorIx);
 	else if (type == "charset")
-		BottomBorderText = String::Format("Charset:%i", GetObjectFrame(o, 0).Index);
+		BottomBorderText = String::Format("Charset:%i", ch.Index);
 	else if (type == "palette")
-		BottomBorderText = String::Format("Palette:%i", GetObjectFrame(o, 0).ForeColorIx);
+		BottomBorderText = String::Format("Palette:%i", ch.ForeColorIx);
 	else
 		BottomBorderText = "Unrecognized type: " + type;
 }
@@ -134,6 +137,14 @@ void CommandShell::InterpretLine(std::string line)
 			SetBorderColor(String::ToInt(params[0]));
 		}
 	}
+	else if (cmd == "btcolor") {
+		if (params.size() != 1) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			SetBorderTextColor(String::ToInt(params[0]));
+		}
+	}
 	else if (cmd == "prog") {
 		ProgEditor->SetForeColor(ForeColor);
 		ProgEditor->SetBackColor(BackColor);
@@ -182,6 +193,17 @@ void CommandShell::InterpretLine(std::string line)
 			int g = String::ToInt(params[2]);
 			int b = String::ToInt(params[3]);
 			Data->GetPalette()->Set(i, r, g, b);
+		}
+	}
+	else if (cmd == "tile") {
+		if (params.size() != 3) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			int i = String::ToInt(params[0]);
+			int fgc = String::ToInt(params[1]);
+			int bgc = String::ToInt(params[2]);
+			SetClipboardTile(i, fgc, bgc);
 		}
 	}
 	else {

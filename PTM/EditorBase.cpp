@@ -106,6 +106,11 @@ void EditorBase::SetBorderColor(int color)
 	BorderColor = color;
 }
 
+void EditorBase::SetBorderTextColor(int color)
+{
+	BorderTextColor = color;
+}
+
 int EditorBase::GetForeColor()
 {
 	return ForeColor;
@@ -121,17 +126,26 @@ int EditorBase::GetBorderColor()
 	return BorderColor;
 }
 
+int EditorBase::GetBorderTextColor()
+{
+	return BorderTextColor;
+}
+
 void EditorBase::FollowCursorInsideView()
 {
 	const int maxX = View->GetScrollX() + View->GetWidth() - 1;
 	const int maxY = View->GetScrollY() + View->GetHeight() - 1;
+	const int minX = View->GetScrollX();
+	const int minY = View->GetScrollY();
 
-	if (Cursor->GetX() > maxX) {
+	if (Cursor->GetX() > maxX)
 		View->Scroll(1, 0);
-	}
-	if (Cursor->GetY() > maxY) {
+	if (Cursor->GetY() > maxY)
 		View->Scroll(0, 1);
-	}
+	if (Cursor->GetX() < minX)
+		View->Scroll(-1, 0);
+	if (Cursor->GetY() < minY)
+		View->Scroll(0, -1);
 }
 
 void EditorBase::UpdateCursor()
@@ -307,6 +321,10 @@ void EditorBase::OnKeyPress(SDL_Keycode key)
 		TypeDelete();
 		break;
 	}
+	case SDLK_TAB: {
+		TypeTab();
+		break;
+	}
 	case SDLK_c: {
 		if (ctrl)
 			CopyChar();
@@ -405,9 +423,22 @@ void EditorBase::TypeDelete()
 	}
 }
 
+void EditorBase::TypeTab()
+{
+	for (int i = 0; i < 4; i++) {
+		DeleteCharUnderCursor();
+		Cursor->Move(1, 0);
+	}
+}
+
 void EditorBase::DeleteCharUnderCursor()
 {
-	Scrbuf->RemoveObject(GetObject(Cursor->GetX(), Cursor->GetY()));
+	DeleteChar(Cursor->GetX(), Cursor->GetY());
+}
+
+void EditorBase::DeleteChar(int x, int y)
+{
+	Scrbuf->RemoveObject(GetObject(x, y));
 }
 
 void EditorBase::TypeString(std::string str)
@@ -584,6 +615,19 @@ void EditorBase::CopyChar()
 	else {
 		ClearClipboard();
 	}
+}
+
+void EditorBase::SetClipboardTile(int ch, int fgc, int bgc)
+{
+	if (Clipboard == NULL)
+		Clipboard = new SceneObject();
+
+	Clipboard->GetObj()->GetAnimation().Clear();
+	Clipboard->GetObj()->GetAnimation().AddNullFrame();
+	GetObjectFrame(Clipboard, 0).Index = ch;
+	GetObjectFrame(Clipboard, 0).ForeColorIx = fgc;
+	GetObjectFrame(Clipboard, 0).BackColorIx = bgc;
+	Clipboard->GetObj()->SetProperty("type", "tile");
 }
 
 void EditorBase::PasteChar()
