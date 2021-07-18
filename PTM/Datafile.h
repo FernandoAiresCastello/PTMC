@@ -16,6 +16,10 @@ public:
 	void SetProgram(Program* prog);
 	Charset* GetCharset();
 	Palette* GetPalette();
+	std::vector<SceneObject*>& GetTemplates();
+	void SetTemplate(std::string id, SceneObject* o);
+	SceneObject* GetTemplate(std::string id);
+	void DeleteObjTemplate(std::string id);
 
 private:
 	Charset* Chars;

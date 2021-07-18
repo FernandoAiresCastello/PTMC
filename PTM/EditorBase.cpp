@@ -83,7 +83,7 @@ void EditorBase::SetForeColor(int color)
 	ForeColor = color;
 	for (auto& it : Scrbuf->GetObjects()) {
 		Object* o = it.second->GetObj();
-		if (o->HasPropertyValue("type", "plain") || o->HasPropertyValue("type", "charset")) {
+		if (o->HasPropertyValue("type", "char") || o->HasPropertyValue("type", "charset")) {
 			GetObjectFrame(o, 0).ForeColorIx = color;
 		}
 	}
@@ -95,7 +95,7 @@ void EditorBase::SetBackColor(int color)
 	Scrbuf->SetBackObject(ObjectChar(0, color, color));
 	for (auto& it : Scrbuf->GetObjects()) {
 		Object* o = it.second->GetObj();
-		if (o->HasPropertyValue("type", "plain") || o->HasPropertyValue("type", "charset")) {
+		if (o->HasPropertyValue("type", "char") || o->HasPropertyValue("type", "charset")) {
 			GetObjectFrame(o, 0).BackColorIx = color;
 		}
 	}
@@ -363,7 +363,7 @@ void EditorBase::TypePlainChar(int ch)
 
 	o->SetScene(Scrbuf);
 	o->SetPosition(Cursor->GetX(), Cursor->GetY());
-	o->GetObj()->SetProperty("type", "plain");
+	o->GetObj()->SetProperty("type", "char");
 
 	ObjectChar och;
 
@@ -464,6 +464,29 @@ void EditorBase::TypeStringCrlf(std::string str)
 	Crlf();
 }
 
+void EditorBase::TypeTemplate(std::string id)
+{
+	SceneObject* o = Data->GetTemplate(id);
+	if (o != NULL) {
+		o->GetObj()->SetProperty("type", "template");
+		o->GetObj()->SetProperty("template_id", id);
+		TypeObject(*o->GetObj());
+	}
+}
+
+void EditorBase::TypeTileStack()
+{
+	for (int i = 0; i < TileStack.size(); i++) {
+		ObjectChar& ch = TileStack[i];
+		Object o;
+		o.GetAnimation().Clear();
+		o.GetAnimation().AddFrame(ch);
+		o.SetProperty("type", "tile");
+		TypeObject(o);
+	}
+	Crlf();
+}
+
 void EditorBase::PutPlainChar(int ch, int x, int y)
 {
 	SceneObject* o = GetObject(x, y);
@@ -472,7 +495,7 @@ void EditorBase::PutPlainChar(int ch, int x, int y)
 
 	o->SetScene(Scrbuf);
 	o->SetPosition(x, y);
-	o->GetObj()->SetProperty("type", "plain");
+	o->GetObj()->SetProperty("type", "char");
 
 	ObjectChar och;
 	och.Index = ch;
@@ -641,4 +664,25 @@ void EditorBase::PasteChar()
 void EditorBase::ClearClipboard()
 {
 	Clipboard = NULL;
+}
+
+void EditorBase::PushTile(int ix, int fgc, int bgc)
+{
+	TileStack.push_back(ObjectChar(ix, fgc, bgc));
+}
+
+void EditorBase::SetObjTemplate(std::string id)
+{
+	SceneObject o;
+	o.GetObj()->GetAnimation().Clear();
+	for (int i = 0; i < TileStack.size(); i++) {
+		o.GetObj()->GetAnimation().AddFrame(TileStack[i]);
+	}
+	Data->SetTemplate(id, &o);
+	TileStack.clear();
+}
+
+void EditorBase::DeleteObjTemplate(std::string id)
+{
+	Data->DeleteObjTemplate(id);
 }

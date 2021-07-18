@@ -41,6 +41,7 @@ protected:
 	std::string TopBorderText;
 	std::string BottomBorderText;
 	SceneObject* Clipboard;
+	std::vector<ObjectChar> TileStack;
 
 	virtual void OnStart();
 	virtual void OnLoop();
@@ -62,6 +63,8 @@ protected:
 	void DeleteChar(int x, int y);
 	void TypeString(std::string str);
 	void TypeStringCrlf(std::string str);
+	void TypeTemplate(std::string id);
+	void TypeTileStack();
 	void PutPlainChar(int ch, int x, int y);
 	void Crlf();
 	void ClearScreen();
@@ -81,4 +84,7 @@ protected:
 	void SetClipboardTile(int ch, int fgc, int bgc);
 	void PasteChar();
 	void ClearClipboard();
+	void PushTile(int ix, int fgc, int bgc);
+	void SetObjTemplate(std::string id);
+	void DeleteObjTemplate(std::string id);
 };

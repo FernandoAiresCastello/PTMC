@@ -3,6 +3,7 @@
 #include "CharEdit.h"
 
 #define ERR_SYNTAX_ERROR "Syntax error"
+#define ERR_TEMPLATE_NOT_FOUND "Template not found"
 
 CommandShell::CommandShell(Graphics* gr, Datafile* data) : EditorBase(gr, data)
 {
@@ -34,16 +35,18 @@ void CommandShell::OnLoop()
 
 	if (type == "")
 		BottomBorderText = "No type";
-	else if (type == "plain")
-		BottomBorderText = "Plain char";
+	else if (type == "char")
+		BottomBorderText = String::Format("Char:%i", ch.Index);
 	else if (type == "tile")
 		BottomBorderText = String::Format("Tile:%i,%i,%i", ch.Index, ch.ForeColorIx, ch.BackColorIx);
 	else if (type == "charset")
 		BottomBorderText = String::Format("Charset:%i", ch.Index);
 	else if (type == "palette")
 		BottomBorderText = String::Format("Palette:%i", ch.ForeColorIx);
+	else if (type == "template")
+		BottomBorderText = String::Format("Template:%s", o->GetObj()->GetPropertyAsString("template_id").c_str());
 	else
-		BottomBorderText = "Unrecognized type: " + type;
+		BottomBorderText = String::Format("Invalid type (%s)", type.c_str());
 }
 
 void CommandShell::TypeEnter()
@@ -53,7 +56,7 @@ void CommandShell::TypeEnter()
 	if (HasObject(Cursor->GetX(), Cursor->GetY()))
 		type = GetObjectType(Cursor->GetX(), Cursor->GetY());
 
-	if (type == "" || type == "plain") {
+	if (type == "" || type == "char") {
 		Crlf();
 		std::string line = GetStringInLine(Cursor->GetY() - 1);
 		if (!line.empty()) {
@@ -206,6 +209,70 @@ void CommandShell::InterpretLine(std::string line)
 			SetClipboardTile(i, fgc, bgc);
 		}
 	}
+	else if (cmd == "pushtp") {
+		if (params.size() != 3) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			int i = String::ToInt(params[0]);
+			int fgc = String::ToInt(params[1]);
+			int bgc = String::ToInt(params[2]);
+			PushTile(i, fgc, bgc);
+		}
+	}
+	else if (cmd == "tilestk") {
+		if (params.size() != 0) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			TypeTileStack();
+		}
+	}
+	else if (cmd == "settp") {
+		if (params.size() != 1) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			SetObjTemplate(params[0]);
+		}
+	}
+	else if (cmd == "deltp") {
+		if (params.size() != 1) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			std::string id = params[0];
+			if (Data->GetTemplate(id) != NULL) {
+				DeleteObjTemplate(params[0]);
+			}
+			else {
+				error = ERR_TEMPLATE_NOT_FOUND;
+			}
+		}
+	}
+	else if (cmd == "templates") {
+		if (params.size() != 0) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			PrintTemplates();
+		}
+	}
+	else if (cmd == "tp") {
+		if (params.size() != 1) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			std::string id = params[0];
+			if (Data->GetTemplate(id) != NULL) {
+				TypeTemplate(id);
+				Crlf();
+			}
+			else {
+				error = ERR_TEMPLATE_NOT_FOUND;
+			}
+		}
+	}
 	else {
 		error = ERR_SYNTAX_ERROR;
 	}
@@ -242,6 +309,16 @@ void CommandShell::PrintPalette(int first, int last)
 		if (Cursor->GetX() >= View->GetWidth() - 1) {
 			Crlf();
 		}
+	}
+	Crlf();
+}
+
+void CommandShell::PrintTemplates()
+{
+	auto& templates = Data->GetTemplates();
+	for (int i = 0; i < templates.size(); i++) {
+		SceneObject* o = templates[i];
+		TypeTemplate(o->GetObj()->GetPropertyAsString("temp_id"));
 	}
 	Crlf();
 }

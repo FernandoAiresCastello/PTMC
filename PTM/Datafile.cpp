@@ -47,3 +47,45 @@ Palette* Datafile::GetPalette()
 {
 	return Pal;
 }
+
+std::vector<SceneObject*>& Datafile::GetTemplates()
+{
+	return ObjTemplates;
+}
+
+void Datafile::SetTemplate(std::string id, SceneObject* o)
+{
+	SceneObject* templ = GetTemplate(id);
+	if (templ == NULL) {
+		templ = new SceneObject();
+		ObjTemplates.push_back(templ);
+	}
+
+	templ->SetEqual(o);
+	templ->GetObj()->SetProperty("temp_id", id);
+}
+
+SceneObject* Datafile::GetTemplate(std::string id)
+{
+	for (auto& templ : ObjTemplates) {
+		if (templ->GetObj()->GetPropertyAsString("temp_id") == id)
+			return templ;
+	}
+
+	return NULL;
+}
+
+void Datafile::DeleteObjTemplate(std::string id)
+{
+	int tempIndex = -1;
+	for (int i = 0; i < ObjTemplates.size(); i++) {
+		SceneObject* o = ObjTemplates[i];
+		if (o->GetObj()->GetPropertyAsString("temp_id") == id) {
+			tempIndex = i;
+			break;
+		}
+	}
+
+	if (tempIndex >= 0)
+		ObjTemplates.erase(ObjTemplates.begin() + tempIndex);
+}

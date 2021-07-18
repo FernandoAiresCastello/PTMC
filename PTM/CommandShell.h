@@ -23,4 +23,5 @@ private:
 	void InterpretLine(std::string line);
 	void PrintCharset(int first, int last);
 	void PrintPalette(int first, int last);
+	void PrintTemplates();
 };
