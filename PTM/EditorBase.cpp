@@ -619,6 +619,8 @@ bool EditorBase::HasObject(int x, int y)
 
 void EditorBase::PrintOnTopBorder()
 {
+	const int x = (Gr->Cols / 2) - (BottomBorderText.length() / 2);
+
 	Gr->Print(Data->GetCharset(), 0, 0,
 		Data->GetPalette()->Get(BorderTextColor)->ToInteger(),
 		Data->GetPalette()->Get(BorderColor)->ToInteger(), TopBorderText);
@@ -626,7 +628,9 @@ void EditorBase::PrintOnTopBorder()
 
 void EditorBase::PrintOnBottomBorder()
 {
-	Gr->Print(Data->GetCharset(), 0, Gr->Rows - 1,
+	const int x = (Gr->Cols / 2) - (BottomBorderText.length() / 2);
+
+	Gr->Print(Data->GetCharset(), x, Gr->Rows - 1,
 		Data->GetPalette()->Get(BorderTextColor)->ToInteger(),
 		Data->GetPalette()->Get(BorderColor)->ToInteger(), BottomBorderText);
 }
@@ -710,7 +714,6 @@ void EditorBase::EditChar(Graphics* gr, Datafile* data, int ch)
 		editor->Draw();
 		
 		BottomBorderText = String::Format("%02X %02X %02X %02X %02X %02X %02X %02X",
-			editor->CharIndex, 
 			pixelRow[0], pixelRow[1], pixelRow[2], pixelRow[3], 
 			pixelRow[4], pixelRow[5], pixelRow[6], pixelRow[7]);
 
