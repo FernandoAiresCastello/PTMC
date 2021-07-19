@@ -17,11 +17,11 @@ void Ui::DrawWindow(Datafile* data, Graphics* gr, int x, int y, int w, int h, in
 	gr->PutChar(data->GetCharset(), CHAR_BL, x + 0, y + h + 1, fgc, bgc);
 	gr->PutChar(data->GetCharset(), CHAR_BR, x + w + 1, y + h + 1, fgc, bgc);
 
-	for (int px = 1; px <= 8; px++) {
+	for (int px = 1; px <= w; px++) {
 		gr->PutChar(data->GetCharset(), CHAR_H, x + px, y + 0, fgc, bgc);
 		gr->PutChar(data->GetCharset(), CHAR_H, x + px, y + h + 1, fgc, bgc);
 	}
-	for (int py = 1; py <= 8; py++) {
+	for (int py = 1; py <= h; py++) {
 		gr->PutChar(data->GetCharset(), CHAR_V, x + 0, y + py, fgc, bgc);
 		gr->PutChar(data->GetCharset(), CHAR_V, x + w + 1, y + py, fgc, bgc);
 	}

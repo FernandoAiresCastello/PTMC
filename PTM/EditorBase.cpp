@@ -1,6 +1,7 @@
 #include <algorithm>
 #include "EditorBase.h"
 #include "CharEdit.h"
+#include "CharSelect.h"
 
 #define CHAR_LAYER 0
 
@@ -10,9 +11,6 @@ EditorBase::EditorBase(Graphics* gr, Datafile* data)
 	Data = data;
 	Running = false;
 	Scrbuf = new Scene();
-	Cursor = new SceneObject();
-	Cursor->SetScene(Scrbuf);
-	Cursor->SetLayer(1);
 	View = new SceneView(Gr, data->GetCharset(), data->GetPalette(), 400);
 	View->SetScene(Scrbuf);
 	View->SetPosition(1, 1);
@@ -21,6 +19,9 @@ EditorBase::EditorBase(Graphics* gr, Datafile* data)
 	SetBackColor(52);
 	SetBorderColor(50);
 	BorderTextColor = 55;
+	Cursor = new SceneObject();
+	Cursor->SetLayer(1);
+	Cursor->SetScene(Scrbuf);
 	Cursor->GetObj()->GetAnimation().Clear();
 	Cursor->GetObj()->GetAnimation().AddFrame(ObjectChar(0, ForeColor, BackColor));
 	Cursor->GetObj()->GetAnimation().AddFrame(ObjectChar(0, BackColor, ForeColor));
@@ -28,6 +29,8 @@ EditorBase::EditorBase(Graphics* gr, Datafile* data)
 	AllowClearBuffer = true;
 	AllowExitOnEscape = false;
 	ClearClipboard();
+	CharEditPos = Position(1, 1);
+	CharSelectPos = Position(1, 1);
 }
 
 EditorBase::~EditorBase()
@@ -690,13 +693,56 @@ void EditorBase::DeleteObjTemplate(std::string id)
 
 void EditorBase::EditChar(Graphics* gr, Datafile* data, int ch)
 {
-	CharEdit* editor = new CharEdit(Gr, Data, ch, ForeColor, BackColor);
+	CharEdit* editor = new CharEdit(gr, data);
+
+	editor->X = CharEditPos.X;
+	editor->Y = CharEditPos.Y;
+	editor->CharIndex = ch;
+	editor->ForeColor = ForeColor;
+	editor->BackColor = BackColor;
+	editor->InitPixelBuffer();
+
 	editor->Running = true;
+
 	while (editor->Running) {
 		Draw();
 		editor->Draw();
 		Gr->Update();
 		editor->HandleEvents();
 	}
+
+	CharEditPos.X = editor->X;
+	CharEditPos.Y = editor->Y;
+
 	delete editor;
+}
+
+int EditorBase::SelectChar(Graphics* gr, Datafile* data)
+{
+	CharSelect* select = new CharSelect(gr, data);
+
+	select->X = CharSelectPos.X;
+	select->Y = CharSelectPos.Y;
+	select->ForeColor = ForeColor;
+	select->BackColor = BackColor;
+	select->CharsPerRow = 16;
+	select->InitChars();
+
+	select->Running = true;
+
+	while (select->Running) {
+		Draw();
+		select->Draw();
+		BottomBorderText = String::Format("Charset:%i", select->GetSelectedChar());
+		PrintOnBottomBorder();
+		Gr->Update();
+		select->HandleEvents();
+	}
+
+	int selected = select->GetSelectedChar();
+	CharSelectPos.X = select->X;
+	CharSelectPos.Y = select->Y;
+	
+	delete select;
+	return selected;
 }

@@ -2,28 +2,28 @@
 
 #include <TBRLGPT.h>
 #include "Datafile.h"
-#include "EditorBase.h"
 using namespace TBRLGPT;
 
 class CharEdit
 {
 public:
 	bool Running;
-	static int X;
-	static int Y;
+	int X;
+	int Y;
+	int CharIndex;
+	int ForeColor;
+	int BackColor;
 
-	CharEdit(Graphics* gr, Datafile* data, int ch, int fgc, int bgc);
+	CharEdit(Graphics* gr, Datafile* data);
 	~CharEdit();
 
 	void Draw();
 	void HandleEvents();
+	void InitPixelBuffer();
 
 private:
 	Graphics* Gr;
 	Datafile* Data;
-	int CharIndex;
-	int ForeColor;
-	int BackColor;
 	char Buffer[64];
 	char OriginalPixels[64];
 	int CursorX;
@@ -32,7 +32,6 @@ private:
 	void ToggleCurrentPixel();
 	void SetCurrentPixel(int value);
 	void ClearChar();
-	void InitPixelBuffer();
 	void UpdateChar();
 	void RevertChar();
 };

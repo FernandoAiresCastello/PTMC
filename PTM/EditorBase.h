@@ -42,6 +42,8 @@ protected:
 	std::string BottomBorderText;
 	SceneObject* Clipboard;
 	std::vector<ObjectChar> TileStack;
+	Position CharEditPos;
+	Position CharSelectPos;
 
 	virtual void OnStart();
 	virtual void OnLoop();
@@ -88,4 +90,5 @@ protected:
 	void SetObjTemplate(std::string id);
 	void DeleteObjTemplate(std::string id);
 	void EditChar(Graphics* gr, Datafile* data, int ch);
+	int SelectChar(Graphics* gr, Datafile* data);
 };

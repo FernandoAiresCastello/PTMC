@@ -2,6 +2,7 @@
 #include <TBRLGPT.h>
 #include "Machine.h"
 #include "Datafile.h"
+#include "EditorBase.h"
 #include "CommandShell.h"
 using namespace TBRLGPT;
 
@@ -18,7 +19,7 @@ int main(int argc, char** argv)
 	Graphics* gr = new Graphics(w, h, zoom * w, zoom * h, false);
 	gr->SetWindowTitle("PTM");
 	Datafile* data = new Datafile();
-	CommandShell* sh = new CommandShell(gr, data);
+	EditorBase* sh = new CommandShell(gr, data);
 	sh->Run();
 	delete sh;
 	delete data;

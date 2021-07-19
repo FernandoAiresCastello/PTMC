@@ -1,16 +1,12 @@
 #include "CharEdit.h"
 #include "Ui.h"
 
-int CharEdit::X;
-int CharEdit::Y;
-
-CharEdit::CharEdit(Graphics* gr, Datafile* data, int ch, int fgc, int bgc)
+CharEdit::CharEdit(Graphics* gr, Datafile* data)
 {
 	Gr = gr;
 	Data = data;
-	CharIndex = ch;
-	ForeColor = fgc;
-	BackColor = bgc;
+	X = 1;
+	Y = 1;
 	CursorX = 0;
 	CursorY = 0;
 	Running = false;
@@ -129,7 +125,13 @@ void CharEdit::HandleEvents()
 			RevertChar();
 		}
 		else if (key == SDLK_RETURN) {
-			Running = false;
+			if (alt) {
+				Gr->ToggleFullscreen();
+				Gr->Update();
+			}
+			else {
+				Running = false;
+			}
 		}
 		else if (key == SDLK_RIGHT) {
 			if (alt) {

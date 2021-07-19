@@ -8,8 +8,6 @@
 CommandShell::CommandShell(Graphics* gr, Datafile* data) : EditorBase(gr, data)
 {
 	ProgEditor = new ProgramEditor(gr, data);
-	CharEdit::X = Gr->Cols / 2 - 5;
-	CharEdit::Y = Gr->Rows / 2 - 5;
 }
 
 CommandShell::~CommandShell()
@@ -148,7 +146,19 @@ void CommandShell::InterpretLine(std::string line)
 			error = ERR_SYNTAX_ERROR;
 		}
 		else {
-			(String::ToInt(params[0]), String::ToInt(params[0]));
+			Cursor->GetObj()->SetVisible(false);
+			EditChar(Gr, Data, String::ToInt(params[0]));
+			Cursor->GetObj()->SetVisible(true);
+		}
+	}
+	else if (cmd == "selchar") {
+		if (params.size() != 0) {
+			error = ERR_SYNTAX_ERROR;
+		}
+		else {
+			Cursor->GetObj()->SetVisible(false);
+			SelectChar(Gr, Data);
+			Cursor->GetObj()->SetVisible(true);
 		}
 	}
 	else if (cmd == "char") {
