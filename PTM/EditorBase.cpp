@@ -701,12 +701,20 @@ void EditorBase::EditChar(Graphics* gr, Datafile* data, int ch)
 	editor->ForeColor = ForeColor;
 	editor->BackColor = BackColor;
 	editor->InitPixelBuffer();
+	byte* pixelRow = Data->GetCharset()->Get(ch);
 
 	editor->Running = true;
 
 	while (editor->Running) {
 		Draw();
 		editor->Draw();
+		
+		BottomBorderText = String::Format("%02X %02X %02X %02X %02X %02X %02X %02X",
+			editor->CharIndex, 
+			pixelRow[0], pixelRow[1], pixelRow[2], pixelRow[3], 
+			pixelRow[4], pixelRow[5], pixelRow[6], pixelRow[7]);
+
+		PrintOnBottomBorder();
 		Gr->Update();
 		editor->HandleEvents();
 	}

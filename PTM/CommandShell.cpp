@@ -24,7 +24,7 @@ void CommandShell::OnLoop()
 {
 	SceneObject* o = GetObjectUnderCursor();
 	if (o == NULL) {
-		BottomBorderText = "Null";
+		BottomBorderText = "";
 		return;
 	}
 
@@ -40,7 +40,10 @@ void CommandShell::OnLoop()
 	else if (type == "charset")
 		BottomBorderText = String::Format("Charset:%i", ch.Index);
 	else if (type == "palette")
-		BottomBorderText = String::Format("Palette:%i", ch.ForeColorIx);
+		BottomBorderText = String::Format("Palette:%i (%02X %02X %02X)", ch.ForeColorIx, 
+			Data->GetPalette()->Get(ch.ForeColorIx)->R, 
+			Data->GetPalette()->Get(ch.ForeColorIx)->G, 
+			Data->GetPalette()->Get(ch.ForeColorIx)->B);
 	else if (type == "template")
 		BottomBorderText = String::Format("Template:%s", o->GetObj()->GetPropertyAsString("template_id").c_str());
 	else
