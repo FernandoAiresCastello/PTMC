@@ -12,7 +12,6 @@ public:
 	int Y;
 	int Width;
 	int Height;
-	int CharsPerRow;
 	int ForeColor;
 	int BackColor;
 	bool Cancelled;

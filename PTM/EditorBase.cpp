@@ -76,7 +76,7 @@ void EditorBase::TypeEnter()
 
 void EditorBase::Draw()
 {
-	Gr->Clear(Data->GetPalette()->Get(BorderColor)->ToInteger());
+	Gr->Clear(Data->GetPalette()->GetRGB(BorderColor));
 	View->Draw();
 	PrintOnTopBorder();
 	PrintOnBottomBorder();
@@ -622,8 +622,8 @@ void EditorBase::PrintOnTopBorder()
 	const int x = (Gr->Cols / 2) - (BottomBorderText.length() / 2);
 
 	Gr->Print(Data->GetCharset(), 0, 0,
-		Data->GetPalette()->Get(BorderTextColor)->ToInteger(),
-		Data->GetPalette()->Get(BorderColor)->ToInteger(), TopBorderText);
+		Data->GetPalette()->GetRGB(BorderTextColor),
+		Data->GetPalette()->GetRGB(BorderColor), TopBorderText);
 }
 
 void EditorBase::PrintOnBottomBorder()
@@ -631,8 +631,8 @@ void EditorBase::PrintOnBottomBorder()
 	const int x = (Gr->Cols / 2) - (BottomBorderText.length() / 2);
 
 	Gr->Print(Data->GetCharset(), x, Gr->Rows - 1,
-		Data->GetPalette()->Get(BorderTextColor)->ToInteger(),
-		Data->GetPalette()->Get(BorderColor)->ToInteger(), BottomBorderText);
+		Data->GetPalette()->GetRGB(BorderTextColor),
+		Data->GetPalette()->GetRGB(BorderColor), BottomBorderText);
 }
 
 void EditorBase::CopyChar()
@@ -705,7 +705,7 @@ void EditorBase::EditChar(Graphics* gr, Datafile* data, int ch)
 	editor->ForeColor = ForeColor;
 	editor->BackColor = BackColor;
 	editor->InitPixelBuffer();
-	byte* pixelRow = Data->GetCharset()->Get(ch);
+	Char& charRows = Data->GetCharset()->Get(ch);
 
 	editor->Running = true;
 
@@ -714,8 +714,8 @@ void EditorBase::EditChar(Graphics* gr, Datafile* data, int ch)
 		editor->Draw();
 		
 		BottomBorderText = String::Format("%02X %02X %02X %02X %02X %02X %02X %02X",
-			pixelRow[0], pixelRow[1], pixelRow[2], pixelRow[3], 
-			pixelRow[4], pixelRow[5], pixelRow[6], pixelRow[7]);
+			charRows.PixelRow0, charRows.PixelRow1, charRows.PixelRow2, charRows.PixelRow3, 
+			charRows.PixelRow4, charRows.PixelRow5, charRows.PixelRow6, charRows.PixelRow7);
 
 		PrintOnBottomBorder();
 		Gr->Update();
@@ -736,7 +736,6 @@ int EditorBase::SelectChar(Graphics* gr, Datafile* data)
 	select->Y = CharSelectPos.Y;
 	select->ForeColor = ForeColor;
 	select->BackColor = BackColor;
-	select->CharsPerRow = 16;
 	select->InitChars();
 
 	select->Running = true;

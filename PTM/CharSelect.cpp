@@ -9,8 +9,8 @@ CharSelect::CharSelect(Graphics* gr, Datafile* data)
 	Y = 1;
 	Width = 16;
 	Height = 16;
-	CharsPerRow = 16;
 	CharScene = new Scene();
+	CharScene->SetBounds(0, 0, Width - 1, Data->GetCharset()->GetSize() / Width - 1);
 	InitChars();
 	View = new SceneView(gr, Data->GetCharset(), Data->GetPalette(), 250);
 	View->SetScene(CharScene);
@@ -65,9 +65,7 @@ void CharSelect::HandleEvents()
 				X++;
 			}
 			else {
-				if (Cursor->GetX() < CharsPerRow - 1) {
-					Cursor->Move(1, 0);
-				}
+				Cursor->Move(1, 0);
 			}
 		}
 		else if (key == SDLK_LEFT) {
@@ -75,9 +73,7 @@ void CharSelect::HandleEvents()
 				X--;
 			}
 			else {
-				if (Cursor->GetX() > 0) {
-					Cursor->Move(-1, 0);
-				}
+				Cursor->Move(-1, 0);
 			}
 		}
 		else if (key == SDLK_DOWN) {
@@ -96,11 +92,9 @@ void CharSelect::HandleEvents()
 				Y--;
 			}
 			else {
-				if (Cursor->GetY() > 0) {
-					Cursor->Move(0, -1);
-					if (Cursor->GetY() < View->GetScrollY()) {
-						View->Scroll(0, -1);
-					}
+				Cursor->Move(0, -1);
+				if (Cursor->GetY() < View->GetScrollY()) {
+					View->Scroll(0, -1);
 				}
 			}
 		}
@@ -114,24 +108,24 @@ void CharSelect::InitChars()
 
 	CharScene->Clear();
 
-	for (int i = 0; i < Charset::Size; i++) {
+	for (int i = 0; i < Data->GetCharset()->GetSize(); i++) {
 		SceneObject* o = new SceneObject();
+		o->SetScene(CharScene);
 		o->SetPosition(x, y, 0);
 		o->GetObj()->GetAnimation().Clear();
 		o->GetObj()->GetAnimation().AddFrame(ObjectChar(i, ForeColor, BackColor));
 		o->GetObj()->SetProperty("index", i);
-		o->SetScene(CharScene);
 		CharScene->AddObject(o);
 		x++;
-		if (x >= CharSelect::CharsPerRow) {
+		if (x >= Width) {
 			x = 0;
 			y++;
 		}
 	}
 
 	Cursor = new SceneObject();
-	Cursor->SetLayer(1);
 	Cursor->SetScene(CharScene);
+	Cursor->SetLayer(1);
 	Cursor->GetObj()->GetAnimation().Clear();
 	Cursor->GetObj()->GetAnimation().AddFrame(ObjectChar(0, ForeColor, BackColor));
 	Cursor->GetObj()->GetAnimation().AddFrame(ObjectChar(0, BackColor, ForeColor));

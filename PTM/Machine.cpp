@@ -174,15 +174,15 @@ void Machine::DefaultPutChar(int ch, int x, int y, int fgc, int bgc)
 void Machine::Print(std::string text, int x, int y, int fgc, int bgc)
 {
 	Gr->Print(Data->GetCharset(), x, y, 
-		Data->GetPalette()->Get(fgc)->ToInteger(), 
-		Data->GetPalette()->Get(bgc)->ToInteger(), text);
+		Data->GetPalette()->GetRGB(fgc), 
+		Data->GetPalette()->GetRGB(bgc), text);
 }
 
 void Machine::PutChar(int ch, int x, int y, int fgc, int bgc)
 {
 	Gr->PutChar(Data->GetCharset(), ch, x, y,
-		Data->GetPalette()->Get(fgc)->ToInteger(),
-		Data->GetPalette()->Get(bgc)->ToInteger());
+		Data->GetPalette()->GetRGB(fgc),
+		Data->GetPalette()->GetRGB(bgc));
 }
 
 void Machine::ClearScreen(int bgc)
@@ -443,7 +443,7 @@ void Machine::C_ClearScreen()
 	}
 
 	int palIndex = ResolveNumber(Line->GetParam(0));
-	int color = Data->GetPalette()->Get(palIndex)->ToInteger();
+	int color = Data->GetPalette()->GetRGB(palIndex);
 	Gr->Clear(color);
 }
 

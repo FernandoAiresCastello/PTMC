@@ -25,8 +25,8 @@ void CharEdit::Draw()
 	const int bit1 = 219;
 	const int selBit0 = 250;
 	const int selBit1 = 254;
-	const int fgc = Data->GetPalette()->Get(ForeColor)->ToInteger();
-	const int bgc = Data->GetPalette()->Get(BackColor)->ToInteger();
+	const int fgc = Data->GetPalette()->GetRGB(ForeColor);
+	const int bgc = Data->GetPalette()->GetRGB(BackColor);
 
 	for (int y = 0; y < 8; y++) {
 		for (int x = 0; x < 8; x++) {
@@ -74,30 +74,15 @@ void CharEdit::ClearChar()
 
 void CharEdit::InitPixelBuffer()
 {
-	byte* pixels = Data->GetCharset()->Get(CharIndex);
-	int bufferIx = 0;
-
-	for (int row = 0; row < Char::Height; row++) {
-		const unsigned int& bits = pixels[row];
-		for (int pos = Char::Width - 1; pos >= 0; pos--, bufferIx++) {
-			int pixelOn = (bits & (1 << pos));
-			Buffer[bufferIx] = pixelOn ? '1' : '0';
-			OriginalPixels[bufferIx] = Buffer[bufferIx];
-		}
-	}
+	Char& ch = Data->GetCharset()->Get(CharIndex);
+	ch.ToBinaryString(Buffer);
+	ch.ToBinaryString(OriginalPixels);
 }
 
 void CharEdit::UpdateChar()
 {
-	byte* pixels = Data->GetCharset()->Get(CharIndex);
-
-	for (int row = 0; row < Char::Height; row++) {
-		std::string rowbits = "";
-		for (int col = 0; col < Char::Width; col++)
-			rowbits += Buffer[col + (row * Char::Width)];
-
-		pixels[row] = (byte)strtol(rowbits.c_str(), NULL, 2);
-	}
+	Char& ch = Data->GetCharset()->Get(CharIndex);
+	ch.SetFromBinaryString(Buffer);
 }
 
 void CharEdit::RevertChar()

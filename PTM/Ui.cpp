@@ -9,8 +9,8 @@
 
 void Ui::DrawWindow(Datafile* data, Graphics* gr, int x, int y, int w, int h, int fgcix, int bgcix)
 {
-	const int fgc = data->GetPalette()->Get(fgcix)->ToInteger();
-	const int bgc = data->GetPalette()->Get(bgcix)->ToInteger();
+	const int fgc = data->GetPalette()->GetRGB(fgcix);
+	const int bgc = data->GetPalette()->GetRGB(bgcix);
 
 	gr->PutChar(data->GetCharset(), CHAR_TL, x + 0, y + 0, fgc, bgc);
 	gr->PutChar(data->GetCharset(), CHAR_TR, x + w + 1, y + 0, fgc, bgc);
