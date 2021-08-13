@@ -16,6 +16,8 @@ public:
 	~ProgramLine();
 
 	void Parse(std::string& src);
+	void ParseParams(std::string& rawParams);
+	int GetParamCount();
 	Parameter* NextParam();
 	Parameter* GetParam(int ix = 0);
 

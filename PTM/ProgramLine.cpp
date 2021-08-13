@@ -32,12 +32,55 @@ void ProgramLine::Parse(std::string& src)
 
 	if (firstSpaceIx >= 0) {
 		Command = TString::ToUpper(src.substr(0, firstSpaceIx));
-		std::string rawParam = src.substr(firstSpaceIx);
-		Params.push_back(new Parameter(rawParam));
+		std::string rawParams = src.substr(firstSpaceIx);
+		ParseParams(rawParams);
 	}
 	else {
 		Command = TString::ToUpper(src);
 	}
+}
+
+void ProgramLine::ParseParams(std::string& rawParams)
+{
+	if (!TString::Contains(rawParams, '"')) {
+		auto params = TString::Split(rawParams, ' ');
+		for (auto& param : params) {
+			if (!param.empty())
+				Params.push_back(new Parameter(param));
+		}
+		return;
+	}
+
+	std::stringstream curParam;
+	bool quote = false;
+	char ch = 0;
+	int i = 0;
+
+	while (true) {
+		ch = rawParams[i];
+		i++;
+		if (ch == '"') {
+			quote = !quote;
+			curParam.put(ch);
+		}
+		else if (ch == ' ' && !quote) {
+			std::string param = curParam.str();
+			curParam.str("");
+			if (!param.empty())
+				Params.push_back(new Parameter(param));
+		}
+		else {
+			curParam.put(ch);
+		}
+		if (i >= rawParams.size()) {
+			break;
+		}
+	}
+}
+
+int ProgramLine::GetParamCount()
+{
+	return Params.size();
 }
 
 Parameter* ProgramLine::NextParam()

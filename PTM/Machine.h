@@ -22,6 +22,7 @@ public:
 
 private:
 	bool Running;
+	bool Halted;
 	std::map<std::string, void(Machine::*)()> CmdMap;
 	std::vector<ProgramLine*> Program;
 	std::map<std::string, int> Labels;
@@ -29,9 +30,23 @@ private:
 	int ProgramPtr;
 	ProgramLine* CurrentLine;
 	TWindow* Win;
+	TPalette* Pal;
+	TCharset* Chars;
+	int BackColor;
+	TBoard* Board;
+	TBoardView* View;
 
-	void Abort(std::string msg);
+	void Abort(std::string msg, bool showSource = true);
+	Parameter Pop();
+	int PopNumber();
+	std::string PopString();
 	void InitCommandMap();
+
 	void C_Nop();
+	void C_Exit();
+	void C_Halt();
 	void C_Push();
+	void C_WindowOpen();
+	void C_WindowClear();
+	void C_WindowUpdate();
 };
