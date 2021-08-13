@@ -1,10 +1,16 @@
-#include <SDL.h>
-#include <TileGameLib.h>
-using namespace TileGameLib;
+#include "Machine.h"
+#include "ProgramEditor.h"
 
 int main(int argc, char** args)
 {
-	TWindow win(256, 192, 3, false);
+	Machine* machine = new Machine();
+	machine->LoadProgram("main.prg");
+	machine->Run();
+	delete machine;
+
+	//ProgramEditor* editor = new ProgramEditor();
+	//editor->Run();
+	//delete editor;
 
 	return 0;
 }

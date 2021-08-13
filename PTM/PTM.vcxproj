@@ -128,7 +128,45 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Machine.cpp">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Parameter.cpp">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="ProgramEditor.cpp">
+      <SubType>
+      </SubType>
+    </ClCompile>
+    <ClCompile Include="ProgramLine.cpp">
+      <SubType>
+      </SubType>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Machine.h">
+      <SubType>
+      </SubType>
+    </ClInclude>
+    <ClInclude Include="Parameter.h">
+      <SubType>
+      </SubType>
+    </ClInclude>
+    <ClInclude Include="ParameterType.h">
+      <SubType>
+      </SubType>
+    </ClInclude>
+    <ClInclude Include="ProgramEditor.h">
+      <SubType>
+      </SubType>
+    </ClInclude>
+    <ClInclude Include="ProgramLine.h">
+      <SubType>
+      </SubType>
+    </ClInclude>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
