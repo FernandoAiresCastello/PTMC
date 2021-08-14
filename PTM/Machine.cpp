@@ -1,3 +1,4 @@
+#include <Windows.h>
 #include "Machine.h"
 
 #define CMD(cmd,fn) CmdMap[cmd] = &Machine::fn
@@ -13,6 +14,9 @@ Machine::Machine()
 	BackColor = 0;
 	Board = nullptr;
 	View = nullptr;
+	BoardCursor.X = 0;
+	BoardCursor.Y = 0;
+	BoardCursor.Layer = 0;
 
 	InitCommandMap();
 }
@@ -24,6 +28,12 @@ Machine::~Machine()
 		Program[i] = nullptr;
 	}
 	Program.clear();
+
+	for (auto& temp : ObjTemplates) {
+		delete temp.second;
+		temp.second = nullptr;
+	}
+	ObjTemplates.clear();
 
 	delete Win;
 }
@@ -137,13 +147,30 @@ std::string Machine::PopString()
 
 void Machine::InitCommandMap()
 {
+	// === System ===
 	CMD("NOP", C_Nop);
 	CMD("EXIT", C_Exit);
 	CMD("HALT", C_Halt);
+	// === Stack ===
 	CMD("PUSH", C_Push);
+	CMD("DUP", C_DuplicateStackItem);
+	// === Window ===
 	CMD("WINDOW.OPEN", C_WindowOpen);
 	CMD("WINDOW.CLEAR", C_WindowClear);
 	CMD("WINDOW.UPDATE", C_WindowUpdate);
+	// === Palette ===
+	CMD("PAL.CLEAR", C_PaletteClear);
+	CMD("PAL.SET", C_PaletteSet);
+	// === Charset ===
+	CMD("CHR.CLEAR", C_CharsetClear);
+	CMD("CHR.SET", C_CharsetSet);
+	// === Map ===
+	CMD("MAP.CURSOR.SET", C_MapCursorSet);
+	CMD("MAP.TILE.ADD", C_MapTileAdd);
+	CMD("MAP.OBJT.PUT", C_MapObjectTemplatePut);
+	// === Object templates ===
+	CMD("OBJT.NEW", C_ObjectTemplateCreate);
+	CMD("OBJT.TILE.ADD", C_ObjectTemplateTileAdd);
 }
 
 void Machine::C_Nop()
@@ -165,6 +192,11 @@ void Machine::C_Push()
 {
 	for (int i = 0; i < CurrentLine->GetParamCount(); i++)
 		ParamStack.push(Parameter(*CurrentLine->NextParam()));
+}
+
+void Machine::C_DuplicateStackItem()
+{
+	ParamStack.push(ParamStack.top());
 }
 
 void Machine::C_WindowOpen()
@@ -195,4 +227,95 @@ void Machine::C_WindowClear()
 void Machine::C_WindowUpdate()
 {
 	Win->Update();
+}
+
+void Machine::C_PaletteClear()
+{
+	Pal->Clear();
+}
+
+void Machine::C_PaletteSet()
+{
+	int b = PopNumber();
+	int g = PopNumber();
+	int r = PopNumber();
+	int index = PopNumber();
+
+	Pal->Set(index, r, g, b);
+}
+
+void Machine::C_CharsetClear()
+{
+	Chars->Clear();
+}
+
+void Machine::C_CharsetSet()
+{
+	int row7 = PopNumber();
+	int row6 = PopNumber();
+	int row5 = PopNumber();
+	int row4 = PopNumber();
+	int row3 = PopNumber();
+	int row2 = PopNumber();
+	int row1 = PopNumber();
+	int row0 = PopNumber();
+	int chr = PopNumber();
+
+	Chars->Set(chr, row0, row1, row2, row3, row4, row5, row6, row7);
+}
+
+void Machine::C_MapCursorSet()
+{
+	BoardCursor.Layer = PopNumber();
+	BoardCursor.Y = PopNumber();
+	BoardCursor.X = PopNumber();
+}
+
+void Machine::C_MapTileAdd()
+{
+	int bgc = PopNumber();
+	int fgc = PopNumber();
+	int chr = PopNumber();
+
+	TObject* o = Board->GetObjectAt(BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
+
+	if (o == nullptr) {
+		o = new TObject(chr, fgc, bgc);
+		Board->PutObject(o, BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
+	}
+	else {
+		o->AddTile(chr, fgc, bgc);
+	}
+}
+
+void Machine::C_MapObjectTemplatePut()
+{
+	ObjectTemplate* temp = ObjTemplates[PopString()];
+
+	TObject* o = Board->GetObjectAt(BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
+	if (o != nullptr)
+		Board->DeleteObject(BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
+	
+	Board->PutObject(new TObject(*temp->Obj), BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
+}
+
+void Machine::C_ObjectTemplateCreate()
+{
+	std::string id = PopString();
+	
+	ObjectTemplate* temp = new ObjectTemplate();
+	temp->Id = id;
+	temp->Obj = new TObject();
+
+	ObjTemplates[id] = temp;
+}
+
+void Machine::C_ObjectTemplateTileAdd()
+{
+	int bgc = PopNumber();
+	int fgc = PopNumber();
+	int chr = PopNumber();
+	std::string id = PopString();
+
+	ObjTemplates[id]->Obj->AddTile(chr, fgc, bgc);
 }

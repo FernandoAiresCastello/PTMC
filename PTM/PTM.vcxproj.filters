@@ -2,16 +2,51 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Machine.cpp" />
-    <ClCompile Include="Parameter.cpp" />
-    <ClCompile Include="ProgramLine.cpp" />
-    <ClCompile Include="ProgramEditor.cpp" />
+    <ClCompile Include="ProgramLine.cpp">
+      <Filter>Program</Filter>
+    </ClCompile>
+    <ClCompile Include="Parameter.cpp">
+      <Filter>Program</Filter>
+    </ClCompile>
+    <ClCompile Include="Machine.cpp">
+      <Filter>Machine</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectTemplate.cpp">
+      <Filter>Machine</Filter>
+    </ClCompile>
+    <ClCompile Include="ProgramEditor.cpp">
+      <Filter>Editors</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Machine.h" />
-    <ClInclude Include="ParameterType.h" />
-    <ClInclude Include="Parameter.h" />
-    <ClInclude Include="ProgramLine.h" />
-    <ClInclude Include="ProgramEditor.h" />
+    <ClInclude Include="ProgramLine.h">
+      <Filter>Program</Filter>
+    </ClInclude>
+    <ClInclude Include="Parameter.h">
+      <Filter>Program</Filter>
+    </ClInclude>
+    <ClInclude Include="ParameterType.h">
+      <Filter>Program</Filter>
+    </ClInclude>
+    <ClInclude Include="Machine.h">
+      <Filter>Machine</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectTemplate.h">
+      <Filter>Machine</Filter>
+    </ClInclude>
+    <ClInclude Include="ProgramEditor.h">
+      <Filter>Editors</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Program">
+      <UniqueIdentifier>{566bdbe8-36c9-4f94-9fee-4fc32797aeb1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Machine">
+      <UniqueIdentifier>{c7abbf58-d8ac-4045-a1f4-20f5251edf07}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Editors">
+      <UniqueIdentifier>{6f18c09b-f428-49c7-b341-ae78e97220df}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

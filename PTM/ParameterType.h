@@ -6,5 +6,5 @@ enum class ParameterType
 	Number,
 	String,
 	Variable,
-	Label
+	Identifier
 };

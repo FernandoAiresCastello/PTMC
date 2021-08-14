@@ -75,10 +75,11 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level1</WarningLevel>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Fernando\Lib\SDL2-2.0.8\include;C:\Fernando\Proj\TileGameToolkit\TileGameLib\TileGameLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -133,6 +134,10 @@
       </SubType>
     </ClCompile>
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="ObjectTemplate.cpp">
+      <SubType>
+      </SubType>
+    </ClCompile>
     <ClCompile Include="Parameter.cpp">
       <SubType>
       </SubType>
@@ -148,6 +153,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Machine.h">
+      <SubType>
+      </SubType>
+    </ClInclude>
+    <ClInclude Include="ObjectTemplate.h">
       <SubType>
       </SubType>
     </ClInclude>

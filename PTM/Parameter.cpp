@@ -26,7 +26,7 @@ Parameter::Parameter(std::string& str)
 		String = TString::Skip(str, 1);
 	}
 	else {
-		Type = ParameterType::Label;
+		Type = ParameterType::Identifier;
 		Number = 0;
 		String = str;
 	}

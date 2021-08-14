@@ -1,13 +1,13 @@
 #pragma once
-#include <Windows.h>
 #include <map>
 #include <stack>
 #include <string>
 #include <vector>
 #include <SDL.h>
-#include <TileGameLib.h>
 #include "Machine.h"
 #include "ProgramLine.h"
+#include "ObjectTemplate.h"
+#include <TileGameLib.h>
 using namespace TileGameLib;
 
 class Machine
@@ -36,6 +36,14 @@ private:
 	TBoard* Board;
 	TBoardView* View;
 
+	struct {
+		int X;
+		int Y;
+		int Layer;
+	} BoardCursor;
+
+	std::map<std::string, ObjectTemplate*> ObjTemplates;
+
 	void Abort(std::string msg, bool showSource = true);
 	Parameter Pop();
 	int PopNumber();
@@ -46,7 +54,17 @@ private:
 	void C_Exit();
 	void C_Halt();
 	void C_Push();
+	void C_DuplicateStackItem();
 	void C_WindowOpen();
 	void C_WindowClear();
 	void C_WindowUpdate();
+	void C_PaletteClear();
+	void C_PaletteSet();
+	void C_CharsetClear();
+	void C_CharsetSet();
+	void C_MapCursorSet();
+	void C_MapTileAdd();
+	void C_MapObjectTemplatePut();
+	void C_ObjectTemplateCreate();
+	void C_ObjectTemplateTileAdd();
 };
