@@ -12,8 +12,8 @@ Machine::Machine()
 	Pal = TPalette::Default;
 	Chars = TCharset::Default;
 	BackColor = 0;
-	Board = nullptr;
-	View = nullptr;
+	SelectedBoard = nullptr;
+	SelectedView = nullptr;
 	BoardCursor.X = 0;
 	BoardCursor.Y = 0;
 	BoardCursor.Layer = 0;
@@ -34,6 +34,18 @@ Machine::~Machine()
 		temp.second = nullptr;
 	}
 	ObjTemplates.clear();
+
+	for (auto& view : Views) {
+		delete view.second;
+		view.second = nullptr;
+	}
+	Views.clear();
+
+	for (auto& map : Maps) {
+		delete map.second;
+		map.second = nullptr;
+	}
+	Maps.clear();
 
 	delete Win;
 }
@@ -67,8 +79,11 @@ void Machine::Run()
 	Running = true;
 
 	while (Running) {
-		if (View) {
-			View->Draw();
+		if (Win) {
+			Win->Clear(Pal, BackColor);
+			for (auto& view : Views) {
+				view.second->Draw();
+			}
 			Win->Update();
 		}
 
@@ -167,6 +182,11 @@ void Machine::InitCommandMap()
 	CMD("CHR.CLEAR", C_CharsetClear);
 	CMD("CHR.SET", C_CharsetSet);
 	// === Map ===
+	CMD("MAP.SELECT", C_MapSelect);
+	CMD("MAP.VIEW.SELECT", C_MapViewSelect);
+	CMD("MAP.VIEW.ENABLE", C_MapViewEnable);
+	CMD("MAP.VIEW.DISABLE", C_MapViewDisable);
+	CMD("MAP.LOAD", C_MapLoad);
 	CMD("MAP.LAYER.ADD", C_NotImplemented);
 	CMD("MAP.CURSOR.SET", C_MapCursorSet);
 	CMD("MAP.TILE.ADD", C_MapTileAdd);
@@ -222,8 +242,12 @@ void Machine::C_WindowOpen()
 	int w = PopNumber();
 
 	Win = new TWindow(w, h, zoom, fullscreen);
-	Board = new TBoard(Win->Cols, Win->Rows, 1);
-	View = new TBoardView(Board, Win, Chars, Pal, 0, 0, Win->Cols, Win->Rows, 255);
+
+	const std::string defaultId = "__default__";
+	Maps[defaultId] = new TBoard(Win->Cols, Win->Rows, 1);
+	Views[defaultId] = new TBoardView(Maps[defaultId], Win, Chars, Pal, 0, 0, Win->Cols, Win->Rows, 255);
+	SelectedBoard = Maps[defaultId];
+	SelectedView = Views[defaultId];
 }
 
 void Machine::C_WindowClear()
@@ -315,6 +339,80 @@ void Machine::C_CharsetSet()
 	Chars->Set(chr, row0, row1, row2, row3, row4, row5, row6, row7);
 }
 
+void Machine::C_MapSelect()
+{
+	std::string id = PopString();
+	SelectedBoard = Maps[id];
+}
+
+void Machine::C_MapViewSelect()
+{
+	std::string id = PopString();
+	SelectedView = Views[id];
+}
+
+void Machine::C_MapViewEnable()
+{
+	SelectedView->SetEnabled(true);
+}
+
+void Machine::C_MapViewDisable()
+{
+	SelectedView->SetEnabled(false);
+}
+
+void Machine::C_MapLoad()
+{
+	std::string file = PopString();
+	std::string id = PopString();
+
+	auto lines = TFile::ReadLines(file);
+	std::string name = TString::Trim(lines[0]);
+	std::string sizeStr = TString::Trim(lines[1]);
+	auto size = TString::Split(sizeStr, ' ');
+	int width = TString::ToInt(TString::Trim(size[0]));
+	int height = TString::ToInt(TString::Trim(size[1]));
+	int layers = TString::ToInt(TString::Trim(size[2]));
+
+	TBoard* map = new TBoard(width, height, layers);
+	if (Maps.find(id) != Maps.end()) {
+		delete Maps[id];
+		Maps.erase(id);
+	}
+	Maps[id] = map;
+
+	int lineIndex = 2;
+	std::string line = "";
+	while (line.empty()) {
+		line = TString::Trim(lines[lineIndex]);
+		lineIndex++;
+		if (lineIndex >= lines.size())
+			break;
+	}
+	lineIndex--;
+
+	int layer = 0;
+	int x = 0;
+	int y = 0;
+
+	for (lineIndex; lineIndex < lines.size(); lineIndex++) {
+		line = TString::Trim(lines[lineIndex]);
+		if (line.empty())
+			continue;
+
+		auto data = TString::Split(line, ' ');
+		if (TString::ToLower(data[0]) == "end") {
+			layer++;
+			x = 0;
+			y = 0;
+			continue;
+		}
+
+		int count = TString::ToInt(TString::Trim(data[0]));
+		std::string id = TString::Trim(data[1]);
+	}
+}
+
 void Machine::C_MapCursorSet()
 {
 	BoardCursor.Layer = PopNumber();
@@ -328,11 +426,11 @@ void Machine::C_MapTileAdd()
 	int fgc = PopNumber();
 	int chr = PopNumber();
 
-	TObject* o = Board->GetObjectAt(BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
+	TObject* o = SelectedBoard->GetObjectAt(BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
 
 	if (o == nullptr) {
 		o = new TObject(chr, fgc, bgc);
-		Board->PutObject(o, BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
+		SelectedBoard->PutObject(o, BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
 	}
 	else {
 		o->AddTile(chr, fgc, bgc);
@@ -343,11 +441,11 @@ void Machine::C_MapObjectTemplatePut()
 {
 	ObjectTemplate* temp = ObjTemplates[PopString()];
 
-	TObject* o = Board->GetObjectAt(BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
+	TObject* o = SelectedBoard->GetObjectAt(BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
 	if (o != nullptr)
-		Board->DeleteObject(BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
+		SelectedBoard->DeleteObject(BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
 	
-	Board->PutObject(new TObject(*temp->Obj), BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
+	SelectedBoard->PutObject(new TObject(*temp->Obj), BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
 }
 
 void Machine::C_ObjectTemplatesLoad()

@@ -33,8 +33,10 @@ private:
 	TPalette* Pal;
 	TCharset* Chars;
 	int BackColor;
-	TBoard* Board;
-	TBoardView* View;
+	std::map<std::string, TBoard*> Maps;
+	std::map<std::string, TBoardView*> Views;
+	TBoard* SelectedBoard;
+	TBoardView* SelectedView;
 
 	struct {
 		int X;
@@ -65,6 +67,11 @@ private:
 	void C_CharsetLoad();
 	void C_CharsetClear();
 	void C_CharsetSet();
+	void C_MapSelect();
+	void C_MapViewSelect();
+	void C_MapViewEnable();
+	void C_MapViewDisable();
+	void C_MapLoad();
 	void C_MapCursorSet();
 	void C_MapTileAdd();
 	void C_MapObjectTemplatePut();
