@@ -42,6 +42,8 @@ void ProgramLine::Parse(std::string& src)
 
 void ProgramLine::ParseParams(std::string& rawParams)
 {
+	rawParams = TString::Trim(rawParams);
+
 	if (!TString::Contains(rawParams, '"')) {
 		auto params = TString::Split(rawParams, ' ');
 		for (auto& param : params) {
@@ -73,6 +75,8 @@ void ProgramLine::ParseParams(std::string& rawParams)
 			curParam.put(ch);
 		}
 		if (i >= rawParams.size()) {
+			std::string param = curParam.str();
+			Params.push_back(new Parameter(param));
 			break;
 		}
 	}

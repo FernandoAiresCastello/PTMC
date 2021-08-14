@@ -159,18 +159,28 @@ void Machine::InitCommandMap()
 	CMD("WINDOW.CLEAR", C_WindowClear);
 	CMD("WINDOW.UPDATE", C_WindowUpdate);
 	// === Palette ===
+	CMD("PAL.LOAD", C_PaletteLoad);
 	CMD("PAL.CLEAR", C_PaletteClear);
 	CMD("PAL.SET", C_PaletteSet);
 	// === Charset ===
+	CMD("CHR.LOAD", C_CharsetLoad);
 	CMD("CHR.CLEAR", C_CharsetClear);
 	CMD("CHR.SET", C_CharsetSet);
 	// === Map ===
+	CMD("MAP.LAYER.ADD", C_NotImplemented);
 	CMD("MAP.CURSOR.SET", C_MapCursorSet);
 	CMD("MAP.TILE.ADD", C_MapTileAdd);
 	CMD("MAP.OBJT.PUT", C_MapObjectTemplatePut);
+	CMD("MAP.OBJ.GRAB", C_NotImplemented);
 	// === Object templates ===
+	CMD("OBJT.LOAD", C_ObjectTemplatesLoad);
 	CMD("OBJT.NEW", C_ObjectTemplateCreate);
 	CMD("OBJT.TILE.ADD", C_ObjectTemplateTileAdd);
+}
+
+void Machine::C_NotImplemented()
+{
+	Abort("Command not implemented");
 }
 
 void Machine::C_Nop()
@@ -212,10 +222,8 @@ void Machine::C_WindowOpen()
 	int w = PopNumber();
 
 	Win = new TWindow(w, h, zoom, fullscreen);
-	Board = new TBoard(Win->Cols, Win->Rows, 2);
+	Board = new TBoard(Win->Cols, Win->Rows, 1);
 	View = new TBoardView(Board, Win, Chars, Pal, 0, 0, Win->Cols, Win->Rows, 255);
-
-	Win->Clear(Pal, BackColor);
 }
 
 void Machine::C_WindowClear()
@@ -227,6 +235,28 @@ void Machine::C_WindowClear()
 void Machine::C_WindowUpdate()
 {
 	Win->Update();
+}
+
+void Machine::C_PaletteLoad()
+{
+	std::string file = PopString();
+	auto lines = TFile::ReadLines(file);
+	int index = 0;
+
+	for (auto& line : lines) {
+		line = TString::Trim(line);
+		if (line.empty())
+			continue;
+
+		auto rgb = TString::Split(line, ' ');
+		int r = TString::ToInt(rgb[0]);
+		int g = TString::ToInt(rgb[1]);
+		int b = TString::ToInt(rgb[2]);
+
+		Pal->Set(index, r, g, b);
+
+		index++;
+	}
 }
 
 void Machine::C_PaletteClear()
@@ -242,6 +272,27 @@ void Machine::C_PaletteSet()
 	int index = PopNumber();
 
 	Pal->Set(index, r, g, b);
+}
+
+void Machine::C_CharsetLoad()
+{
+	std::string file = PopString();
+	auto lines = TFile::ReadLines(file);
+	int data[9] = { 0 };
+	int lineIndex = 0;
+
+	for (auto& line : lines) {
+		line = TString::Trim(line);
+		if (line.empty())
+			continue;
+
+		data[lineIndex] = TString::ToInt(line);
+		lineIndex++;
+		if (lineIndex == 9) {
+			Chars->Set(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8]);
+			lineIndex = 0;
+		}
+	}
 }
 
 void Machine::C_CharsetClear()
@@ -297,6 +348,111 @@ void Machine::C_MapObjectTemplatePut()
 		Board->DeleteObject(BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
 	
 	Board->PutObject(new TObject(*temp->Obj), BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
+}
+
+void Machine::C_ObjectTemplatesLoad()
+{
+	std::string file = PopString();
+	auto lines = TFile::ReadLines(file);
+	TTileSequence ts;
+	ObjectTemplate* temp = nullptr;
+	TObject* o = nullptr;
+
+	for (auto& line : lines) {
+		line = TString::Trim(line);
+		if (line.empty())
+			continue;
+
+		int ixFirstSpace = TString::FindFirst(line, ' ');
+		std::string what = TString::ToLower(TString::Trim(line.substr(0, ixFirstSpace)));
+		if (what == "end") {
+			ObjTemplates[temp->Id] = temp;
+			continue;
+		}
+
+		std::string data = TString::Trim(line.substr(ixFirstSpace));
+
+		if (what == "id") {
+			o = new TObject();
+			temp = new ObjectTemplate();
+			temp->Id = data;
+			temp->Obj = o;
+		}
+		else if (what == "ts") {
+			ts.DeleteAll();
+			auto tiles = TString::Split(data, ',');
+			for (auto& tile : tiles) {
+				auto tileData = TString::Split(tile, ' ');
+				ts.Add(TString::ToInt(tileData[0]), TString::ToInt(tileData[1]), TString::ToInt(tileData[2]));
+			}
+			o->SetTilesEqual(&ts);
+		}
+		else if (what == "p") {
+			ixFirstSpace = TString::FindFirst(data, '=');
+			std::string prop = TString::Trim(data.substr(0, ixFirstSpace));
+			std::string value = TString::Trim(data.substr(ixFirstSpace + 1));
+			o->SetProperty(prop, value);
+		}
+	}
+}
+
+void Machine::C_ObjectTemplatesLoad2()
+{
+	std::string file = PopString();
+	auto lines = TFile::ReadLines(file);
+	std::string id = "";
+	TTileSequence tileseq;
+	bool tileseqParsed = false;
+	TObject* o = new TObject();
+
+	for (auto& line : lines) {
+		line = TString::Trim(line);
+		if (line.empty())
+			continue;
+		if (id.empty()) {
+			id = line;
+			continue;
+		}
+		else if (!tileseqParsed) {
+			auto rawTileseq = TString::Split(line, ' ');
+			TTile tile;
+			int tiledatIndex = 0;
+			for (auto& tiledat : rawTileseq) {
+				if (tiledatIndex == 0)
+					tile.Char = TString::ToInt(tiledat);
+				else if (tiledatIndex == 1)
+					tile.ForeColor = TString::ToInt(tiledat);
+				else if (tiledatIndex == 2)
+					tile.BackColor = TString::ToInt(tiledat);
+
+				tiledatIndex++;
+				if (tiledatIndex > 2) {
+					tiledatIndex = 0;
+					tileseq.Add(tile);
+				}
+			}
+			tileseqParsed = true;
+			continue;
+		}
+		
+		if (tileseqParsed && TString::ToLower(line) != "end") {
+			int ixFirstEqualSign = TString::FindFirst(line, '=');
+			std::string prop = TString::Trim(line.substr(0, ixFirstEqualSign));
+			std::string value = TString::Trim(line.substr(ixFirstEqualSign));
+			o->SetProperty(prop, value);
+		}
+
+		if (TString::ToLower(line) == "end") {
+			o = new TObject();
+			o->SetTilesEqual(&tileseq);
+			ObjectTemplate* temp = new ObjectTemplate();
+			temp->Id = id;
+			temp->Obj = o;
+			id = "";
+			tileseq.Clear();
+			ObjTemplates[temp->Id] = temp;
+		}
+	}
 }
 
 void Machine::C_ObjectTemplateCreate()
