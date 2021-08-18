@@ -3,6 +3,8 @@
 
 #define CMD(cmd,fn) CmdMap[cmd] = &Machine::fn
 
+#define SDLK_BREAK 1073742048
+
 Machine::Machine()
 {
 	Running = false;
@@ -82,7 +84,8 @@ void Machine::Run()
 		if (Win) {
 			Win->Clear(Pal, BackColor);
 			for (auto& view : Views) {
-				view.second->Draw();
+				if (view.second->GetBoard() != nullptr)
+					view.second->Draw();
 			}
 			Win->Update();
 		}
@@ -98,9 +101,8 @@ void Machine::Run()
 				Win->ToggleFullscreen();
 				Win->Update();
 			}
-			else if (e.key.keysym.sym == 1073742048 /* BREAK key */) {
-				Running = false;
-				break;
+			else if (e.key.keysym.sym == SDLK_BREAK) {
+				SDL_TriggerBreakpoint();
 			}
 		}
 
@@ -162,8 +164,10 @@ std::string Machine::PopString()
 
 void Machine::InitCommandMap()
 {
-	// === System ===
 	CMD("NOP", C_Nop);
+	// === Debugging ===
+	CMD("BREAK", C_Breakpoint);
+	// === Execution flow ===
 	CMD("EXIT", C_Exit);
 	CMD("HALT", C_Halt);
 	// === Stack ===
@@ -181,21 +185,22 @@ void Machine::InitCommandMap()
 	CMD("CHR.LOAD", C_CharsetLoad);
 	CMD("CHR.CLEAR", C_CharsetClear);
 	CMD("CHR.SET", C_CharsetSet);
-	// === Map ===
-	CMD("MAP.SELECT", C_MapSelect);
-	CMD("MAP.VIEW.SELECT", C_MapViewSelect);
-	CMD("MAP.VIEW.ENABLE", C_MapViewEnable);
-	CMD("MAP.VIEW.DISABLE", C_MapViewDisable);
-	CMD("MAP.LOAD", C_MapLoad);
-	CMD("MAP.LAYER.ADD", C_NotImplemented);
-	CMD("MAP.CURSOR.SET", C_MapCursorSet);
-	CMD("MAP.TILE.ADD", C_MapTileAdd);
-	CMD("MAP.OBJT.PUT", C_MapObjectTemplatePut);
-	CMD("MAP.OBJ.GRAB", C_NotImplemented);
 	// === Object templates ===
 	CMD("OBJT.LOAD", C_ObjectTemplatesLoad);
 	CMD("OBJT.NEW", C_ObjectTemplateCreate);
 	CMD("OBJT.TILE.ADD", C_ObjectTemplateTileAdd);
+	// === Map ===
+	CMD("MAP.NEW", C_MapCreate);
+	CMD("MAP.SELECT", C_MapSelect);
+	CMD("MAP.LOAD", C_MapLoad);
+	CMD("MAP.CURSOR.SET", C_MapCursorSet);
+	CMD("MAP.TILE.ADD", C_MapTileAdd);
+	CMD("MAP.OBJT.PUT", C_MapObjectTemplatePut);
+	// === Map view ===
+	CMD("MAP.VIEW.NEW", C_MapViewCreate);
+	CMD("MAP.VIEW.SELECT", C_MapViewSelect);
+	CMD("MAP.VIEW.SHOW", C_MapViewEnable);
+	CMD("MAP.VIEW.HIDE", C_MapViewDisable);
 }
 
 void Machine::C_NotImplemented()
@@ -216,6 +221,11 @@ void Machine::C_Exit()
 void Machine::C_Halt()
 {
 	Halted = true;
+}
+
+void Machine::C_Breakpoint()
+{
+	SDL_TriggerBreakpoint();
 }
 
 void Machine::C_Push()
@@ -242,12 +252,6 @@ void Machine::C_WindowOpen()
 	int w = PopNumber();
 
 	Win = new TWindow(w, h, zoom, fullscreen);
-
-	const std::string defaultId = "__default__";
-	Maps[defaultId] = new TBoard(Win->Cols, Win->Rows, 1);
-	Views[defaultId] = new TBoardView(Maps[defaultId], Win, Chars, Pal, 0, 0, Win->Cols, Win->Rows, 255);
-	SelectedBoard = Maps[defaultId];
-	SelectedView = Views[defaultId];
 }
 
 void Machine::C_WindowClear()
@@ -272,13 +276,7 @@ void Machine::C_PaletteLoad()
 		if (line.empty())
 			continue;
 
-		auto rgb = TString::Split(line, ' ');
-		int r = TString::ToInt(rgb[0]);
-		int g = TString::ToInt(rgb[1]);
-		int b = TString::ToInt(rgb[2]);
-
-		Pal->Set(index, r, g, b);
-
+		Pal->Set(index, TString::ToInt(line));
 		index++;
 	}
 }
@@ -339,10 +337,115 @@ void Machine::C_CharsetSet()
 	Chars->Set(chr, row0, row1, row2, row3, row4, row5, row6, row7);
 }
 
+void Machine::C_ObjectTemplatesLoad()
+{
+	std::string file = PopString();
+	auto lines = TFile::ReadLines(file);
+	TTileSequence ts;
+	ObjectTemplate* temp = nullptr;
+	TObject* o = nullptr;
+
+	for (auto& line : lines) {
+		line = TString::Trim(line);
+		if (line.empty())
+			continue;
+
+		int ixFirstSpace = TString::FindFirst(line, ' ');
+		std::string what = TString::ToLower(TString::Trim(line.substr(0, ixFirstSpace)));
+		if (what == "end") {
+			ObjTemplates[temp->Id] = temp;
+			continue;
+		}
+
+		std::string data = TString::Trim(line.substr(ixFirstSpace));
+
+		if (what == "id") {
+			o = new TObject();
+			temp = new ObjectTemplate();
+			temp->Id = data;
+			temp->Obj = o;
+		}
+		else if (what == "ts") {
+			ts.DeleteAll();
+			auto tiles = TString::Split(data, ',');
+			for (auto& tile : tiles) {
+				auto tileData = TString::Split(tile, ' ');
+				ts.Add(TString::ToInt(tileData[0]), TString::ToInt(tileData[1]), TString::ToInt(tileData[2]));
+			}
+			o->SetTilesEqual(&ts);
+		}
+		else if (what == "p") {
+			ixFirstSpace = TString::FindFirst(data, '=');
+			std::string prop = TString::Trim(data.substr(0, ixFirstSpace));
+			std::string value = TString::Trim(data.substr(ixFirstSpace + 1));
+			o->SetProperty(prop, value);
+		}
+	}
+}
+
+void Machine::C_ObjectTemplateCreate()
+{
+	std::string id = PopString();
+
+	ObjectTemplate* temp = new ObjectTemplate();
+	temp->Id = id;
+	temp->Obj = new TObject();
+
+	ObjTemplates[id] = temp;
+}
+
+void Machine::C_ObjectTemplateTileAdd()
+{
+	int bgc = PopNumber();
+	int fgc = PopNumber();
+	int chr = PopNumber();
+	std::string id = PopString();
+
+	ObjTemplates[id]->Obj->AddTile(chr, fgc, bgc);
+}
+
+void Machine::C_MapCreate()
+{
+	int layers = PopNumber();
+	int height = PopNumber();
+	int width = PopNumber();
+	std::string id = PopString();
+	
+	if (Maps.find(id) == Maps.end())
+		Maps[id] = new TBoard(width, height, layers);
+	else
+		Abort("Duplicated map id: " + id);
+}
+
 void Machine::C_MapSelect()
 {
 	std::string id = PopString();
-	SelectedBoard = Maps[id];
+	if (Maps.find(id) != Maps.end())
+		SelectedBoard = Maps[id];
+	else
+		Abort("Map not found with id: " + id);
+}
+
+void Machine::C_MapViewCreate()
+{
+	int animDelay = PopNumber();
+	int height = PopNumber();
+	int width = PopNumber();
+	int y = PopNumber();
+	int x = PopNumber();
+	std::string id = PopString();
+
+	if (Views.find(id) == Views.end())
+		if (Maps[id] != nullptr) {
+			Views[id] = new TBoardView(Maps[id], Win, Chars, Pal, x, y, width, height, animDelay);
+			Views[id]->SetEnabled(false);
+		}
+		else {
+			Abort("Referenced map not found: " + id);
+		}
+	else {
+		Abort("Duplicated view id: " + id);
+	}
 }
 
 void Machine::C_MapViewSelect()
@@ -353,12 +456,14 @@ void Machine::C_MapViewSelect()
 
 void Machine::C_MapViewEnable()
 {
-	SelectedView->SetEnabled(true);
+	std::string id = PopString();
+	Views[id]->SetEnabled(true);
 }
 
 void Machine::C_MapViewDisable()
 {
-	SelectedView->SetEnabled(false);
+	std::string id = PopString();
+	Views[id]->SetEnabled(false);
 }
 
 void Machine::C_MapLoad()
@@ -409,7 +514,23 @@ void Machine::C_MapLoad()
 		}
 
 		int count = TString::ToInt(TString::Trim(data[0]));
-		std::string id = TString::Trim(data[1]);
+		std::string tempId = TString::Trim(data[1]);
+
+		for (int i = 0; i < count; i++) {
+			if (tempId == "<null>") {
+				map->DeleteObject(x, y, layer);
+			}
+			else {
+				TObject* o = new TObject(*ObjTemplates[tempId]->Obj);
+				map->PutObject(o, x, y, layer);
+			}
+
+			x++;
+			if (x >= width) {
+				x = 0;
+				y++;
+			}
+		}
 	}
 }
 
@@ -446,130 +567,4 @@ void Machine::C_MapObjectTemplatePut()
 		SelectedBoard->DeleteObject(BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
 	
 	SelectedBoard->PutObject(new TObject(*temp->Obj), BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
-}
-
-void Machine::C_ObjectTemplatesLoad()
-{
-	std::string file = PopString();
-	auto lines = TFile::ReadLines(file);
-	TTileSequence ts;
-	ObjectTemplate* temp = nullptr;
-	TObject* o = nullptr;
-
-	for (auto& line : lines) {
-		line = TString::Trim(line);
-		if (line.empty())
-			continue;
-
-		int ixFirstSpace = TString::FindFirst(line, ' ');
-		std::string what = TString::ToLower(TString::Trim(line.substr(0, ixFirstSpace)));
-		if (what == "end") {
-			ObjTemplates[temp->Id] = temp;
-			continue;
-		}
-
-		std::string data = TString::Trim(line.substr(ixFirstSpace));
-
-		if (what == "id") {
-			o = new TObject();
-			temp = new ObjectTemplate();
-			temp->Id = data;
-			temp->Obj = o;
-		}
-		else if (what == "ts") {
-			ts.DeleteAll();
-			auto tiles = TString::Split(data, ',');
-			for (auto& tile : tiles) {
-				auto tileData = TString::Split(tile, ' ');
-				ts.Add(TString::ToInt(tileData[0]), TString::ToInt(tileData[1]), TString::ToInt(tileData[2]));
-			}
-			o->SetTilesEqual(&ts);
-		}
-		else if (what == "p") {
-			ixFirstSpace = TString::FindFirst(data, '=');
-			std::string prop = TString::Trim(data.substr(0, ixFirstSpace));
-			std::string value = TString::Trim(data.substr(ixFirstSpace + 1));
-			o->SetProperty(prop, value);
-		}
-	}
-}
-
-void Machine::C_ObjectTemplatesLoad2()
-{
-	std::string file = PopString();
-	auto lines = TFile::ReadLines(file);
-	std::string id = "";
-	TTileSequence tileseq;
-	bool tileseqParsed = false;
-	TObject* o = new TObject();
-
-	for (auto& line : lines) {
-		line = TString::Trim(line);
-		if (line.empty())
-			continue;
-		if (id.empty()) {
-			id = line;
-			continue;
-		}
-		else if (!tileseqParsed) {
-			auto rawTileseq = TString::Split(line, ' ');
-			TTile tile;
-			int tiledatIndex = 0;
-			for (auto& tiledat : rawTileseq) {
-				if (tiledatIndex == 0)
-					tile.Char = TString::ToInt(tiledat);
-				else if (tiledatIndex == 1)
-					tile.ForeColor = TString::ToInt(tiledat);
-				else if (tiledatIndex == 2)
-					tile.BackColor = TString::ToInt(tiledat);
-
-				tiledatIndex++;
-				if (tiledatIndex > 2) {
-					tiledatIndex = 0;
-					tileseq.Add(tile);
-				}
-			}
-			tileseqParsed = true;
-			continue;
-		}
-		
-		if (tileseqParsed && TString::ToLower(line) != "end") {
-			int ixFirstEqualSign = TString::FindFirst(line, '=');
-			std::string prop = TString::Trim(line.substr(0, ixFirstEqualSign));
-			std::string value = TString::Trim(line.substr(ixFirstEqualSign));
-			o->SetProperty(prop, value);
-		}
-
-		if (TString::ToLower(line) == "end") {
-			o = new TObject();
-			o->SetTilesEqual(&tileseq);
-			ObjectTemplate* temp = new ObjectTemplate();
-			temp->Id = id;
-			temp->Obj = o;
-			id = "";
-			tileseq.Clear();
-			ObjTemplates[temp->Id] = temp;
-		}
-	}
-}
-
-void Machine::C_ObjectTemplateCreate()
-{
-	std::string id = PopString();
-	
-	ObjectTemplate* temp = new ObjectTemplate();
-	temp->Id = id;
-	temp->Obj = new TObject();
-
-	ObjTemplates[id] = temp;
-}
-
-void Machine::C_ObjectTemplateTileAdd()
-{
-	int bgc = PopNumber();
-	int fgc = PopNumber();
-	int chr = PopNumber();
-	std::string id = PopString();
-
-	ObjTemplates[id]->Obj->AddTile(chr, fgc, bgc);
 }

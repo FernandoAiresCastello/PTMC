@@ -54,6 +54,7 @@ private:
 
 	void C_NotImplemented();
 	void C_Nop();
+	void C_Breakpoint();
 	void C_Exit();
 	void C_Halt();
 	void C_Push();
@@ -67,7 +68,12 @@ private:
 	void C_CharsetLoad();
 	void C_CharsetClear();
 	void C_CharsetSet();
+	void C_ObjectTemplatesLoad();
+	void C_ObjectTemplateCreate();
+	void C_ObjectTemplateTileAdd();
+	void C_MapCreate();
 	void C_MapSelect();
+	void C_MapViewCreate();
 	void C_MapViewSelect();
 	void C_MapViewEnable();
 	void C_MapViewDisable();
@@ -75,8 +81,4 @@ private:
 	void C_MapCursorSet();
 	void C_MapTileAdd();
 	void C_MapObjectTemplatePut();
-	void C_ObjectTemplatesLoad();
-	void C_ObjectTemplatesLoad2();
-	void C_ObjectTemplateCreate();
-	void C_ObjectTemplateTileAdd();
 };
