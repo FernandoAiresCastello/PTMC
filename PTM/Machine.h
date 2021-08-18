@@ -10,17 +10,20 @@
 #include <TileGameLib.h>
 using namespace TileGameLib;
 
+#define CMD(cmd,fn) CmdMap[cmd] = &Machine::fn
+
 class Machine
 {
 public:
 	Machine();
-	Machine(const Machine& other) = delete;
 	~Machine();
 
 	void LoadProgram(std::string filename);
 	void Run();
 
 private:
+	Machine(const Machine& other) = delete;
+
 	bool Running;
 	bool Halted;
 	std::map<std::string, void(Machine::*)()> CmdMap;
@@ -35,14 +38,13 @@ private:
 	int BackColor;
 	std::map<std::string, TBoard*> Maps;
 	std::map<std::string, TBoardView*> Views;
-	TBoard* SelectedBoard;
-	TBoardView* SelectedView;
+	TBoard* SelectedMap;
 
 	struct {
 		int X;
 		int Y;
 		int Layer;
-	} BoardCursor;
+	} MapCursor;
 
 	std::map<std::string, ObjectTemplate*> ObjTemplates;
 
@@ -59,6 +61,7 @@ private:
 	void C_Halt();
 	void C_Push();
 	void C_DuplicateStackItem();
+	void C_Pop();
 	void C_WindowOpen();
 	void C_WindowClear();
 	void C_WindowUpdate();
@@ -74,11 +77,11 @@ private:
 	void C_MapCreate();
 	void C_MapSelect();
 	void C_MapViewCreate();
-	void C_MapViewSelect();
 	void C_MapViewEnable();
 	void C_MapViewDisable();
 	void C_MapLoad();
 	void C_MapCursorSet();
 	void C_MapTileAdd();
 	void C_MapObjectTemplatePut();
+	void C_MapPutObjectString();
 };

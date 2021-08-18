@@ -1,9 +1,48 @@
 #include <Windows.h>
 #include "Machine.h"
 
-#define CMD(cmd,fn) CmdMap[cmd] = &Machine::fn
-
-#define SDLK_BREAK 1073742048
+void Machine::InitCommandMap()
+{
+	// ===[ SPECIAL ]===============================================================
+	CMD("NOP", C_Nop);
+	// ===[ DEBUGGING ]=============================================================
+	CMD("BREAK", C_Breakpoint);
+	// ===[ EXECUTION FLOW ]========================================================
+	CMD("EXIT", C_Exit);
+	CMD("HALT", C_Halt);
+	// ===[ STACK ]=================================================================
+	CMD("PUSH", C_Push);
+	CMD("DUP", C_DuplicateStackItem);
+	CMD("POP", C_Pop);
+	// ===[ WINDOW ]================================================================
+	CMD("WND.OPEN", C_WindowOpen);
+	CMD("WND.CLEAR", C_WindowClear);
+	CMD("WND.UPDATE", C_WindowUpdate);
+	// ===[ PALETTE ]===============================================================
+	CMD("PAL.LOAD", C_PaletteLoad);
+	CMD("PAL.CLEAR", C_PaletteClear);
+	CMD("PAL.SET", C_PaletteSet);
+	// ===[ CHARSET ]================================================================
+	CMD("CHR.LOAD", C_CharsetLoad);
+	CMD("CHR.CLEAR", C_CharsetClear);
+	CMD("CHR.SET", C_CharsetSet);
+	// ===[ OBJECT TEMPLATES ]=======================================================
+	CMD("OBJT.LOAD", C_ObjectTemplatesLoad);
+	CMD("OBJT.NEW", C_ObjectTemplateCreate);
+	CMD("OBJT.TILE.ADD", C_ObjectTemplateTileAdd);
+	// ===[ MAP VIEW ]===============================================================
+	CMD("MAP.VIEW.NEW", C_MapViewCreate);
+	CMD("MAP.VIEW.SHOW", C_MapViewEnable);
+	CMD("MAP.VIEW.HIDE", C_MapViewDisable);
+	// ===[ MAP ]====================================================================
+	CMD("MAP.NEW", C_MapCreate);
+	CMD("MAP.SELECT", C_MapSelect);
+	CMD("MAP.LOAD", C_MapLoad);
+	CMD("MAP.CURSOR.SET", C_MapCursorSet);
+	CMD("MAP.TILE.ADD", C_MapTileAdd);
+	CMD("MAP.OBJT.PUT", C_MapObjectTemplatePut);
+	CMD("MAP.STRING.PUT", C_MapPutObjectString);
+}
 
 Machine::Machine()
 {
@@ -14,11 +53,10 @@ Machine::Machine()
 	Pal = TPalette::Default;
 	Chars = TCharset::Default;
 	BackColor = 0;
-	SelectedBoard = nullptr;
-	SelectedView = nullptr;
-	BoardCursor.X = 0;
-	BoardCursor.Y = 0;
-	BoardCursor.Layer = 0;
+	SelectedMap = nullptr;
+	MapCursor.X = 0;
+	MapCursor.Y = 0;
+	MapCursor.Layer = 0;
 
 	InitCommandMap();
 }
@@ -101,7 +139,7 @@ void Machine::Run()
 				Win->ToggleFullscreen();
 				Win->Update();
 			}
-			else if (e.key.keysym.sym == SDLK_BREAK) {
+			else if (e.key.keysym.sym == SDLK_PAUSE) {
 				SDL_TriggerBreakpoint();
 			}
 		}
@@ -142,7 +180,7 @@ void Machine::Abort(std::string msg, bool showSource)
 Parameter Machine::Pop()
 {
 	if (ParamStack.empty()) {
-		Abort("Stack empty");
+		Abort("Empty parameter stack");
 		return Parameter();
 	}
 	else {
@@ -162,46 +200,7 @@ std::string Machine::PopString()
 	return Pop().String;
 }
 
-void Machine::InitCommandMap()
-{
-	CMD("NOP", C_Nop);
-	// === Debugging ===
-	CMD("BREAK", C_Breakpoint);
-	// === Execution flow ===
-	CMD("EXIT", C_Exit);
-	CMD("HALT", C_Halt);
-	// === Stack ===
-	CMD("PUSH", C_Push);
-	CMD("DUP", C_DuplicateStackItem);
-	// === Window ===
-	CMD("WINDOW.OPEN", C_WindowOpen);
-	CMD("WINDOW.CLEAR", C_WindowClear);
-	CMD("WINDOW.UPDATE", C_WindowUpdate);
-	// === Palette ===
-	CMD("PAL.LOAD", C_PaletteLoad);
-	CMD("PAL.CLEAR", C_PaletteClear);
-	CMD("PAL.SET", C_PaletteSet);
-	// === Charset ===
-	CMD("CHR.LOAD", C_CharsetLoad);
-	CMD("CHR.CLEAR", C_CharsetClear);
-	CMD("CHR.SET", C_CharsetSet);
-	// === Object templates ===
-	CMD("OBJT.LOAD", C_ObjectTemplatesLoad);
-	CMD("OBJT.NEW", C_ObjectTemplateCreate);
-	CMD("OBJT.TILE.ADD", C_ObjectTemplateTileAdd);
-	// === Map ===
-	CMD("MAP.NEW", C_MapCreate);
-	CMD("MAP.SELECT", C_MapSelect);
-	CMD("MAP.LOAD", C_MapLoad);
-	CMD("MAP.CURSOR.SET", C_MapCursorSet);
-	CMD("MAP.TILE.ADD", C_MapTileAdd);
-	CMD("MAP.OBJT.PUT", C_MapObjectTemplatePut);
-	// === Map view ===
-	CMD("MAP.VIEW.NEW", C_MapViewCreate);
-	CMD("MAP.VIEW.SELECT", C_MapViewSelect);
-	CMD("MAP.VIEW.SHOW", C_MapViewEnable);
-	CMD("MAP.VIEW.HIDE", C_MapViewDisable);
-}
+// ===[ COMMAND IMPLEMENTATION ]===============================================
 
 void Machine::C_NotImplemented()
 {
@@ -237,6 +236,11 @@ void Machine::C_Push()
 void Machine::C_DuplicateStackItem()
 {
 	ParamStack.push(ParamStack.top());
+}
+
+void Machine::C_Pop()
+{
+	Pop();
 }
 
 void Machine::C_WindowOpen()
@@ -421,7 +425,7 @@ void Machine::C_MapSelect()
 {
 	std::string id = PopString();
 	if (Maps.find(id) != Maps.end())
-		SelectedBoard = Maps[id];
+		SelectedMap = Maps[id];
 	else
 		Abort("Map not found with id: " + id);
 }
@@ -446,12 +450,6 @@ void Machine::C_MapViewCreate()
 	else {
 		Abort("Duplicated view id: " + id);
 	}
-}
-
-void Machine::C_MapViewSelect()
-{
-	std::string id = PopString();
-	SelectedView = Views[id];
 }
 
 void Machine::C_MapViewEnable()
@@ -536,9 +534,9 @@ void Machine::C_MapLoad()
 
 void Machine::C_MapCursorSet()
 {
-	BoardCursor.Layer = PopNumber();
-	BoardCursor.Y = PopNumber();
-	BoardCursor.X = PopNumber();
+	MapCursor.Layer = PopNumber();
+	MapCursor.Y = PopNumber();
+	MapCursor.X = PopNumber();
 }
 
 void Machine::C_MapTileAdd()
@@ -547,11 +545,11 @@ void Machine::C_MapTileAdd()
 	int fgc = PopNumber();
 	int chr = PopNumber();
 
-	TObject* o = SelectedBoard->GetObjectAt(BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
+	TObject* o = SelectedMap->GetObjectAt(MapCursor.X, MapCursor.Y, MapCursor.Layer);
 
 	if (o == nullptr) {
 		o = new TObject(chr, fgc, bgc);
-		SelectedBoard->PutObject(o, BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
+		SelectedMap->PutObject(o, MapCursor.X, MapCursor.Y, MapCursor.Layer);
 	}
 	else {
 		o->AddTile(chr, fgc, bgc);
@@ -562,9 +560,25 @@ void Machine::C_MapObjectTemplatePut()
 {
 	ObjectTemplate* temp = ObjTemplates[PopString()];
 
-	TObject* o = SelectedBoard->GetObjectAt(BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
+	TObject* o = SelectedMap->GetObjectAt(MapCursor.X, MapCursor.Y, MapCursor.Layer);
 	if (o != nullptr)
-		SelectedBoard->DeleteObject(BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
+		SelectedMap->DeleteObject(MapCursor.X, MapCursor.Y, MapCursor.Layer);
 	
-	SelectedBoard->PutObject(new TObject(*temp->Obj), BoardCursor.X, BoardCursor.Y, BoardCursor.Layer);
+	SelectedMap->PutObject(new TObject(*temp->Obj), MapCursor.X, MapCursor.Y, MapCursor.Layer);
+}
+
+void Machine::C_MapPutObjectString()
+{
+	std::string str = PopString();
+	int bgc = PopNumber();
+	int fgc = PopNumber();
+	int layer = PopNumber();
+	int y = PopNumber();
+	int x = PopNumber();
+
+	for (auto& ch : str) {
+		TObject* o = new TObject(ch, fgc, bgc);
+		SelectedMap->PutObject(o, x, y, layer);
+		x++;
+	}
 }
