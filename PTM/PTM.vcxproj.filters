@@ -17,6 +17,9 @@
     <ClCompile Include="ProgramEditor.cpp">
       <Filter>Editors</Filter>
     </ClCompile>
+    <ClCompile Include="Variable.cpp">
+      <Filter>Machine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ProgramLine.h">
@@ -36,6 +39,9 @@
     </ClInclude>
     <ClInclude Include="ProgramEditor.h">
       <Filter>Editors</Filter>
+    </ClInclude>
+    <ClInclude Include="Variable.h">
+      <Filter>Machine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

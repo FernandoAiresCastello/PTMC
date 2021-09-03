@@ -25,11 +25,21 @@ Parameter::Parameter(std::string& str)
 		Number = 0;
 		String = TString::Skip(str, 1);
 	}
+	else if (str == "=" || str == "!=" || str == "<" || str == ">" || str == "<=" || str == ">=") {
+		Type = ParameterType::Comparator;
+		Number = 0;
+		String = str;
+	}
 	else {
 		Type = ParameterType::Identifier;
 		Number = 0;
 		String = str;
 	}
+}
+
+Parameter::Parameter(std::string& str, ParameterType type) : Parameter(str)
+{
+	Type = type;
 }
 
 Parameter::Parameter(const Parameter& other)

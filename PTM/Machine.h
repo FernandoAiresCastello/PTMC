@@ -7,6 +7,8 @@
 #include "Machine.h"
 #include "ProgramLine.h"
 #include "ObjectTemplate.h"
+#include "Variable.h"
+#include "Parameter.h"
 #include <TileGameLib.h>
 using namespace TileGameLib;
 
@@ -24,6 +26,8 @@ public:
 private:
 	Machine(const Machine& other) = delete;
 
+	std::string ProgramFile;
+	std::string WindowTitle;
 	bool Running;
 	bool Halted;
 	std::map<std::string, void(Machine::*)()> CmdMap;
@@ -32,6 +36,7 @@ private:
 	std::stack<Parameter> ParamStack;
 	int ProgramPtr;
 	ProgramLine* CurrentLine;
+	std::map<std::string, Variable> Vars;
 	TWindow* Win;
 	TPalette* Pal;
 	TCharset* Chars;
@@ -48,11 +53,12 @@ private:
 
 	std::map<std::string, ObjectTemplate*> ObjTemplates;
 
+	void InitCommandMap();
 	void Abort(std::string msg, bool showSource = true);
 	Parameter Pop();
 	int PopNumber();
 	std::string PopString();
-	void InitCommandMap();
+	bool HasVariable(std::string var);
 
 	void C_NotImplemented();
 	void C_Nop();
@@ -62,9 +68,13 @@ private:
 	void C_Push();
 	void C_DuplicateStackItem();
 	void C_Pop();
+	void C_SetVariable();
+	void C_GetVariable();
+	void C_If();
 	void C_WindowOpen();
 	void C_WindowClear();
 	void C_WindowUpdate();
+	void C_WindowSetTitle();
 	void C_PaletteLoad();
 	void C_PaletteClear();
 	void C_PaletteSet();

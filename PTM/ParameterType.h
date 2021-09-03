@@ -6,5 +6,6 @@ enum class ParameterType
 	Number,
 	String,
 	Variable,
-	Identifier
+	Identifier,
+	Comparator
 };

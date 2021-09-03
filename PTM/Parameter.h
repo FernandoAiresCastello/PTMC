@@ -11,6 +11,7 @@ public:
 
 	Parameter();
 	Parameter(std::string& str);
+	Parameter(std::string& str, ParameterType type);
 	Parameter(const Parameter& other);
 	~Parameter();
 

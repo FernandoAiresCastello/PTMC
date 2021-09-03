@@ -3,38 +3,44 @@
 
 void Machine::InitCommandMap()
 {
-	// ===[ SPECIAL ]===============================================================
+	// ===[ SPECIAL ]==========================================================
 	CMD("NOP", C_Nop);
-	// ===[ DEBUGGING ]=============================================================
+	// ===[ DEBUGGING ]========================================================
 	CMD("BREAK", C_Breakpoint);
-	// ===[ EXECUTION FLOW ]========================================================
+	// ===[ EXECUTION FLOW ]===================================================
 	CMD("EXIT", C_Exit);
 	CMD("HALT", C_Halt);
-	// ===[ STACK ]=================================================================
+	// ===[ STACK ]============================================================
 	CMD("PUSH", C_Push);
 	CMD("DUP", C_DuplicateStackItem);
 	CMD("POP", C_Pop);
-	// ===[ WINDOW ]================================================================
+	// ===[ VARIABLES ]========================================================
+	CMD("VAR.SET", C_SetVariable);
+	CMD("VAR.GET", C_GetVariable);
+	// ===[ CONDITIONALS ]=====================================================
+	CMD("IF", C_If);
+	// ===[ WINDOW ]===========================================================
 	CMD("WND.OPEN", C_WindowOpen);
 	CMD("WND.CLEAR", C_WindowClear);
 	CMD("WND.UPDATE", C_WindowUpdate);
-	// ===[ PALETTE ]===============================================================
+	CMD("WND.TITLE.SET", C_WindowSetTitle);
+	// ===[ PALETTE ]==========================================================
 	CMD("PAL.LOAD", C_PaletteLoad);
 	CMD("PAL.CLEAR", C_PaletteClear);
 	CMD("PAL.SET", C_PaletteSet);
-	// ===[ CHARSET ]================================================================
+	// ===[ CHARSET ]==========================================================
 	CMD("CHR.LOAD", C_CharsetLoad);
 	CMD("CHR.CLEAR", C_CharsetClear);
 	CMD("CHR.SET", C_CharsetSet);
-	// ===[ OBJECT TEMPLATES ]=======================================================
+	// ===[ OBJECT TEMPLATES ]=================================================
 	CMD("OBJT.LOAD", C_ObjectTemplatesLoad);
 	CMD("OBJT.NEW", C_ObjectTemplateCreate);
 	CMD("OBJT.TILE.ADD", C_ObjectTemplateTileAdd);
-	// ===[ MAP VIEW ]===============================================================
+	// ===[ MAP VIEW ]=========================================================
 	CMD("MAP.VIEW.NEW", C_MapViewCreate);
 	CMD("MAP.VIEW.SHOW", C_MapViewEnable);
 	CMD("MAP.VIEW.HIDE", C_MapViewDisable);
-	// ===[ MAP ]====================================================================
+	// ===[ MAP ]==============================================================
 	CMD("MAP.NEW", C_MapCreate);
 	CMD("MAP.SELECT", C_MapSelect);
 	CMD("MAP.LOAD", C_MapLoad);
@@ -46,6 +52,8 @@ void Machine::InitCommandMap()
 
 Machine::Machine()
 {
+	ProgramFile = "";
+	WindowTitle = "";
 	Running = false;
 	Halted = false;
 	CurrentLine = nullptr;
@@ -92,6 +100,13 @@ Machine::~Machine()
 
 void Machine::LoadProgram(std::string filename)
 {
+	if (!TFile::Exists(filename)) {
+		Abort("Program file not found: " + filename, false);
+		return;
+	}
+
+	ProgramFile = filename;
+	WindowTitle = "PTM - " + ProgramFile;
 	Program.clear();
 	Labels.clear();
 
@@ -115,6 +130,9 @@ void Machine::LoadProgram(std::string filename)
 
 void Machine::Run()
 {
+	if (Program.empty())
+		return;
+
 	ProgramPtr = 0;
 	Running = true;
 
@@ -192,12 +210,29 @@ Parameter Machine::Pop()
 
 int Machine::PopNumber()
 {
-	return Pop().Number;
+	Parameter param = Pop();
+
+	if (param.Type == ParameterType::Variable) {
+		return Vars[param.String].Number;
+	}
+
+	return param.Number;
 }
 
 std::string Machine::PopString()
 {
-	return Pop().String;
+	Parameter param = Pop();
+
+	if (param.Type == ParameterType::Variable) {
+		return Vars[param.String].String;
+	}
+
+	return param.String;
+}
+
+bool Machine::HasVariable(std::string var)
+{
+	return Vars.find(var) != Vars.end();
 }
 
 // ===[ COMMAND IMPLEMENTATION ]===============================================
@@ -229,8 +264,18 @@ void Machine::C_Breakpoint()
 
 void Machine::C_Push()
 {
-	for (int i = 0; i < CurrentLine->GetParamCount(); i++)
-		ParamStack.push(Parameter(*CurrentLine->NextParam()));
+	for (int i = 0; i < CurrentLine->GetParamCount(); i++) {
+		Parameter* param = CurrentLine->NextParam();
+		if (param->Type != ParameterType::Variable) {
+			ParamStack.push(*param);
+		}
+		else if (HasVariable(param->String)) {
+			ParamStack.push(Parameter(Vars[param->String].String));
+		}
+		else {
+			Abort("Variable not found");
+		}
+	}
 }
 
 void Machine::C_DuplicateStackItem()
@@ -241,6 +286,97 @@ void Machine::C_DuplicateStackItem()
 void Machine::C_Pop()
 {
 	Pop();
+}
+
+void Machine::C_SetVariable()
+{
+	std::string value = PopString();
+	Parameter* var = CurrentLine->GetParam();
+	Vars[var->String] = Variable(var->String, value);
+}
+
+void Machine::C_GetVariable()
+{
+	Parameter* var = CurrentLine->GetParam();
+	std::string name = var->String;
+	if (HasVariable(name))
+		ParamStack.push(Parameter(Vars[name].String, ParameterType::String));
+	else
+		Abort("Variable not found");
+}
+
+void Machine::C_If()
+{
+	Parameter* p1 = CurrentLine->NextParam();
+	std::string comparator = CurrentLine->NextParam()->String;
+	Parameter* p2 = CurrentLine->NextParam();
+	int number1 = 0;
+	int number2 = 0;
+
+	// p1
+	if (p1->Type == ParameterType::Variable) {
+		if (HasVariable(p1->String)) {
+			number1 = Vars[p1->String].Number;
+		}
+		else {
+			Abort("Variable not found");
+			return;
+		}
+	}
+	else if (p1->Type == ParameterType::Number) {
+		number1 = p1->Number;
+	}
+	else {
+		Abort("Type mismatch");
+		return;
+	}
+
+	// p2
+	if (p2->Type == ParameterType::Variable) {
+		if (HasVariable(p2->String)) {
+			number2 = Vars[p2->String].Number;
+		}
+		else {
+			Abort("Variable not found");
+			return;
+		}
+	}
+	else if (p2->Type == ParameterType::Number) {
+		number2 = p2->Number;
+	}
+	else {
+		Abort("Type mismatch");
+		return;
+	}
+
+	std::string result = "0";
+
+	if (comparator == "=") {
+		if (number1 == number2)
+			result = "1";
+	}
+	else if (comparator == "!=") {
+		if (number1 != number2)
+			result = "1";
+	}
+	else if (comparator == "<") {
+		if (number1 < number2)
+			result = "1";
+	}
+	else if (comparator == ">") {
+		if (number1 > number2)
+			result = "1";
+	}
+	else if (comparator == "<=") {
+		if (number1 <= number2)
+			result = "1";
+	}
+	else if (comparator == ">=") {
+		if (number1 >= number2)
+			result = "1";
+	}
+
+	ParamStack.push(Parameter(result, ParameterType::Number));
 }
 
 void Machine::C_WindowOpen()
@@ -256,6 +392,7 @@ void Machine::C_WindowOpen()
 	int w = PopNumber();
 
 	Win = new TWindow(w, h, zoom, fullscreen);
+	Win->SetTitle(WindowTitle);
 }
 
 void Machine::C_WindowClear()
@@ -269,6 +406,13 @@ void Machine::C_WindowUpdate()
 	Win->Update();
 }
 
+void Machine::C_WindowSetTitle()
+{
+	WindowTitle = PopString();
+	if (Win != nullptr)
+		Win->SetTitle(WindowTitle);
+}
+
 void Machine::C_PaletteLoad()
 {
 	std::string file = PopString();
@@ -280,7 +424,11 @@ void Machine::C_PaletteLoad()
 		if (line.empty())
 			continue;
 
-		Pal->Set(index, TString::ToInt(line));
+		if (index < Pal->GetSize())
+			Pal->Set(index, TString::ToInt(line));
+		else
+			Pal->Add(TString::ToInt(line));
+
 		index++;
 	}
 }
@@ -483,6 +631,7 @@ void Machine::C_MapLoad()
 		Maps.erase(id);
 	}
 	Maps[id] = map;
+	map->SetName(name);
 
 	int lineIndex = 2;
 	std::string line = "";
@@ -515,12 +664,14 @@ void Machine::C_MapLoad()
 		std::string tempId = TString::Trim(data[1]);
 
 		for (int i = 0; i < count; i++) {
-			if (tempId == "<null>") {
-				map->DeleteObject(x, y, layer);
-			}
-			else {
-				TObject* o = new TObject(*ObjTemplates[tempId]->Obj);
-				map->PutObject(o, x, y, layer);
+			if (tempId != "<null>") {
+				if (ObjTemplates.find(tempId) != ObjTemplates.end()) {
+					TObject* o = new TObject(*ObjTemplates[tempId]->Obj);
+					map->PutObject(o, x, y, layer);
+				}
+				else {
+					Abort("Object template not found with id: " + tempId);
+				}
 			}
 
 			x++;
