@@ -1,97 +1,50 @@
 #pragma once
 #include <map>
-#include <stack>
-#include <string>
 #include <vector>
-#include <SDL.h>
-#include "Machine.h"
-#include "ProgramLine.h"
-#include "ObjectTemplate.h"
-#include "Variable.h"
-#include "Parameter.h"
+#include <string>
+#include <stack>
 #include <TileGameLib.h>
 using namespace TileGameLib;
 
-#define CMD(cmd,fn) CmdMap[cmd] = &Machine::fn
+extern std::map<std::string, byte> CmdMap;
+#define OP(cmd,opc,fn) Opcodes[opc] = &Machine::fn; CmdMap[cmd] = opc;
 
 class Machine
 {
+private:
+	// Opcodes
+	void O_Nop();
+	void O_Push();
+	void O_WindowCreate();
+	void O_Break();
+	void O_Halt();
+	void O_Exit();
+
 public:
 	Machine();
 	~Machine();
 
-	void LoadProgram(std::string filename);
-	void Run();
+	void Run(std::vector<byte>& bytecode);
 
 private:
+	const int MemorySize = 0x10000;
+	const byte NullOpcode = 0;
+	std::map<int, void(Machine::*)()> Opcodes;
+	bool Running = false;
+	std::vector<byte> Bytecode;
+	int ProgramPtr = 0;
+	int* Memory;
+	std::stack<int> ParamStack;
+	std::stack<int> CallStack;
+	bool Halted = false;
+	TWindow* Wnd = nullptr;
+
 	Machine(const Machine& other) = delete;
 
-	std::string ProgramFile;
-	std::string WindowTitle;
-	bool Running;
-	bool Halted;
-	std::map<std::string, void(Machine::*)()> CmdMap;
-	std::vector<ProgramLine*> Program;
-	std::map<std::string, int> Labels;
-	std::stack<Parameter> ParamStack;
-	int ProgramPtr;
-	ProgramLine* CurrentLine;
-	std::map<std::string, Variable> Vars;
-	TWindow* Win;
-	TPalette* Pal;
-	TCharset* Chars;
-	int BackColor;
-	std::map<std::string, TBoard*> Maps;
-	std::map<std::string, TBoardView*> Views;
-	TBoard* SelectedMap;
-
-	struct {
-		int X;
-		int Y;
-		int Layer;
-	} MapCursor;
-
-	std::map<std::string, ObjectTemplate*> ObjTemplates;
-
-	void InitCommandMap();
-	void Abort(std::string msg, bool showSource = true);
-	Parameter Pop();
+	void InitOpcodes();
+	const byte& NextByte();
+	const int NextWord();
+	void Abort(std::string msg);
+	void Execute(byte opcode);
 	int PopNumber();
-	std::string PopString();
-	bool HasVariable(std::string var);
-
-	void C_NotImplemented();
-	void C_Nop();
-	void C_Breakpoint();
-	void C_Exit();
-	void C_Halt();
-	void C_Push();
-	void C_DuplicateStackItem();
-	void C_Pop();
-	void C_SetVariable();
-	void C_GetVariable();
-	void C_If();
-	void C_WindowOpen();
-	void C_WindowClear();
-	void C_WindowUpdate();
-	void C_WindowSetTitle();
-	void C_PaletteLoad();
-	void C_PaletteClear();
-	void C_PaletteSet();
-	void C_CharsetLoad();
-	void C_CharsetClear();
-	void C_CharsetSet();
-	void C_ObjectTemplatesLoad();
-	void C_ObjectTemplateCreate();
-	void C_ObjectTemplateTileAdd();
-	void C_MapCreate();
-	void C_MapSelect();
-	void C_MapViewCreate();
-	void C_MapViewEnable();
-	void C_MapViewDisable();
-	void C_MapLoad();
-	void C_MapCursorSet();
-	void C_MapTileAdd();
-	void C_MapObjectTemplatePut();
-	void C_MapPutObjectString();
 };
