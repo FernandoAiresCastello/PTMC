@@ -7,7 +7,8 @@ void Machine::InitOpcodes()
 	// ===[ Special ]===
 	OP("NOP", 0x00, O_Nop);
 	// ===[ Param stack ]===
-	OP("PUSH", 0x10, O_Push);
+	OP("PUSH", 0x10, O_PushByte);
+	OP("PUSHW", 0x11, O_PushWord);
 	// ===[ Graphics ]===
 	OP("WND.OPEN", 0x20, O_WindowCreate);
 	// ===[ Debugging ]===
@@ -22,7 +23,12 @@ void Machine::O_Nop()
 	// No operation
 }
 
-void Machine::O_Push()
+void Machine::O_PushByte()
+{
+	ParamStack.push(NextByte());
+}
+
+void Machine::O_PushWord()
 {
 	ParamStack.push(NextWord());
 }

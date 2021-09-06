@@ -15,7 +15,8 @@ class Machine
 private:
 	// Opcodes
 	void O_Nop();
-	void O_Push();
+	void O_PushByte();
+	void O_PushWord();
 	void O_WindowCreate();
 	void O_Break();
 	void O_Halt();

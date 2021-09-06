@@ -15,6 +15,7 @@ public:
 
 	void LoadBytecode(std::string filename);
 	void SaveBytecode(std::string filename);
+	void SaveBytecodeAsPlainText(std::string filename);
 
 private:
 	Program(const Program& other) = delete;
