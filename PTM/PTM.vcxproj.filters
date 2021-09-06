@@ -4,9 +4,11 @@
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Machine.cpp" />
     <ClCompile Include="Compiler.cpp" />
+    <ClCompile Include="Program.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Machine.h" />
     <ClInclude Include="Compiler.h" />
+    <ClInclude Include="Program.h" />
   </ItemGroup>
 </Project>

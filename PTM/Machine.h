@@ -1,4 +1,5 @@
 #pragma once
+#include "Program.h"
 #include <map>
 #include <vector>
 #include <string>
@@ -24,14 +25,14 @@ public:
 	Machine();
 	~Machine();
 
-	void Run(std::vector<byte>& bytecode);
+	void Run(Program* prog);
 
 private:
 	const int MemorySize = 0x10000;
 	const byte NullOpcode = 0;
 	std::map<int, void(Machine::*)()> Opcodes;
 	bool Running = false;
-	std::vector<byte> Bytecode;
+	Program* Prog;
 	int ProgramPtr = 0;
 	int* Memory;
 	std::stack<int> ParamStack;

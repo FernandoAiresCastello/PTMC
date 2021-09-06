@@ -1,4 +1,5 @@
 #pragma once
+#include "Program.h"
 #include <vector>
 #include <string>
 #include <TileGameLib.h>
@@ -10,13 +11,12 @@ public:
 	Compiler();
 	~Compiler();
 
-	std::vector<byte> Compile(std::string filename);
+	Program* Compile(std::string srcfile, std::string dstfile);
 
 private:
 	Compiler(const Compiler& other) = delete;
 
 	std::vector<std::string> LoadSource(std::string filename);
-	void SaveCompiled(std::string filename, std::vector<byte>& bytecode);
 	std::vector<byte> CompileLine(std::string line, int srcln);
 	void Abort(std::string msg);
 };

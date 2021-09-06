@@ -71,14 +71,14 @@ Machine::~Machine()
 	delete[] Memory;
 }
 
-void Machine::Run(std::vector<byte>& bytecode)
+void Machine::Run(Program* prog)
 {
 	if (Running) {
 		Abort("Machine is already running");
 		return;
 	}
 
-	Bytecode = bytecode;
+	Prog = prog;
 	ProgramPtr = 0;
 	Running = true;
 	Halted = false;
@@ -109,7 +109,7 @@ void Machine::Run(std::vector<byte>& bytecode)
 		if (Halted)
 			continue;
 
-		if (ProgramPtr < bytecode.size())
+		if (ProgramPtr < Prog->Bytecode.size())
 			Execute(NextByte());
 		else
 			Abort("Execution pointer past end of program");
@@ -121,8 +121,8 @@ void Machine::Run(std::vector<byte>& bytecode)
 
 const byte& Machine::NextByte()
 {
-	if (ProgramPtr < Bytecode.size())
-		return Bytecode[ProgramPtr++];
+	if (ProgramPtr < Prog->Bytecode.size())
+		return Prog->Bytecode[ProgramPtr++];
 
 	return NullOpcode;
 }

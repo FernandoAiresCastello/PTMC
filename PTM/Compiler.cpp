@@ -14,34 +14,34 @@ std::vector<std::string> Compiler::LoadSource(std::string filename)
 	return TFile::ReadLines(filename);
 }
 
-void Compiler::SaveCompiled(std::string filename, std::vector<byte>& bytecode)
-{
-	std::vector<int> compiled;
-	for (byte& byte : bytecode) {
-		compiled.push_back(byte);
-	}
-	TFile::WriteBytes("compiled.ptm", compiled);
-}
-
-std::vector<byte> Compiler::Compile(std::string filename)
+Program* Compiler::Compile(std::string srcfile, std::string dstfile)
 {
 	std::vector<byte> bytecode;
-	auto lines = LoadSource(filename);
+	std::map<std::string, unsigned long> labels;
+	auto lines = LoadSource(srcfile);
+	unsigned long programIndex = 0;
 
 	for (int srcln = 0; srcln < lines.size(); srcln++) {
 		std::string line = TString::Trim(lines[srcln]);
 		if (!line.empty()) {
-			if (TString::StartsWith(line, ';'))
+			if (TString::StartsWith(line, ';')) {
 				continue;
+			}
+			if (TString::EndsWith(line, ':')) {
+				std::string label = TString::RemoveLast(line);
+				labels[label] = programIndex;
+				continue;
+			}
 
 			auto bytes = CompileLine(line, srcln);
 			bytecode.insert(bytecode.end(), bytes.begin(), bytes.end());
+			programIndex = bytecode.size();
 		}
 	}
 
-	SaveCompiled("compiled.ptm", bytecode);
-
-	return bytecode;
+	Program* program = new Program();
+	program->Bytecode = bytecode;
+	return program;
 }
 
 std::vector<byte> Compiler::CompileLine(std::string line, int srcln)
