@@ -12,5 +12,18 @@
     <ClInclude Include="Compiler.h" />
     <ClInclude Include="Program.h" />
     <ClInclude Include="Command.h" />
+    <ClInclude Include="resource.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{6730cd6e-7bf5-43f7-9697-274d3bae40bb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="PTM.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
