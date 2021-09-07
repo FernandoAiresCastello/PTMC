@@ -14,8 +14,6 @@ public:
 	Program* Compile(std::string srcfile, std::string dstfile);
 
 private:
-	Compiler(const Compiler& other) = delete;
-
 	std::vector<std::string> LoadSource(std::string filename);
 	std::vector<byte> CompileLine(std::string line, int srcln);
 	void Abort(std::string msg);

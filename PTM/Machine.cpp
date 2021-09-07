@@ -1,22 +1,5 @@
 #include "Machine.h"
-
-std::map<std::string, byte> CmdMap;
-
-void Machine::InitOpcodes()
-{
-	// ===[ Special ]===
-	OP("NOP", 0x00, O_Nop);
-	// ===[ Param stack ]===
-	OP("PUSH", 0x10, O_PushByte);
-	OP("PUSHW", 0x11, O_PushWord);
-	// ===[ Graphics ]===
-	OP("WND.OPEN", 0x20, O_WindowCreate);
-	// ===[ Debugging ]===
-	OP("BREAK", 0xf0, O_Break);
-	// ===[ System ]===
-	OP("HALT", 0xfe, O_Halt);
-	OP("EXIT", 0xff, O_Exit);
-}
+#include "Command.h"
 
 void Machine::O_Nop()
 {
@@ -67,8 +50,6 @@ void Machine::O_Exit()
 
 Machine::Machine()
 {
-	InitOpcodes();
-
 	Memory = new int[MemorySize];
 }
 
@@ -90,10 +71,6 @@ void Machine::Run(Program* prog)
 	Halted = false;
 
 	while (Running) {
-		if (Wnd) {
-			Wnd->Update();
-		}
-
 		SDL_Event e = { 0 };
 		SDL_PollEvent(&e);
 
@@ -109,6 +86,7 @@ void Machine::Run(Program* prog)
 			}
 			else if (key == SDLK_RETURN && TKey::Alt() && Wnd != nullptr) {
 				Wnd->ToggleFullscreen();
+				Wnd->Update();
 			}
 		}
 
@@ -151,7 +129,7 @@ void Machine::Abort(std::string msg)
 
 void Machine::Execute(byte opcode)
 {
-	auto fn = Opcodes[opcode];
+	auto fn = Command::Impl[opcode];
 	if (fn) {
 		(this->*fn)();
 	}

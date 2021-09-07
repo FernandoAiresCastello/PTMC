@@ -1,5 +1,5 @@
 #include "Compiler.h"
-#include "Machine.h"
+#include "Command.h"
 
 Compiler::Compiler()
 {
@@ -68,15 +68,15 @@ std::vector<byte> Compiler::CompileLine(std::string line, int srcln)
 
 	cmd = TString::ToUpper(cmd);
 
-	if (CmdMap.find(cmd) == CmdMap.end()) {
+	if (Command::Name.find(cmd) == Command::Name.end()) {
 		bytes.clear();
-		Abort(TString::Format("Compilation error:\n\nInvalid command %s at line %i", 
-			cmd.c_str(), srcln + 1));
+		Abort(TString::Format(
+			"Compilation error:\n\nInvalid command %s at line %i", cmd.c_str(), srcln + 1));
 		
 		return bytes;
 	}
 
-	bytes.push_back(CmdMap[cmd]);
+	bytes.push_back(Command::Name[cmd]);
 	if (!params.empty())
 		bytes.insert(bytes.end(), params.begin(), params.end());
 

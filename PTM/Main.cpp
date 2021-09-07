@@ -1,3 +1,4 @@
+#include "Command.h"
 #include "Machine.h"
 #include "Compiler.h"
 #include "Program.h"
@@ -23,6 +24,8 @@ int main(int argc, char* argv[])
 		TUtil::Error(TString::Format("File not found: %s", srcpath.c_str()));
 		return 1;
 	}
+
+	Command::Init();
 
 	if (option == "-r") {
 		Machine* machine = new Machine();

@@ -7,12 +7,9 @@
 #include <TileGameLib.h>
 using namespace TileGameLib;
 
-extern std::map<std::string, byte> CmdMap;
-#define OP(cmd,opc,fn) Opcodes[opc] = &Machine::fn; CmdMap[cmd] = opc;
-
 class Machine
 {
-private:
+public:
 	// Opcodes
 	void O_Nop();
 	void O_PushByte();
@@ -31,7 +28,6 @@ public:
 private:
 	const int MemorySize = 0x10000;
 	const byte NullOpcode = 0;
-	std::map<int, void(Machine::*)()> Opcodes;
 	bool Running = false;
 	Program* Prog;
 	int ProgramPtr = 0;
@@ -41,9 +37,6 @@ private:
 	bool Halted = false;
 	TWindow* Wnd = nullptr;
 
-	Machine(const Machine& other) = delete;
-
-	void InitOpcodes();
 	const byte& NextByte();
 	const int NextWord();
 	void Abort(std::string msg);
