@@ -15,6 +15,8 @@ public:
 	void O_PushByte();
 	void O_PushWord();
 	void O_WindowCreate();
+	void O_WindowUpdate();
+	void O_WindowClear();
 	void O_Break();
 	void O_Halt();
 	void O_Exit();
@@ -36,6 +38,8 @@ private:
 	std::stack<int> CallStack;
 	bool Halted = false;
 	TWindow* Wnd = nullptr;
+	TPalette* Pal = TPalette::Default;
+	TCharset* Chr = TCharset::Default;
 
 	const byte& NextByte();
 	const int NextWord();

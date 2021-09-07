@@ -31,6 +31,16 @@ void Machine::O_WindowCreate()
 	Wnd = new TWindow(width, height, zoom, fullscreen);
 }
 
+void Machine::O_WindowUpdate()
+{
+	Wnd->Update();
+}
+
+void Machine::O_WindowClear()
+{
+	Wnd->Clear(Pal, PopNumber());
+}
+
 void Machine::O_Break()
 {
 	SDL_TriggerBreakpoint();

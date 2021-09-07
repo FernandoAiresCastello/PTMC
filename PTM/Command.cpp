@@ -16,6 +16,8 @@ namespace Command
 		OP("PUSHW", 0x11, O_PushWord);
 		// ===[ Graphics ]===
 		OP("WND.OPEN", 0x20, O_WindowCreate);
+		OP("WND.UPDATE", 0x21, O_WindowUpdate);
+		OP("WND.CLEAR", 0x22, O_WindowClear);
 		// ===[ Debugging ]===
 		OP("BREAK", 0xf0, O_Break);
 		// ===[ System ]===
