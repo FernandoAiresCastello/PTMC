@@ -15,10 +15,12 @@ public:
 	void O_PushByte();
 	void O_PushWord();
 	void O_Goto();
+	void O_Pause();
 	void O_WindowCreate();
 	void O_WindowUpdate();
 	void O_WindowClear();
 	void O_WindowBackColorSet();
+	void O_WindowTitleSet();
 	void O_Break();
 	void O_Halt();
 	void O_Exit();
@@ -31,6 +33,7 @@ public:
 
 private:
 	const int MemorySize = 0x10000;
+	const int MaxProgramSize = 0x10000;
 	const byte NullOpcode = 0;
 	bool Running = false;
 	Program* Prog;
@@ -43,10 +46,13 @@ private:
 	TPalette* Pal = TPalette::Default;
 	TCharset* Chr = TCharset::Default;
 	int BackColor = 0;
+	unsigned long PauseCycles = 0;
 
+	bool HandleGlobalEvents(SDL_Event& e);
 	const byte& NextByte();
 	const int NextWord();
 	void Abort(std::string msg);
+	void AbortCommandNotImplemented();
 	void Execute(byte opcode);
 	int PopNumber();
 };

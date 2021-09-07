@@ -20,7 +20,7 @@ private:
 	std::vector<LabelDest> LabelDestAddr;
 	std::vector<LabelOrig> LabelOrigAddr;
 
-	void Abort(std::string msg);
+	void Abort(std::string msg, int line);
 	std::vector<std::string> LoadSource(std::string filename);
 	std::vector<byte> CompileLine(std::string line, int srcln, int progAddr);
 	void ResolveLabels(std::vector<byte>& bytecode);

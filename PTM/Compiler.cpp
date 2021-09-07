@@ -19,9 +19,11 @@ Compiler::~Compiler()
 {
 }
 
-void Compiler::Abort(std::string msg)
+void Compiler::Abort(std::string msg, int line)
 {
-	TUtil::Error(msg);
+	TUtil::Error(TString::Format(
+		"Compilation error:\n\n%s at line %i", msg.c_str(), line + 1));
+
 	exit(1);
 }
 
@@ -69,50 +71,70 @@ Program* Compiler::Compile(std::string srcfile, std::string dstfile)
 std::vector<byte> Compiler::CompileLine(std::string line, int srcln, int progAddr)
 {
 	std::vector<byte> bytes;
-	std::vector<byte> byteParams;
-	std::vector<std::string> stringParams;
+	int numericParam;
+	std::string stringParam;
 	std::string cmd;
 	int ixFirstSpace = line.find_first_of(' ');
+	bool hasParam = false;
 	
 	if (ixFirstSpace >= 0) {
-		cmd = line.substr(0, ixFirstSpace);
-		std::string rawParamStr = TString::Trim(line.substr(ixFirstSpace));
-		stringParams = TString::Split(rawParamStr, ' ');
-		for (auto& rawParam : stringParams) {
-			std::string param = TString::Trim(rawParam);
-			if (!param.empty()) {
-				byteParams.push_back(TString::ToInt(rawParam));
+		cmd = TString::ToUpper(line.substr(0, ixFirstSpace));
+		std::string rawParam = TString::Trim(line.substr(ixFirstSpace));
+		stringParam = TString::Trim(rawParam);
+
+		if (!stringParam.empty()) {
+			int number = TString::ToInt(rawParam);
+			if (number < 0) {
+				bytes.clear();
+				Abort("Numeric param underflow", srcln);
+				return bytes;
 			}
+			if (number > 65535) {
+				bytes.clear();
+				Abort("Numeric param overflow", srcln);
+				return bytes;
+			}
+
+			if (cmd == "PUSH" && number > 255)
+				cmd = "PUSHW";
+
+			numericParam = number;
+			hasParam = true;
 		}
 	}
 	else {
-		cmd = line;
+		cmd = TString::ToUpper(line);
 	}
-
-	cmd = TString::ToUpper(cmd);
 
 	if (Command::Name.find(cmd) == Command::Name.end()) {
 		bytes.clear();
-		Abort(TString::Format(
-			"Compilation error:\n\nInvalid command %s at line %i", cmd.c_str(), srcln + 1));
-		
+		Abort(TString::Format("Invalid command %s", cmd.c_str()), srcln);
 		return bytes;
 	}
 
 	bytes.push_back(Command::Name[cmd]);
 	
-	if (cmd == "GOTO") {
-		LabelOrig label;
-		label.Name = stringParams[0];
-		label.Address = progAddr + 1;
-		LabelOrigAddr.push_back(label);
-		// Add placeholder for label address
-		bytes.push_back(0);
-		bytes.push_back(0);
-	}
-	else {
-		if (!byteParams.empty())
-			bytes.insert(bytes.end(), byteParams.begin(), byteParams.end());
+	if (hasParam) {
+		if (cmd == "GOTO") {
+			LabelOrig label;
+			label.Name = stringParam;
+			label.Address = progAddr + 1;
+			LabelOrigAddr.push_back(label);
+			// Add placeholder for label address
+			bytes.push_back(0);
+			bytes.push_back(0);
+		}
+		else {
+			if (numericParam > 255 && numericParam < 65536) {
+				byte nibbles[2];
+				TUtil::ShortToBytes(numericParam, nibbles);
+				bytes.push_back(nibbles[1]);
+				bytes.push_back(nibbles[0]);
+			}
+			else {
+				bytes.push_back(numericParam);
+			}
+		}
 	}
 
 	return bytes;

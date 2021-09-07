@@ -21,6 +21,11 @@ void Machine::O_Goto()
 	ProgramPtr = NextWord();
 }
 
+void Machine::O_Pause()
+{
+	PauseCycles = PopNumber();
+}
+
 void Machine::O_WindowCreate()
 {
 	if (Wnd != nullptr) {
@@ -49,6 +54,11 @@ void Machine::O_WindowClear()
 void Machine::O_WindowBackColorSet()
 {
 	BackColor = PopNumber();
+}
+
+void Machine::O_WindowTitleSet()
+{
+	AbortCommandNotImplemented();
 }
 
 void Machine::O_Break()
@@ -85,6 +95,12 @@ void Machine::Run(Program* prog)
 		return;
 	}
 
+	int bytecodeLength = prog->Bytecode.size();
+	if (bytecodeLength == 0 || bytecodeLength >= MaxProgramSize) {
+		Abort(TString::Format("Invalid bytecode length: %i bytes", bytecodeLength));
+		return;
+	}
+
 	Prog = prog;
 	ProgramPtr = 0;
 	Running = true;
@@ -93,21 +109,12 @@ void Machine::Run(Program* prog)
 	while (Running) {
 		SDL_Event e = { 0 };
 		SDL_PollEvent(&e);
+		HandleGlobalEvents(e);
 
-		if (e.type == SDL_QUIT) {
-			Running = false;
-			break;
-		}
-		else if (e.type == SDL_KEYDOWN) {
-			const SDL_Keycode key = e.key.keysym.sym;
-			if (key == SDLK_PAUSE) {
-				Running = false;
-				break;
-			}
-			else if (key == SDLK_RETURN && TKey::Alt() && Wnd != nullptr) {
-				Wnd->ToggleFullscreen();
-				Wnd->Update();
-			}
+		if (PauseCycles > 0) {
+			PauseCycles--;
+			SDL_Delay(1);
+			continue;
 		}
 
 		if (Halted)
@@ -121,6 +128,28 @@ void Machine::Run(Program* prog)
 		if (!Running)
 			break;
 	}
+}
+
+bool Machine::HandleGlobalEvents(SDL_Event& e)
+{
+	if (e.type == SDL_QUIT) {
+		Running = false;
+		return true;
+	}
+	else if (e.type == SDL_KEYDOWN) {
+		const SDL_Keycode key = e.key.keysym.sym;
+		if (key == SDLK_PAUSE) {
+			Running = false;
+			return true;
+		}
+		else if (key == SDLK_RETURN && TKey::Alt() && Wnd != nullptr) {
+			Wnd->ToggleFullscreen();
+			Wnd->Update();
+			return true;
+		}
+	}
+
+	return false;
 }
 
 const byte& Machine::NextByte()
@@ -147,6 +176,11 @@ void Machine::Abort(std::string msg)
 		ProgramPtr, ProgramPtr, msg.c_str()));
 }
 
+void Machine::AbortCommandNotImplemented()
+{
+	Abort("Command not implemented");
+}
+
 void Machine::Execute(byte opcode)
 {
 	auto fn = Command::Impl[opcode];
@@ -154,7 +188,7 @@ void Machine::Execute(byte opcode)
 		(this->*fn)();
 	}
 	else {
-		Abort(TString::Format("Invalid opcode 0x%02x", opcode));
+		Abort(TString::Format("Invalid command: 0x%02x", opcode));
 	}
 }
 

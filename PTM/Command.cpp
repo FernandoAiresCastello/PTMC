@@ -16,11 +16,13 @@ namespace Command
 		OP("PUSHW", 0x11, O_PushWord);
 		// ===[ Control flow ]===
 		OP("GOTO", 0x20, O_Goto);
+		OP("PAUSE", 0x21, O_Pause);
 		// ===[ Graphics ]===
 		OP("WND.OPEN", 0x30, O_WindowCreate);
 		OP("WND.UPDATE", 0x31, O_WindowUpdate);
 		OP("WND.CLEAR", 0x32, O_WindowClear);
 		OP("WND.BGC.SET", 0x33, O_WindowBackColorSet);
+		OP("WND.TITLE.SET", 0x34, O_WindowTitleSet);
 		// ===[ Debugging ]===
 		OP("BREAK", 0xf0, O_Break);
 		// ===[ System ]===
