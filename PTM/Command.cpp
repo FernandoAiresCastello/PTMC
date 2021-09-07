@@ -14,10 +14,13 @@ namespace Command
 		// ===[ Param stack ]===
 		OP("PUSH", 0x10, O_PushByte);
 		OP("PUSHW", 0x11, O_PushWord);
+		// ===[ Control flow ]===
+		OP("GOTO", 0x20, O_Goto);
 		// ===[ Graphics ]===
-		OP("WND.OPEN", 0x20, O_WindowCreate);
-		OP("WND.UPDATE", 0x21, O_WindowUpdate);
-		OP("WND.CLEAR", 0x22, O_WindowClear);
+		OP("WND.OPEN", 0x30, O_WindowCreate);
+		OP("WND.UPDATE", 0x31, O_WindowUpdate);
+		OP("WND.CLEAR", 0x32, O_WindowClear);
+		OP("WND.BGC.SET", 0x33, O_WindowBackColorSet);
 		// ===[ Debugging ]===
 		OP("BREAK", 0xf0, O_Break);
 		// ===[ System ]===

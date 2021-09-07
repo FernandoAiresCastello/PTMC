@@ -16,6 +16,11 @@ void Machine::O_PushWord()
 	ParamStack.push(NextWord());
 }
 
+void Machine::O_Goto()
+{
+	ProgramPtr = NextWord();
+}
+
 void Machine::O_WindowCreate()
 {
 	if (Wnd != nullptr) {
@@ -38,7 +43,12 @@ void Machine::O_WindowUpdate()
 
 void Machine::O_WindowClear()
 {
-	Wnd->Clear(Pal, PopNumber());
+	Wnd->Clear(Pal, BackColor);
+}
+
+void Machine::O_WindowBackColorSet()
+{
+	BackColor = PopNumber();
 }
 
 void Machine::O_Break()
@@ -150,6 +160,11 @@ void Machine::Execute(byte opcode)
 
 int Machine::PopNumber()
 {
+	if (ParamStack.empty()) {
+		Abort("Stack empty");
+		return 0;
+	}
+
 	int& top = ParamStack.top();
 	ParamStack.pop();
 	return top;

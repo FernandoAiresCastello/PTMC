@@ -14,9 +14,11 @@ public:
 	void O_Nop();
 	void O_PushByte();
 	void O_PushWord();
+	void O_Goto();
 	void O_WindowCreate();
 	void O_WindowUpdate();
 	void O_WindowClear();
+	void O_WindowBackColorSet();
 	void O_Break();
 	void O_Halt();
 	void O_Exit();
@@ -40,6 +42,7 @@ private:
 	TWindow* Wnd = nullptr;
 	TPalette* Pal = TPalette::Default;
 	TCharset* Chr = TCharset::Default;
+	int BackColor = 0;
 
 	const byte& NextByte();
 	const int NextWord();
