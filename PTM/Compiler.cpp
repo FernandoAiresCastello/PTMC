@@ -1,6 +1,28 @@
 #include "Compiler.h"
 #include "Command.h"
 
+//=============================================================================
+//	Symbol definitions
+//=============================================================================
+
+#define SYM_SEPARATOR	' '
+#define SYM_DIRECTIVE	'.'
+#define SYM_DATA_PTR	'&'
+#define SYM_COMMENT		';'
+#define SYM_LABEL		':'
+#define SYM_VARIABLE	'$'
+
+//=============================================================================
+//	Constants
+//=============================================================================
+
+#define BYTE_MAX	255
+#define WORD_MAX	65535
+
+//=============================================================================
+//	Support structures
+//=============================================================================
+
 struct LabelDest {
 	std::string Name;
 	int Address;
@@ -16,6 +38,10 @@ struct DataItem {
 	std::vector<byte> Data;
 	int Address;
 };
+
+//=============================================================================
+//	Basic functions
+//=============================================================================
 
 Compiler::Compiler()
 {
@@ -38,6 +64,10 @@ void Compiler::Abort(std::string msg, int line)
 	exit(1);
 }
 
+//=============================================================================
+//	Bytecode compilation
+//=============================================================================
+
 std::vector<std::string> Compiler::LoadSource(std::string filename)
 {
 	return TFile::ReadLines(filename);
@@ -53,11 +83,11 @@ Program* Compiler::Compile(std::string srcfile, std::string dstfile)
 	for (int srcln = 0; srcln < lines.size(); srcln++) {
 		std::string line = TString::Trim(lines[srcln]);
 		if (!line.empty()) {
-			if (TString::StartsWith(line, ';')) {
+			if (TString::StartsWith(line, SYM_COMMENT)) {
 				// It's a comment
 				continue;
 			}
-			if (TString::EndsWith(line, ':')) {
+			if (TString::EndsWith(line, SYM_LABEL)) {
 				// It's a label
 				std::string labelName = TString::RemoveLast(line);
 				LabelDest label;
@@ -86,7 +116,7 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 	int numericParam;
 	std::string stringParam;
 	std::string cmd;
-	int ixFirstSpace = line.find_first_of(' ');
+	int ixFirstSpace = line.find_first_of(SYM_SEPARATOR);
 	bool hasParam = false;
 	
 	if (ixFirstSpace >= 0) {
@@ -95,8 +125,8 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 
 		if (!stringParam.empty()) {
 
-			if (TString::IsEnclosedBy(stringParam, "[", "]")) {
-				std::string id = TString::RemoveFirstAndLast(stringParam);
+			if (TString::StartsWith(stringParam, SYM_DATA_PTR)) {
+				std::string id = TString::Skip(stringParam, 1);
 				if (DataPtr.find(id) != DataPtr.end()) {
 					byte data = program->Bytecode[DataPtr[id]];
 					stringParam = TString::ToString(data);
@@ -111,16 +141,16 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 			int number = TString::ToInt(stringParam);
 			if (number < 0) {
 				bytes.clear();
-				Abort("Numeric param underflow", srcln);
+				Abort("Numeric underflow", srcln);
 				return bytes;
 			}
-			if (number > 65535) {
+			if (number > WORD_MAX) {
 				bytes.clear();
-				Abort("Numeric param overflow", srcln);
+				Abort("Numeric overflow", srcln);
 				return bytes;
 			}
 
-			if (cmd == "PUSH" && number > 255)
+			if (cmd == "PUSH" && number > BYTE_MAX)
 				cmd = "PUSHW";
 
 			numericParam = number;
@@ -150,7 +180,7 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 			bytes.push_back(0);
 		}
 		else {
-			if (numericParam > 255 && numericParam < 65536) {
+			if (numericParam > BYTE_MAX && numericParam <= WORD_MAX) {
 				byte nibbles[2];
 				TUtil::ShortToBytes(numericParam, nibbles);
 				bytes.push_back(nibbles[1]);
@@ -179,6 +209,10 @@ void Compiler::ResolveLabels(std::vector<byte>& program)
 	}
 }
 
+//=============================================================================
+//	Data compilation
+//=============================================================================
+
 void Compiler::CompileData(Program* program, std::vector<std::string>& sourceLines)
 {
 	Data.clear();
@@ -190,12 +224,12 @@ void Compiler::CompileData(Program* program, std::vector<std::string>& sourceLin
 		std::string srcLine = sourceLines[srcLineNumber];
 		std::string line = TString::Trim(srcLine);
 
-		if (TString::StartsWith(line, '.')) {
+		if (TString::StartsWith(line, SYM_DIRECTIVE)) {
 
 			sourceLines[srcLineNumber] = "";
 
-			int ixFirstSpace = line.find_first_of(' ');
-			int ixSecondSpace = line.find_first_of(' ', ixFirstSpace + 1);
+			int ixFirstSpace = line.find_first_of(SYM_SEPARATOR);
+			int ixSecondSpace = line.find_first_of(SYM_SEPARATOR, ixFirstSpace + 1);
 
 			std::string directive = TString::Trim(TString::ToLower(line.substr(1, ixFirstSpace - 1)));
 			
@@ -246,10 +280,10 @@ DataItem Compiler::CompileByteData(std::string id, std::string data, int srcln)
 	item.Id = id;
 	item.Address = 0;
 
-	auto bytes = TString::Split(data, ' ');
+	auto bytes = TString::Split(data, SYM_SEPARATOR);
 	for (auto& strByte : bytes) {
 		int byte = TString::ToInt(strByte);
-		if (byte < 0 || byte > 255) {
+		if (byte < 0 || byte > BYTE_MAX) {
 			Abort("Invalid byte value", srcln);
 			return item;
 		}
