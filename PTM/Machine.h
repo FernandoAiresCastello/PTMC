@@ -33,7 +33,6 @@ public:
 
 private:
 	const int MemorySize = 0x10000;
-	const int MaxProgramSize = 0x10000;
 	const byte NullOpcode = 0;
 	bool Running = false;
 	Program* Prog;

@@ -95,12 +95,6 @@ void Machine::Run(Program* prog)
 		return;
 	}
 
-	int bytecodeLength = prog->Bytecode.size();
-	if (bytecodeLength == 0 || bytecodeLength >= MaxProgramSize) {
-		Abort(TString::Format("Invalid bytecode length: %i bytes", bytecodeLength));
-		return;
-	}
-
 	Prog = prog;
 	ProgramPtr = 0;
 	Running = true;
