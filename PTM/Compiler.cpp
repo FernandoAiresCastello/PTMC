@@ -299,8 +299,11 @@ DataItem Compiler::CompileTextData(std::string id, std::string data, int srcln)
 {
 	DataItem item;
 	item.Id = id;
-	
-	// todo
 
+	std::string text = TString::RemoveFirstAndLast(data);
+	for (char& ch : text)
+		item.Data.push_back(ch);
+
+	item.Data.push_back(0);
 	return item;
 }
