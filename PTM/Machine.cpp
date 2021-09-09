@@ -165,14 +165,14 @@ const int Machine::NextWord()
 	const byte& hi = NextByte();
 	const byte& lo = NextByte();
 	byte nibbles[2] = { lo, hi };
-	return TUtil::BytesToShort(nibbles);
+	return Util::BytesToShort(nibbles);
 }
 
 void Machine::Abort(std::string msg)
 {
 	Running = false;
 
-	TUtil::Error(TString::Format("Runtime error at program index %i (0x%x):\n\n%s", 
+	Util::Error(String::Format("Runtime error at program index %i (0x%x):\n\n%s", 
 		ProgramPtr, ProgramPtr, msg.c_str()));
 }
 
@@ -188,7 +188,7 @@ void Machine::Execute(byte opcode)
 		(this->*fn)();
 	}
 	else {
-		Abort(TString::Format("Invalid command: 0x%02x", opcode));
+		Abort(String::Format("Invalid command: 0x%02x", opcode));
 	}
 }
 

@@ -3,7 +3,10 @@
 #include <vector>
 #include <string>
 #include <TileGameLib.h>
+#include <CppUtils/CppUtils.h>
+
 using namespace TileGameLib;
+using namespace CppUtils;
 
 class Program
 {

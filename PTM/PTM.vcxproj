@@ -78,13 +78,13 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Fernando\Lib\SDL2-2.0.8\include;C:\Fernando\Proj\TileGameToolkit\TileGameLib\TileGameLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Fernando\Lib\SDL2-2.0.8\include;C:\Fernando\Proj\TileGameToolkit\TileGameLib\TileGameLib;C:\Fernando\Proj\CppUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>C:\Fernando\Lib\SDL2-2.0.8\lib\x86;C:\Fernando\Proj\TileGameToolkit\Builds;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>SDL2.lib;SDL2main.lib;TileGameLib.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Fernando\Lib\SDL2-2.0.8\lib\x86;C:\Fernando\Proj\TileGameToolkit\Builds;C:\Fernando\Proj\CppUtils\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>SDL2.lib;SDL2main.lib;TileGameLib.lib;CppUtils.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

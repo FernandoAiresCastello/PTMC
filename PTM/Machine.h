@@ -5,7 +5,10 @@
 #include <string>
 #include <stack>
 #include <TileGameLib.h>
+#include <CppUtils/CppUtils.h>
+
 using namespace TileGameLib;
+using namespace CppUtils;
 
 class Machine
 {

@@ -1,5 +1,8 @@
+#include <CppUtils/CppUtils.h>
 #include "Compiler.h"
 #include "Command.h"
+
+using namespace CppUtils;
 
 //=============================================================================
 //	Symbol definitions
@@ -56,11 +59,11 @@ void Compiler::Abort(std::string msg, int line)
 	std::string fmt = "";
 
 	if (line >= 0)
-		fmt = TString::Format("Compilation error:\n\n%s at line %i", msg.c_str(), line + 1);
+		fmt = String::Format("Compilation error:\n\n%s at line %i", msg.c_str(), line + 1);
 	else
-		fmt = TString::Format("Compilation error:\n\n%s", msg.c_str());
+		fmt = String::Format("Compilation error:\n\n%s", msg.c_str());
 
-	TUtil::Error(fmt);
+	Util::Error(fmt);
 	exit(1);
 }
 
@@ -81,15 +84,15 @@ Program* Compiler::Compile(std::string srcfile, std::string dstfile)
 	unsigned long progAddr = 0;
 
 	for (int srcln = 0; srcln < lines.size(); srcln++) {
-		std::string line = TString::Trim(lines[srcln]);
+		std::string line = String::Trim(lines[srcln]);
 		if (!line.empty()) {
-			if (TString::StartsWith(line, SYM_COMMENT)) {
+			if (String::StartsWith(line, SYM_COMMENT)) {
 				// It's a comment
 				continue;
 			}
-			if (TString::EndsWith(line, SYM_LABEL)) {
+			if (String::EndsWith(line, SYM_LABEL)) {
 				// It's a label
-				std::string labelName = TString::RemoveLast(line);
+				std::string labelName = String::RemoveLast(line);
 				LabelDest label;
 				label.Name = labelName;
 				label.Address = progAddr;
@@ -120,25 +123,25 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 	bool hasParam = false;
 	
 	if (ixFirstSpace >= 0) {
-		cmd = TString::ToUpper(line.substr(0, ixFirstSpace));
-		stringParam = TString::Trim(line.substr(ixFirstSpace));
+		cmd = String::ToUpper(line.substr(0, ixFirstSpace));
+		stringParam = String::Trim(line.substr(ixFirstSpace));
 
 		if (!stringParam.empty()) {
 
-			if (TString::StartsWith(stringParam, SYM_DATA_PTR)) {
-				std::string id = TString::Skip(stringParam, 1);
+			if (String::StartsWith(stringParam, SYM_DATA_PTR)) {
+				std::string id = String::Skip(stringParam, 1);
 				if (DataPtr.find(id) != DataPtr.end()) {
 					byte data = program->Bytecode[DataPtr[id]];
-					stringParam = TString::ToString(data);
+					stringParam = String::ToString(data);
 				}
 				else {
 					bytes.clear();
-					Abort(TString::Format("Undefined data id %s", id.c_str()), srcln);
+					Abort(String::Format("Undefined data id %s", id.c_str()), srcln);
 					return bytes;
 				}
 			}
 
-			int number = TString::ToInt(stringParam);
+			int number = String::ToInt(stringParam);
 			if (number < 0) {
 				bytes.clear();
 				Abort("Numeric underflow", srcln);
@@ -158,12 +161,12 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 		}
 	}
 	else {
-		cmd = TString::ToUpper(line);
+		cmd = String::ToUpper(line);
 	}
 
 	if (Command::Name.find(cmd) == Command::Name.end()) {
 		bytes.clear();
-		Abort(TString::Format("Invalid command %s", cmd.c_str()), srcln);
+		Abort(String::Format("Invalid command %s", cmd.c_str()), srcln);
 		return bytes;
 	}
 
@@ -182,7 +185,7 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 		else {
 			if (numericParam > BYTE_MAX && numericParam <= WORD_MAX) {
 				byte nibbles[2];
-				TUtil::ShortToBytes(numericParam, nibbles);
+				Util::ShortToBytes(numericParam, nibbles);
 				bytes.push_back(nibbles[1]);
 				bytes.push_back(nibbles[0]);
 			}
@@ -201,7 +204,7 @@ void Compiler::ResolveLabels(std::vector<byte>& program)
 		for (auto& destLabel : LabelDestAddr) {
 			if (origLabel.Name == destLabel.Name) {
 				byte destAddrBytes[2];
-				TUtil::ShortToBytes(destLabel.Address, destAddrBytes);
+				Util::ShortToBytes(destLabel.Address, destAddrBytes);
 				program[origLabel.Address + 0] = destAddrBytes[1];
 				program[origLabel.Address + 1] = destAddrBytes[0];
 			}
@@ -222,20 +225,20 @@ void Compiler::CompileData(Program* program, std::vector<std::string>& sourceLin
 	// STEP 1: find and process data directives
 	for (int srcLineNumber = 0; srcLineNumber < sourceLines.size(); srcLineNumber++) {
 		std::string srcLine = sourceLines[srcLineNumber];
-		std::string line = TString::Trim(srcLine);
+		std::string line = String::Trim(srcLine);
 
-		if (TString::StartsWith(line, SYM_DIRECTIVE)) {
+		if (String::StartsWith(line, SYM_DIRECTIVE)) {
 
 			sourceLines[srcLineNumber] = "";
 
 			int ixFirstSpace = line.find_first_of(SYM_SEPARATOR);
 			int ixSecondSpace = line.find_first_of(SYM_SEPARATOR, ixFirstSpace + 1);
 
-			std::string directive = TString::Trim(TString::ToLower(line.substr(1, ixFirstSpace - 1)));
+			std::string directive = String::Trim(String::ToLower(line.substr(1, ixFirstSpace - 1)));
 			
 			if (directive == "data") {
-				std::string address = TString::Trim(line.substr(ixFirstSpace));
-				DataDirectoryAddress = TString::ToInt(address);
+				std::string address = String::Trim(line.substr(ixFirstSpace));
+				DataDirectoryAddress = String::ToInt(address);
 				continue;
 			}
 			if (ixFirstSpace <= 0 || ixSecondSpace <= 0) {
@@ -247,8 +250,8 @@ void Compiler::CompileData(Program* program, std::vector<std::string>& sourceLin
 				return;
 			}
 
-			std::string id = TString::Trim(line.substr(ixFirstSpace + 1, ixSecondSpace - ixFirstSpace));
-			std::string data = TString::Trim(line.substr(ixSecondSpace));
+			std::string id = String::Trim(line.substr(ixFirstSpace + 1, ixSecondSpace - ixFirstSpace));
+			std::string data = String::Trim(line.substr(ixSecondSpace));
 
 			if (directive == "byte") {
 				Data.push_back(CompileByteData(id, data, srcLineNumber));
@@ -257,7 +260,7 @@ void Compiler::CompileData(Program* program, std::vector<std::string>& sourceLin
 				Data.push_back(CompileTextData(id, data, srcLineNumber));
 			}
 			else {
-				Abort(TString::Format("Invalid data directive .%s", directive.c_str()), srcLineNumber);
+				Abort(String::Format("Invalid data directive .%s", directive.c_str()), srcLineNumber);
 				return;
 			}
 		}
@@ -280,9 +283,9 @@ DataItem Compiler::CompileByteData(std::string id, std::string data, int srcln)
 	item.Id = id;
 	item.Address = 0;
 
-	auto bytes = TString::Split(data, SYM_SEPARATOR);
+	auto bytes = String::Split(data, SYM_SEPARATOR);
 	for (auto& strByte : bytes) {
-		int byte = TString::ToInt(strByte);
+		int byte = String::ToInt(strByte);
 		if (byte < 0 || byte > BYTE_MAX) {
 			Abort("Invalid byte value", srcln);
 			return item;
@@ -300,7 +303,7 @@ DataItem Compiler::CompileTextData(std::string id, std::string data, int srcln)
 	DataItem item;
 	item.Id = id;
 
-	std::string text = TString::RemoveFirstAndLast(data);
+	std::string text = String::RemoveFirstAndLast(data);
 	for (char& ch : text)
 		item.Data.push_back(ch);
 

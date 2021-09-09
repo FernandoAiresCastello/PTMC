@@ -45,7 +45,7 @@ void Program::SaveBytecodeAsPlainText(std::string filename)
 	int countPerRow = 0;
 
 	for (int i = 0; i < Bytecode.size(); i++) {
-		std::string hex = TString::Format("%02X ", Bytecode[i]);
+		std::string hex = String::Format("%02X ", Bytecode[i]);
 		text += hex;
 		countPerRow++;
 		if (countPerRow > 15) {

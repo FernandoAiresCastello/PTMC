@@ -3,12 +3,15 @@
 #include "Compiler.h"
 #include "Program.h"
 #include <TileGameLib.h>
+#include <CppUtils/CppUtils.h>
+
 using namespace TileGameLib;
+using namespace CppUtils;
 
 int main(int argc, char* argv[])
 {
 	if (argc < 3) {
-		TUtil::Error("Invalid command line. Valid syntax:\n\n"
+		Util::Error("Invalid command line. Valid syntax:\n\n"
 			"Run:\nptm -r <file>\n\n"
 			"Compile:\nptm -c <srcfile> <dstfile>\n\n"
 			"Compile then run:\nptm -cr <srcfile> <dstfile>");
@@ -21,7 +24,7 @@ int main(int argc, char* argv[])
 	std::string dstpath = argc > 3 ? argv[3] : "";
 
 	if (!TFile::Exists(srcpath)) {
-		TUtil::Error(TString::Format("File not found: %s", srcpath.c_str()));
+		Util::Error(String::Format("File not found: %s", srcpath.c_str()));
 		return 1;
 	}
 
@@ -39,7 +42,7 @@ int main(int argc, char* argv[])
 
 	if (option == "-c") {
 		if (dstpath.empty()) {
-			TUtil::Error("Missing destination filename");
+			Util::Error("Missing destination filename");
 			return 1;
 		}
 		Machine* machine = new Machine();
@@ -54,7 +57,7 @@ int main(int argc, char* argv[])
 
 	if (option == "-cr") {
 		if (dstpath.empty()) {
-			TUtil::Error("Missing destination filename");
+			Util::Error("Missing destination filename");
 			return 1;
 		}
 		Machine* machine = new Machine();
