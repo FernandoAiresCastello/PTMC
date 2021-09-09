@@ -13,19 +13,19 @@ namespace Command
 		OP("NOP", 0x00, O_Nop);
 
 		// ===[ Param stack ]===
-		OP("PUSH", 0x10, O_PushByte);
-		OP("PUSHW", 0x11, O_PushWord);
-		
+		OP("PUSH", 0x10, O_PushByteConst);
+		OP("PUSHW", 0x11, O_PushWordConst);
+
 		// ===[ Control flow ]===
 		OP("GOTO", 0x20, O_Goto);
 		OP("PAUSE", 0x21, O_Pause);
 		
 		// ===[ Graphics ]===
-		OP("WND.OPEN", 0x30, O_WindowCreate);
-		OP("WND.UPDATE", 0x31, O_WindowUpdate);
-		OP("WND.CLEAR", 0x32, O_WindowClear);
-		OP("WND.BGC.SET", 0x33, O_WindowBackColorSet);
-		OP("WND.TITLE.SET", 0x34, O_WindowTitleSet);
+		OP("GFX.OPEN", 0x30, O_GfxCreate);
+		OP("GFX.UPDATE", 0x31, O_GfxUpdate);
+		OP("GFX.CLEAR", 0x32, O_GfxClear);
+		OP("GFX.BGC.SET", 0x33, O_GfxBackColorSet);
+		OP("GFX.TITLE.SET", 0x34, O_GfxTitleSet);
 		
 		// ===[ Debugging ]===
 		OP("BREAK", 0xf0, O_Break);

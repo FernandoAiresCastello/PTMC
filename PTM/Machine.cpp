@@ -10,19 +10,19 @@ void Machine::O_Nop()
 	// No operation
 }
 
-void Machine::O_PushByte()
+void Machine::O_PushByteConst()
 {
-	ParamStack.push(NextByte());
+	ParamStack.push(NextProgramByte());
 }
 
-void Machine::O_PushWord()
+void Machine::O_PushWordConst()
 {
-	ParamStack.push(NextWord());
+	ParamStack.push(NextProgramWord());
 }
 
 void Machine::O_Goto()
 {
-	ProgramPtr = NextWord();
+	ExecPtr = NextProgramWord();
 }
 
 void Machine::O_Pause()
@@ -30,7 +30,7 @@ void Machine::O_Pause()
 	PauseCycles = PopNumber();
 }
 
-void Machine::O_WindowCreate()
+void Machine::O_GfxCreate()
 {
 	if (Wnd != nullptr) {
 		Abort("Window is already open");
@@ -45,22 +45,22 @@ void Machine::O_WindowCreate()
 	Wnd = new TWindow(width, height, zoom, fullscreen);
 }
 
-void Machine::O_WindowUpdate()
+void Machine::O_GfxUpdate()
 {
 	Wnd->Update();
 }
 
-void Machine::O_WindowClear()
+void Machine::O_GfxClear()
 {
 	Wnd->Clear(Pal, BackColor);
 }
 
-void Machine::O_WindowBackColorSet()
+void Machine::O_GfxBackColorSet()
 {
 	BackColor = PopNumber();
 }
 
-void Machine::O_WindowTitleSet()
+void Machine::O_GfxTitleSet()
 {
 	AbortCommandNotImplemented();
 }
@@ -86,12 +86,12 @@ void Machine::O_Exit()
 
 Machine::Machine()
 {
-	Memory = new int[MemorySize];
 }
 
 Machine::~Machine()
 {
-	delete[] Memory;
+	delete[] ProgMemory;
+	delete[] DataMemory;
 }
 
 void Machine::Run(Program* prog)
@@ -101,8 +101,15 @@ void Machine::Run(Program* prog)
 		return;
 	}
 
-	Prog = prog;
-	ProgramPtr = 0;
+	DataMemorySize = 0x10000;
+	DataMemory = new int[DataMemorySize];
+
+	ProgMemorySize = prog->Bytecode.size();
+	ProgMemory = new byte[ProgMemorySize];
+	for (int i = 0; i < ProgMemorySize; i++)
+		ProgMemory[i] = prog->Bytecode[i];
+
+	ExecPtr = 0;
 	Running = true;
 	Halted = false;
 
@@ -120,8 +127,8 @@ void Machine::Run(Program* prog)
 		if (Halted)
 			continue;
 
-		if (ProgramPtr < Prog->Bytecode.size())
-			Execute(NextByte());
+		if (ExecPtr < ProgMemorySize)
+			Execute(NextProgramByte());
 		else
 			Abort("Execution pointer past end of program");
 
@@ -152,18 +159,18 @@ bool Machine::HandleGlobalEvents(SDL_Event& e)
 	return false;
 }
 
-const byte& Machine::NextByte()
+byte Machine::NextProgramByte()
 {
-	if (ProgramPtr < Prog->Bytecode.size())
-		return Prog->Bytecode[ProgramPtr++];
+	if (ExecPtr < ProgMemorySize)
+		return ProgMemory[ExecPtr++];
 
 	return NullOpcode;
 }
 
-const int Machine::NextWord()
+int Machine::NextProgramWord()
 {
-	const byte& hi = NextByte();
-	const byte& lo = NextByte();
+	byte hi = NextProgramByte();
+	byte lo = NextProgramByte();
 	byte nibbles[2] = { lo, hi };
 	return Util::BytesToShort(nibbles);
 }
@@ -173,7 +180,7 @@ void Machine::Abort(std::string msg)
 	Running = false;
 
 	Util::Error(String::Format("Runtime error at program index %i (0x%x):\n\n%s", 
-		ProgramPtr, ProgramPtr, msg.c_str()));
+		ExecPtr, ExecPtr, msg.c_str()));
 }
 
 void Machine::AbortCommandNotImplemented()

@@ -78,8 +78,8 @@ std::vector<std::string> Compiler::LoadSource(std::string filename)
 
 Program* Compiler::Compile(std::string srcfile, std::string dstfile)
 {
-	Program* program = new Program();
 	auto lines = LoadSource(srcfile);
+	Program* program = new Program();
 	CompileData(program, lines);
 	unsigned long progAddr = 0;
 
@@ -102,7 +102,7 @@ Program* Compiler::Compile(std::string srcfile, std::string dstfile)
 
 			auto bytes = CompileLine(program, line, srcln, progAddr);
 			for (byte& b : bytes) {
-				program->Bytecode[progAddr] = b;
+				program->Bytecode.push_back(b);
 				progAddr++;
 			}
 		}
@@ -127,20 +127,6 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 		stringParam = String::Trim(line.substr(ixFirstSpace));
 
 		if (!stringParam.empty()) {
-
-			if (String::StartsWith(stringParam, SYM_DATA_PTR)) {
-				std::string id = String::Skip(stringParam, 1);
-				if (DataPtr.find(id) != DataPtr.end()) {
-					byte data = program->Bytecode[DataPtr[id]];
-					stringParam = String::ToString(data);
-				}
-				else {
-					bytes.clear();
-					Abort(String::Format("Undefined data id %s", id.c_str()), srcln);
-					return bytes;
-				}
-			}
-
 			int number = String::ToInt(stringParam);
 			if (number < 0) {
 				bytes.clear();

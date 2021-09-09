@@ -45,14 +45,14 @@ int main(int argc, char* argv[])
 			Util::Error("Missing destination filename");
 			return 1;
 		}
-		Machine* machine = new Machine();
 		Compiler* compiler = new Compiler();
 		Program* program = compiler->Compile(srcpath, dstpath);
-		program->SaveBytecode(dstpath);
-		delete program;
+		if (program != nullptr) {
+			program->SaveBytecode(dstpath);
+			delete program;
+		}
 		delete compiler;
-		delete machine;
-		return 0;
+		return program == nullptr ? 1 : 0;
 	}
 
 	if (option == "-cr") {
@@ -60,15 +60,17 @@ int main(int argc, char* argv[])
 			Util::Error("Missing destination filename");
 			return 1;
 		}
-		Machine* machine = new Machine();
 		Compiler* compiler = new Compiler();
 		Program* program = compiler->Compile(srcpath, dstpath);
-		program->SaveBytecode(dstpath);
-		machine->Run(program);
-		delete program;
+		if (program != nullptr) {
+			program->SaveBytecode(dstpath);
+			Machine* machine = new Machine();
+			machine->Run(program);
+			delete machine;
+			delete program;
+		}
 		delete compiler;
-		delete machine;
-		return 0;
+		return program == nullptr ? 1 : 0;
 	}
 
 	return 0;

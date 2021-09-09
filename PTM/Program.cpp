@@ -1,30 +1,19 @@
 #include "Program.h"
 
-#define BYTECODE_LENGTH 0x10000
-
 Program::Program()
 {
-	ClearBytecode();
 }
 
 Program::~Program()
 {
 }
 
-void Program::ClearBytecode()
-{
-	Bytecode.clear();
-	for (int i = 0; i < BYTECODE_LENGTH; i++)
-		Bytecode.push_back(0);
-}
-
 void Program::LoadBytecode(std::string filename)
 {
-	ClearBytecode();
-	std::vector<int> compiled = TFile::ReadBytes(filename);
-	for (int i = 0; i < BYTECODE_LENGTH && i < compiled.size(); i++) {
-		Bytecode[i] = compiled[i];
-	}
+	std::vector<int> file = TFile::ReadBytes(filename);
+	Bytecode.clear();
+	for (int i = 0; i < file.size(); i++)
+		Bytecode.push_back(file[i]);
 }
 
 void Program::SaveBytecode(std::string filename)

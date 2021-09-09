@@ -16,7 +16,6 @@ public:
 
 	std::vector<byte> Bytecode;
 
-	void ClearBytecode();
 	void LoadBytecode(std::string filename);
 	void SaveBytecode(std::string filename);
 	void SaveBytecodeAsPlainText(std::string filename);

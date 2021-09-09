@@ -22,7 +22,7 @@ private:
 	std::vector<LabelOrig> LabelOrigAddr;
 	std::vector<DataItem> Data;
 	std::map<std::string, int> DataPtr;
-	int DataDirectoryAddress;
+	int DataDirectoryAddress = 0;
 
 	void Abort(std::string msg, int line = -1);
 	std::vector<std::string> LoadSource(std::string filename);

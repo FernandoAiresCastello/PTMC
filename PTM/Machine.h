@@ -15,15 +15,15 @@ class Machine
 public:
 	// Opcodes
 	void O_Nop();
-	void O_PushByte();
-	void O_PushWord();
+	void O_PushByteConst();
+	void O_PushWordConst();
 	void O_Goto();
 	void O_Pause();
-	void O_WindowCreate();
-	void O_WindowUpdate();
-	void O_WindowClear();
-	void O_WindowBackColorSet();
-	void O_WindowTitleSet();
+	void O_GfxCreate();
+	void O_GfxUpdate();
+	void O_GfxClear();
+	void O_GfxBackColorSet();
+	void O_GfxTitleSet();
 	void O_Break();
 	void O_Halt();
 	void O_Exit();
@@ -35,12 +35,13 @@ public:
 	void Run(Program* prog);
 
 private:
-	const int MemorySize = 0x10000;
-	const byte NullOpcode = 0;
+	byte NullOpcode = 0;
 	bool Running = false;
-	Program* Prog;
-	int ProgramPtr = 0;
-	int* Memory;
+	int ExecPtr = 0;
+	byte* ProgMemory = nullptr;
+	int ProgMemorySize = 0;
+	int* DataMemory = nullptr;
+	int DataMemorySize = 0;
 	std::stack<int> ParamStack;
 	std::stack<int> CallStack;
 	bool Halted = false;
@@ -51,8 +52,8 @@ private:
 	unsigned long PauseCycles = 0;
 
 	bool HandleGlobalEvents(SDL_Event& e);
-	const byte& NextByte();
-	const int NextWord();
+	byte NextProgramByte();
+	int NextProgramWord();
 	void Abort(std::string msg);
 	void AbortCommandNotImplemented();
 	void Execute(byte opcode);
