@@ -24,6 +24,7 @@ private:
 	std::map<std::string, int> DataPtr;
 	int DataDirectoryAddress = 0;
 
+	void Cancel(int line);
 	void Abort(std::string msg, int line = -1);
 	std::vector<std::string> LoadSource(std::string filename);
 	std::vector<byte> CompileLine(Program* program, std::string line, int srcln, int progAddr);

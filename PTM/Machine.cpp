@@ -10,24 +10,30 @@ void Machine::O_Nop()
 	// No operation
 }
 
-void Machine::O_PushByteConst()
+void Machine::O_PushIntConst()
 {
-	ParamStack.push(NextProgramByte());
+	ParamStack.push(NextProgramInt());
 }
 
-void Machine::O_PushWordConst()
+void Machine::O_PushIntArrayConst()
 {
-	ParamStack.push(NextProgramWord());
+	for (auto& val : NextProgramIntArray())
+		ParamStack.push(val);
+}
+
+void Machine::O_Pop()
+{
+	ParamStack.pop();
 }
 
 void Machine::O_Goto()
 {
-	ExecPtr = NextProgramWord();
+	ExecPtr = NextProgramUint();
 }
 
 void Machine::O_Pause()
 {
-	PauseCycles = PopNumber();
+	PauseCycles = Pop();
 }
 
 void Machine::O_GfxCreate()
@@ -37,10 +43,10 @@ void Machine::O_GfxCreate()
 		return;
 	}
 
-	int fullscreen = PopNumber();
-	int zoom = PopNumber();
-	int height = PopNumber();
-	int width = PopNumber();
+	int fullscreen = Pop();
+	int zoom = Pop();
+	int height = Pop();
+	int width = Pop();
 
 	Wnd = new TWindow(width, height, zoom, fullscreen);
 }
@@ -57,7 +63,7 @@ void Machine::O_GfxClear()
 
 void Machine::O_GfxBackColorSet()
 {
-	BackColor = PopNumber();
+	BackColor = Pop();
 }
 
 void Machine::O_GfxTitleSet()
@@ -159,7 +165,7 @@ bool Machine::HandleGlobalEvents(SDL_Event& e)
 	return false;
 }
 
-byte Machine::NextProgramByte()
+byte& Machine::NextProgramByte()
 {
 	if (ExecPtr < ProgMemorySize)
 		return ProgMemory[ExecPtr++];
@@ -167,19 +173,40 @@ byte Machine::NextProgramByte()
 	return NullOpcode;
 }
 
-int Machine::NextProgramWord()
+int Machine::NextProgramInt()
 {
-	byte hi = NextProgramByte();
-	byte lo = NextProgramByte();
+	byte& sign = NextProgramByte();
+	byte& hi = NextProgramByte();
+	byte& lo = NextProgramByte();
+	byte nibbles[2] = { lo, hi };
+	ushort value = Util::BytesToShort(nibbles);
+
+	return sign == 0 ? value : -value;
+}
+
+int Machine::NextProgramUint()
+{
+	byte& hi = NextProgramByte();
+	byte& lo = NextProgramByte();
 	byte nibbles[2] = { lo, hi };
 	return Util::BytesToShort(nibbles);
+}
+
+std::vector<int> Machine::NextProgramIntArray()
+{
+	std::vector<int> array;
+	byte& count = NextProgramByte();
+	for (int i = 0; i < count; i++)
+		array.push_back(NextProgramInt());
+	
+	return array;
 }
 
 void Machine::Abort(std::string msg)
 {
 	Running = false;
 
-	Util::Error(String::Format("Runtime error at program index %i (0x%x):\n\n%s", 
+	MsgBox::Error(String::Format("Runtime error at program index %i (0x%x):\n\n%s", 
 		ExecPtr, ExecPtr, msg.c_str()));
 }
 
@@ -199,7 +226,7 @@ void Machine::Execute(byte opcode)
 	}
 }
 
-int Machine::PopNumber()
+int Machine::Pop()
 {
 	if (ParamStack.empty()) {
 		Abort("Stack empty");

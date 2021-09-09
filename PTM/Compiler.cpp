@@ -8,6 +8,7 @@ using namespace CppUtils;
 //	Symbol definitions
 //=============================================================================
 
+#define SYM_CANCEL		'!'
 #define SYM_SEPARATOR	' '
 #define SYM_DIRECTIVE	'.'
 #define SYM_DATA_PTR	'&'
@@ -21,6 +22,12 @@ using namespace CppUtils;
 
 #define BYTE_MAX	255
 #define WORD_MAX	65535
+
+//=============================================================================
+//	Macros
+//=============================================================================
+
+#define ABORT_COMPILATION(msg) Abort(msg, srcln); bytecode.clear(); return bytecode;
 
 //=============================================================================
 //	Support structures
@@ -54,6 +61,12 @@ Compiler::~Compiler()
 {
 }
 
+void Compiler::Cancel(int line)
+{
+	MsgBox::Warning(String::Format("Compilation cancelled at line %i", line + 1));
+	exit(0);
+}
+
 void Compiler::Abort(std::string msg, int line)
 {
 	std::string fmt = "";
@@ -63,7 +76,7 @@ void Compiler::Abort(std::string msg, int line)
 	else
 		fmt = String::Format("Compilation error:\n\n%s", msg.c_str());
 
-	Util::Error(fmt);
+	MsgBox::Error(fmt);
 	exit(1);
 }
 
@@ -86,6 +99,10 @@ Program* Compiler::Compile(std::string srcfile, std::string dstfile)
 	for (int srcln = 0; srcln < lines.size(); srcln++) {
 		std::string line = String::Trim(lines[srcln]);
 		if (!line.empty()) {
+			if (line[0] == SYM_CANCEL) {
+				Cancel(srcln);
+				return nullptr;
+			}
 			if (String::StartsWith(line, SYM_COMMENT)) {
 				// It's a comment
 				continue;
@@ -115,73 +132,83 @@ Program* Compiler::Compile(std::string srcfile, std::string dstfile)
 
 std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int srcln, int progAddr)
 {
-	std::vector<byte> bytes;
-	int numericParam;
-	std::string stringParam;
-	std::string cmd;
+	std::vector<byte> bytecode;
+	std::string command;
+	std::string identifier;
+	std::vector<int> numericParams;
+
 	int ixFirstSpace = line.find_first_of(SYM_SEPARATOR);
-	bool hasParam = false;
-	
 	if (ixFirstSpace >= 0) {
-		cmd = String::ToUpper(line.substr(0, ixFirstSpace));
-		stringParam = String::Trim(line.substr(ixFirstSpace));
-
-		if (!stringParam.empty()) {
-			int number = String::ToInt(stringParam);
-			if (number < 0) {
-				bytes.clear();
-				Abort("Numeric underflow", srcln);
-				return bytes;
+		command = String::ToUpper(line.substr(0, ixFirstSpace));
+		std::string strParams = String::Trim(line.substr(ixFirstSpace));
+		// Parse parameters
+		if (!strParams.empty()) {
+			if (isalpha(strParams[0])) {
+				// It's an identifier
+				identifier = strParams;
 			}
-			if (number > WORD_MAX) {
-				bytes.clear();
-				Abort("Numeric overflow", srcln);
-				return bytes;
+			else {
+				// It's numbers
+				for (auto& strParam : String::Split(strParams, SYM_SEPARATOR)) {
+					numericParams.push_back(String::ToInt(strParam));
+				}
 			}
-
-			if (cmd == "PUSH" && number > BYTE_MAX)
-				cmd = "PUSHW";
-
-			numericParam = number;
-			hasParam = true;
 		}
 	}
 	else {
-		cmd = String::ToUpper(line);
+		command = String::ToUpper(line);
 	}
 
-	if (Command::Name.find(cmd) == Command::Name.end()) {
-		bytes.clear();
-		Abort(String::Format("Invalid command %s", cmd.c_str()), srcln);
-		return bytes;
+	if (Command::Name.find(command) == Command::Name.end()) {
+		ABORT_COMPILATION(String::Format("Invalid command %s", command.c_str()));
 	}
 
-	bytes.push_back(Command::Name[cmd]);
+	bytecode.push_back(Command::Name[command]);
 	
-	if (hasParam) {
-		if (cmd == "GOTO") {
-			LabelOrig label;
-			label.Name = stringParam;
-			label.Address = progAddr + 1;
-			LabelOrigAddr.push_back(label);
-			// Add placeholder for label address
-			bytes.push_back(0);
-			bytes.push_back(0);
+	if (command == "GOTO") {
+		if (identifier.empty()) {
+			ABORT_COMPILATION("Label identifier expected");
 		}
-		else {
-			if (numericParam > BYTE_MAX && numericParam <= WORD_MAX) {
-				byte nibbles[2];
-				Util::ShortToBytes(numericParam, nibbles);
-				bytes.push_back(nibbles[1]);
-				bytes.push_back(nibbles[0]);
+		LabelOrig label;
+		label.Name = identifier;
+		label.Address = progAddr + 1;
+		LabelOrigAddr.push_back(label);
+		// Add placeholder for label address
+		bytecode.push_back(0);
+		bytecode.push_back(0);
+	}
+	if (command == "PUSH" || command == "PUSHA") {
+		int count = numericParams.size();
+		if (count == 0) {
+			ABORT_COMPILATION("Parameters expected");
+		}
+		if (command == "PUSHA") {
+			if (count > BYTE_MAX) {
+				ABORT_COMPILATION("Parameter list exceeds 255 items");
 			}
-			else {
-				bytes.push_back(numericParam);
+			bytecode.push_back(count);
+		}
+		else if (command == "PUSH" && count > 1) {
+			ABORT_COMPILATION("Single parameter expected");
+		}
+		for (auto& param : numericParams) {
+			byte sign = param < 0 ? 1 : 0;
+			byte nibbles[2];
+			int value = abs(param);
+			if (value > WORD_MAX) {
+				ABORT_COMPILATION("Parameter overflow");
 			}
+			Util::ShortToBytes(value, nibbles);
+			bytecode.push_back(sign);
+			bytecode.push_back(nibbles[1]);
+			bytecode.push_back(nibbles[0]);
 		}
 	}
+	else {
+		bytecode.insert(bytecode.end(), numericParams.begin(), numericParams.end());
+	}
 
-	return bytes;
+	return bytecode;
 }
 
 void Compiler::ResolveLabels(std::vector<byte>& program)

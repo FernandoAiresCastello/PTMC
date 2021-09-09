@@ -11,7 +11,7 @@ using namespace CppUtils;
 int main(int argc, char* argv[])
 {
 	if (argc < 3) {
-		Util::Error("Invalid command line. Valid syntax:\n\n"
+		MsgBox::Error("Invalid command line. Valid syntax:\n\n"
 			"Run:\nptm -r <file>\n\n"
 			"Compile:\nptm -c <srcfile> <dstfile>\n\n"
 			"Compile then run:\nptm -cr <srcfile> <dstfile>");
@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
 	std::string dstpath = argc > 3 ? argv[3] : "";
 
 	if (!TFile::Exists(srcpath)) {
-		Util::Error(String::Format("File not found: %s", srcpath.c_str()));
+		MsgBox::Error(String::Format("File not found: %s", srcpath.c_str()));
 		return 1;
 	}
 
@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 
 	if (option == "-c") {
 		if (dstpath.empty()) {
-			Util::Error("Missing destination filename");
+			MsgBox::Error("Missing destination filename");
 			return 1;
 		}
 		Compiler* compiler = new Compiler();
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
 
 	if (option == "-cr") {
 		if (dstpath.empty()) {
-			Util::Error("Missing destination filename");
+			MsgBox::Error("Missing destination filename");
 			return 1;
 		}
 		Compiler* compiler = new Compiler();

@@ -15,8 +15,9 @@ class Machine
 public:
 	// Opcodes
 	void O_Nop();
-	void O_PushByteConst();
-	void O_PushWordConst();
+	void O_PushIntConst();
+	void O_PushIntArrayConst();
+	void O_Pop();
 	void O_Goto();
 	void O_Pause();
 	void O_GfxCreate();
@@ -52,10 +53,12 @@ private:
 	unsigned long PauseCycles = 0;
 
 	bool HandleGlobalEvents(SDL_Event& e);
-	byte NextProgramByte();
-	int NextProgramWord();
+	byte& NextProgramByte();
+	int NextProgramInt();
+	int NextProgramUint();
+	std::vector<int> NextProgramIntArray();
 	void Abort(std::string msg);
 	void AbortCommandNotImplemented();
 	void Execute(byte opcode);
-	int PopNumber();
+	int Pop();
 };

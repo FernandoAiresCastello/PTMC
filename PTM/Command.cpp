@@ -13,8 +13,9 @@ namespace Command
 		OP("NOP", 0x00, O_Nop);
 
 		// ===[ Param stack ]===
-		OP("PUSH", 0x10, O_PushByteConst);
-		OP("PUSHW", 0x11, O_PushWordConst);
+		OP("PUSH", 0x10, O_PushIntConst);
+		OP("PUSHA", 0x11, O_PushIntArrayConst);
+		OP("POP", 0x12, O_Pop);
 
 		// ===[ Control flow ]===
 		OP("GOTO", 0x20, O_Goto);
