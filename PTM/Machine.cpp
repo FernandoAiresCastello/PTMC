@@ -81,6 +81,16 @@ void Machine::O_Goto()
 	ExecPtr = NextProgramUint();
 }
 
+void Machine::O_Call()
+{
+	Call();
+}
+
+void Machine::O_Return()
+{
+	Return();
+}
+
 void Machine::O_Pause()
 {
 	PauseCycles = Pop();
@@ -278,8 +288,7 @@ StringLiteral Machine::NextProgramStringLiteral()
 void Machine::Abort(std::string msg)
 {
 	Running = false;
-
-	MsgBox::Error(String::Format("Runtime error at program index %i (0x%x):\n\n%s", 
+	MsgBox::Error("PTM", String::Format("Runtime error at program index %i (0x%x):\n\n%s",
 		ExecPtr, ExecPtr, msg.c_str()));
 }
 
@@ -352,6 +361,23 @@ std::string Machine::GetStringFromMemory(int ptr)
 	}
 
 	return std::string(mem.begin(), mem.end());
+}
+
+void Machine::Call()
+{
+	CallStack.push(ExecPtr + 2);
+	ExecPtr = NextProgramUint();
+}
+
+void Machine::Return()
+{
+	if (CallStack.empty()) {
+		Abort("Call stack empty");
+		return;
+	}
+
+	ExecPtr = CallStack.top();
+	CallStack.pop();
 }
 
 void Machine::InitDefaultPalette()

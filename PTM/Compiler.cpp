@@ -67,7 +67,7 @@ Compiler::~Compiler()
 
 void Compiler::Cancel(int line)
 {
-	MsgBox::Warning(String::Format("Compilation cancelled at line %i", line + 1));
+	MsgBox::Warning("PTM", String::Format("Compilation cancelled at line %i", line + 1));
 	exit(0);
 }
 
@@ -80,7 +80,7 @@ void Compiler::Abort(std::string msg, int line)
 	else
 		fmt = String::Format("Compilation error:\n\n%s", msg.c_str());
 
-	MsgBox::Error(fmt);
+	MsgBox::Error("PTM", fmt);
 	exit(1);
 }
 
@@ -188,8 +188,8 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 
 	bytecode.push_back(Command::Name[command]);
 	
-	// === GOTO ===
-	if (command == "GOTO") {
+	// === GOTO / CALL ===
+	if (command == "GOTO" || command == "CALL") {
 		if (identifier.empty()) {
 			ABORT_COMPILATION("Label identifier expected");
 		}
@@ -201,7 +201,7 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 		bytecode.push_back(0);
 		bytecode.push_back(0);
 	}
-	// === STO / STS / LOAD ===
+	// === STORE / LOAD ===
 	else if (command == "STORE" || command == "STORE.I" || command == "STORE.S" ||
 			 command == "LOAD" || command == "LOAD.I") {
 

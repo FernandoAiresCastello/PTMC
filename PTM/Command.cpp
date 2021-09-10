@@ -27,7 +27,9 @@ namespace Command
 
 		// ===[ Control flow ]===
 		OP("GOTO", 0x30, O_Goto);
-		OP("PAUSE", 0x31, O_Pause);
+		OP("CALL", 0x31, O_Call);
+		OP("RET", 0x32, O_Return);
+		OP("PAUSE", 0x33, O_Pause);
 		
 		// ===[ Graphics ]===
 		OP("GFX.OPEN", 0x40, O_GfxCreate);

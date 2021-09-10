@@ -27,6 +27,8 @@ public:
 	void O_LoadIntDirect();
 	void O_LoadIntIndirect();
 	void O_Goto();
+	void O_Call();
+	void O_Return();
 	void O_Pause();
 	void O_GfxCreate();
 	void O_GfxUpdate();
@@ -74,4 +76,6 @@ private:
 	std::vector<int> GetValuesInMemoryRegion(int firstAddr, int lastAddr);
 	void DumpMemoryToFile(std::string filename, int firstAddr, int lastAddr);
 	std::string GetStringFromMemory(int ptr);
+	void Call();
+	void Return();
 };
