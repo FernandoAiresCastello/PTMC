@@ -11,6 +11,7 @@ using namespace CppUtils;
 #define SYM_CANCEL		'!'
 #define SYM_SEPARATOR	' '
 #define SYM_DIRECTIVE	'.'
+#define SYM_STRING		'"'
 #define SYM_DATA_PTR	'&'
 #define SYM_COMMENT		';'
 #define SYM_LABEL		':'
@@ -28,6 +29,8 @@ using namespace CppUtils;
 //=============================================================================
 
 #define ABORT_COMPILATION(msg) Abort(msg, srcln); bytecode.clear(); return bytecode;
+#define BREAK_ON(cmd) if (command == cmd) SDL_TriggerBreakpoint();
+
 
 //=============================================================================
 //	Support structures
@@ -135,6 +138,7 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 	std::vector<byte> bytecode;
 	std::string command;
 	std::string identifier;
+	std::string stringLiteral;
 	std::vector<int> numericParams;
 
 	int ixFirstSpace = line.find_first_of(SYM_SEPARATOR);
@@ -143,7 +147,11 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 		std::string strParams = String::Trim(line.substr(ixFirstSpace));
 		// Parse parameters
 		if (!strParams.empty()) {
-			if (isalpha(strParams[0])) {
+			if (String::StartsAndEndsWith(strParams, SYM_STRING)) {
+				// It's a string literal
+				stringLiteral = String::RemoveFirstAndLast(strParams);
+			}
+			else if (isalpha(strParams[0])) {
 				// It's an identifier
 				identifier = strParams;
 			}
@@ -165,6 +173,7 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 
 	bytecode.push_back(Command::Name[command]);
 	
+	// === GOTO ===
 	if (command == "GOTO") {
 		if (identifier.empty()) {
 			ABORT_COMPILATION("Label identifier expected");
@@ -177,7 +186,19 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 		bytecode.push_back(0);
 		bytecode.push_back(0);
 	}
-	if (command == "PUSH" || command == "PUSHA") {
+	// === STS ===
+	else if (command == "STS") {
+		int count = numericParams.size();
+		if (count != 1) {
+			ABORT_COMPILATION("Pointer expected");
+		}
+		byte nibbles[2];
+		Util::ShortToBytes(numericParams[0], nibbles);
+		bytecode.push_back(nibbles[1]);
+		bytecode.push_back(nibbles[0]);
+	}
+	// === PUSH / PUSHA ===
+	else if (command == "PUSH" || command == "PUSHA") {
 		int count = numericParams.size();
 		if (count == 0) {
 			ABORT_COMPILATION("Parameters expected");
@@ -204,6 +225,18 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 			bytecode.push_back(nibbles[0]);
 		}
 	}
+	// === PUSHS ===
+	else if (command == "PUSHS") {
+		bytecode.push_back(stringLiteral.length());
+		for (int i = stringLiteral.length() - 1; i >= 0; i--) {
+			char ch = stringLiteral[i];
+			if (ch < 0 || ch > 255) {
+				ABORT_COMPILATION("String character overflow");
+			}
+			bytecode.push_back(ch);
+		}
+	}
+	// === All other commands ===
 	else {
 		bytecode.insert(bytecode.end(), numericParams.begin(), numericParams.end());
 	}

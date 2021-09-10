@@ -15,18 +15,22 @@ namespace Command
 		// ===[ Param stack ]===
 		OP("PUSH", 0x10, O_PushIntConst);
 		OP("PUSHA", 0x11, O_PushIntArrayConst);
-		OP("POP", 0x12, O_Pop);
+		OP("PUSHS", 0x12, O_PushStringConst);
+		OP("POP", 0x13, O_Pop);
+
+		// ===[ Memory ]===
+		OP("STS", 0x20, O_StoreString);
 
 		// ===[ Control flow ]===
-		OP("GOTO", 0x20, O_Goto);
-		OP("PAUSE", 0x21, O_Pause);
+		OP("GOTO", 0x30, O_Goto);
+		OP("PAUSE", 0x31, O_Pause);
 		
 		// ===[ Graphics ]===
-		OP("GFX.OPEN", 0x30, O_GfxCreate);
-		OP("GFX.UPDATE", 0x31, O_GfxUpdate);
-		OP("GFX.CLEAR", 0x32, O_GfxClear);
-		OP("GFX.BGC.SET", 0x33, O_GfxBackColorSet);
-		OP("GFX.TITLE.SET", 0x34, O_GfxTitleSet);
+		OP("GFX.OPEN", 0x40, O_GfxCreate);
+		OP("GFX.UPDATE", 0x41, O_GfxUpdate);
+		OP("GFX.CLEAR", 0x42, O_GfxClear);
+		OP("GFX.BGC.SET", 0x43, O_GfxBackColorSet);
+		OP("GFX.TITLE.SET", 0x44, O_GfxTitleSet);
 		
 		// ===[ Debugging ]===
 		OP("BREAK", 0xf0, O_Break);

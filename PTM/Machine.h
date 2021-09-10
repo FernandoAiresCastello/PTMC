@@ -10,6 +10,8 @@
 using namespace TileGameLib;
 using namespace CppUtils;
 
+struct StringLiteral;
+
 class Machine
 {
 public:
@@ -17,7 +19,9 @@ public:
 	void O_Nop();
 	void O_PushIntConst();
 	void O_PushIntArrayConst();
+	void O_PushStringConst();
 	void O_Pop();
+	void O_StoreString();
 	void O_Goto();
 	void O_Pause();
 	void O_GfxCreate();
@@ -53,12 +57,15 @@ private:
 	unsigned long PauseCycles = 0;
 
 	bool HandleGlobalEvents(SDL_Event& e);
+	void ClearMemory();
 	byte& NextProgramByte();
 	int NextProgramInt();
 	int NextProgramUint();
 	std::vector<int> NextProgramIntArray();
+	StringLiteral NextProgramStringLiteral();
 	void Abort(std::string msg);
-	void AbortCommandNotImplemented();
 	void Execute(byte opcode);
 	int Pop();
+	std::vector<int> GetValuesInMemoryRegion(int firstAddr, int lastAddr);
+	void DumpMemoryToFile(std::string filename, int firstAddr, int lastAddr);
 };
