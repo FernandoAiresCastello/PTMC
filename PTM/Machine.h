@@ -1,5 +1,6 @@
 #pragma once
 #include "Program.h"
+#include "ScreenBuffer.h"
 #include <map>
 #include <vector>
 #include <string>
@@ -29,6 +30,7 @@ public:
 	void O_LoadIntDirect();
 	void O_LoadIntIndirect();
 	void O_Goto();
+	void O_GotoIfNotZero();
 	void O_Call();
 	void O_Return();
 	void O_Pause();
@@ -61,6 +63,7 @@ public:
 private:
 	byte NullOpcode = 0;
 	bool Running = false;
+	bool DebugEnabled = true;
 	int ExecPtr = 0;
 	byte* ProgMemory = nullptr;
 	int ProgMemorySize = 0;
@@ -69,12 +72,12 @@ private:
 	std::stack<int> ParamStack;
 	std::stack<int> CallStack;
 	bool Halted = false;
-	bool DebugEnabled = true;
+	unsigned long PauseCycles = 0;
+	int BackColor = 0;
 	TWindow* Wnd = nullptr;
 	TPalette* Pal = TPalette::Default;
 	TCharset* Chr = TCharset::Default;
-	int BackColor = 0;
-	unsigned long PauseCycles = 0;
+	ScreenBuffer* Scr = nullptr;
 
 	void InitDefaultPalette();
 	bool HandleGlobalEvents(SDL_Event& e);
@@ -95,6 +98,7 @@ private:
 	std::string StackToString(std::stack<int>& stk);
 	std::string MemoryToString(int firstAddr, int lastAddr);
 	std::string GetStringFromMemory(int ptr);
+	void Goto();
 	void Call();
 	void Return();
 };

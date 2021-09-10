@@ -91,7 +91,14 @@ void Machine::O_LoadIntIndirect()
 
 void Machine::O_Goto()
 {
-	ExecPtr = NextProgramUint();
+	Goto();
+}
+
+void Machine::O_GotoIfNotZero()
+{
+	int value = Pop();
+	if (value != 0)
+		Goto();
 }
 
 void Machine::O_Call()
@@ -122,16 +129,44 @@ void Machine::O_GfxCreate()
 	int width = Pop();
 
 	Wnd = new TWindow(width, height, zoom, fullscreen);
+	Scr = new ScreenBuffer(width / 8, height / 8); // 20x18
 }
 
 void Machine::O_GfxUpdate()
 {
+	static int x;
+	static int y;
+	
+	x = 0;
+	y = 0;
+
+	for (int i = 0; i < Scr->Size; i++) {
+		ScreenCell& cell = Scr->Cells[i];
+		Wnd->DrawChar(Chr, Pal, cell.Char, cell.ForeColor, cell.BackColor, x, y);
+		x++;
+		if (x >= Scr->Cols) {
+			x = 0;
+			y++;
+		}
+	}
+
 	Wnd->Update();
 }
 
 void Machine::O_GfxClear()
 {
-	Wnd->Clear(Pal, BackColor);
+	static int x;
+	static int y;
+
+	x = 0;
+	y = 0;
+
+	for (int i = 0; i < Scr->Size; i++) {
+		ScreenCell& cell = Scr->Cells[i];
+		cell.Char = 0;
+		cell.ForeColor = BackColor;
+		cell.BackColor = BackColor;
+	}
 }
 
 void Machine::O_GfxBackColorSet()
@@ -168,7 +203,10 @@ void Machine::O_GfxPut()
 	int y = Pop();
 	int x = Pop();
 	
-	Wnd->DrawChar(Chr, Pal, ch, fgc, bgc, x, y);
+	ScreenCell& cell = Scr->Cells[y * Scr->Cols + x];
+	cell.Char = ch;
+	cell.ForeColor = fgc;
+	cell.BackColor = bgc;
 }
 
 void Machine::O_Increment()
@@ -270,6 +308,7 @@ Machine::~Machine()
 {
 	delete[] ProgMemory;
 	delete[] DataMemory;
+	delete Scr;
 }
 
 void Machine::Run(Program* prog)
@@ -521,6 +560,11 @@ std::string Machine::GetStringFromMemory(int ptr)
 	}
 
 	return std::string(mem.begin(), mem.end());
+}
+
+void Machine::Goto()
+{
+	ExecPtr = NextProgramUint();
 }
 
 void Machine::Call()

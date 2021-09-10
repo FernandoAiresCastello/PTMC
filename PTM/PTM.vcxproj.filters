@@ -6,6 +6,7 @@
     <ClCompile Include="Compiler.cpp" />
     <ClCompile Include="Program.cpp" />
     <ClCompile Include="Command.cpp" />
+    <ClCompile Include="ScreenBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Machine.h" />
@@ -15,6 +16,7 @@
     <ClInclude Include="resource.h">
       <Filter>Resources</Filter>
     </ClInclude>
+    <ClInclude Include="ScreenBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Resources">

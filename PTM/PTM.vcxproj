@@ -146,6 +146,10 @@
       <SubType>
       </SubType>
     </ClCompile>
+    <ClCompile Include="ScreenBuffer.cpp">
+      <SubType>
+      </SubType>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Command.h">
@@ -165,6 +169,10 @@
       </SubType>
     </ClInclude>
     <ClInclude Include="resource.h" />
+    <ClInclude Include="ScreenBuffer.h">
+      <SubType>
+      </SubType>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="PTM.rc" />

@@ -189,7 +189,7 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 	bytecode.push_back(Command::Name[command]);
 	
 	// === GOTO / CALL ===
-	if (command == "GOTO" || command == "CALL") {
+	if (command == "GOTO" || command == "GOTONZ" || command == "CALL") {
 		if (identifier.empty()) {
 			ABORT_COMPILATION("Label identifier expected");
 		}
