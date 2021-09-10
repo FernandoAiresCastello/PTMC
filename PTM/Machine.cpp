@@ -27,6 +27,12 @@ void Machine::O_PushIntArrayConst()
 		ParamStack.push(val);
 }
 
+void Machine::O_PushByteArrayConst()
+{
+	for (auto& val : NextProgramByteArray())
+		ParamStack.push(val);
+}
+
 void Machine::O_PushStringConst()
 {
 	StringLiteral str = NextProgramStringLiteral();
@@ -39,6 +45,12 @@ void Machine::O_PushStringConst()
 void Machine::O_Pop()
 {
 	ParamStack.pop();
+}
+
+void Machine::O_PopAll()
+{
+	while (!ParamStack.empty())
+		ParamStack.pop();
 }
 
 void Machine::O_StoreIntDirect()
@@ -184,7 +196,7 @@ void Machine::O_DebugBreak()
 	if (!DebugEnabled)
 		return;
 	
-	MessageBox("Breakpoint");
+	MessageBox(String::Format("Breakpoint at program index %i (0x%x)", ExecPtr));
 }
 
 void Machine::O_DebugMsgBoxShow()
@@ -303,7 +315,7 @@ bool Machine::HandleGlobalEvents(SDL_Event& e)
 		Running = false;
 		return true;
 	}
-	if (e.type == SDL_KEYDOWN) {
+	else if (e.type == SDL_KEYDOWN) {
 		const SDL_Keycode key = e.key.keysym.sym;
 		if (key == SDLK_PAUSE) {
 			Running = false;
@@ -358,6 +370,16 @@ std::vector<int> Machine::NextProgramIntArray()
 	byte& count = NextProgramByte();
 	for (int i = 0; i < count; i++)
 		array.push_back(NextProgramInt());
+
+	return array;
+}
+
+std::vector<byte> Machine::NextProgramByteArray()
+{
+	std::vector<byte> array;
+	byte& count = NextProgramByte();
+	for (int i = 0; i < count; i++)
+		array.push_back(NextProgramByte());
 
 	return array;
 }

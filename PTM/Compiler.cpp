@@ -215,12 +215,13 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 		bytecode.push_back(nibbles[0]);
 	}
 	// === PUSH / PUSHA ===
-	else if (command == "PUSH" || command == "PUSHA") {
+	else if (command == "PUSH" || command == "PUSHA" || command == "PUSHB") {
 		int count = numericParams.size();
 		if (count == 0) {
 			ABORT_COMPILATION("Parameters expected");
 		}
-		if (command == "PUSHA") {
+
+		if (command == "PUSHA" || command == "PUSHB") {
 			if (count > BYTE_MAX) {
 				ABORT_COMPILATION("Parameter list exceeds 255 items");
 			}
@@ -229,17 +230,26 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 		else if (command == "PUSH" && count > 1) {
 			ABORT_COMPILATION("Single parameter expected");
 		}
+
 		for (auto& param : numericParams) {
-			byte sign = param < 0 ? 1 : 0;
-			byte nibbles[2];
-			int value = abs(param);
-			if (value > WORD_MAX) {
-				ABORT_COMPILATION("Parameter overflow");
+			if (command == "PUSH" || command == "PUSHA") {
+				byte sign = param < 0 ? 1 : 0;
+				byte nibbles[2];
+				int value = abs(param);
+				if (value > WORD_MAX) {
+					ABORT_COMPILATION("Parameter overflow");
+				}
+				Util::ShortToBytes(value, nibbles);
+				bytecode.push_back(sign);
+				bytecode.push_back(nibbles[1]);
+				bytecode.push_back(nibbles[0]);
 			}
-			Util::ShortToBytes(value, nibbles);
-			bytecode.push_back(sign);
-			bytecode.push_back(nibbles[1]);
-			bytecode.push_back(nibbles[0]);
+			else if (command == "PUSHB") {
+				if (param < 0 || param > BYTE_MAX) {
+					ABORT_COMPILATION("Parameter overflow");
+				}
+				bytecode.push_back(param);
+			}
 		}
 	}
 	// === PUSHS ===

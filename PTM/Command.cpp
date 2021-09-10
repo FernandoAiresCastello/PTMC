@@ -15,8 +15,10 @@ namespace Command
 		// ===[ Param stack ]===
 		OP("PUSH", 0x10, O_PushIntConst);
 		OP("PUSHA", 0x11, O_PushIntArrayConst);
-		OP("PUSHS", 0x12, O_PushStringConst);
-		OP("POP", 0x13, O_Pop);
+		OP("PUSHB", 0x12, O_PushByteArrayConst);
+		OP("PUSHS", 0x13, O_PushStringConst);
+		OP("POP", 0x14, O_Pop);
+		OP("POPA", 0x15, O_PopAll);
 
 		// ===[ Memory ]===
 		OP("STORE", 0x20, O_StoreIntDirect);

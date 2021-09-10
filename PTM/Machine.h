@@ -15,12 +15,14 @@ struct StringLiteral;
 class Machine
 {
 public:
-	// Opcodes
+	// ===[ Commands ]===
 	void O_Nop();
 	void O_PushIntConst();
 	void O_PushIntArrayConst();
+	void O_PushByteArrayConst();
 	void O_PushStringConst();
 	void O_Pop();
+	void O_PopAll();
 	void O_StoreIntDirect();
 	void O_StoreIntIndirect();
 	void O_StoreString();
@@ -80,6 +82,7 @@ private:
 	int NextProgramInt();
 	int NextProgramUint();
 	std::vector<int> NextProgramIntArray();
+	std::vector<byte> NextProgramByteArray();
 	StringLiteral NextProgramStringLiteral();
 	void Abort(std::string msg);
 	void MessageBox(std::string msg);
