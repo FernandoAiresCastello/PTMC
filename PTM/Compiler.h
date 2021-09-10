@@ -28,4 +28,5 @@ private:
 	std::vector<byte> CompileLine(Program* program, std::string line, int srcln, int progAddr);
 	void ResolveLabels(std::vector<byte>& bytecode);
 	void ReplaceConstants(Program* program, std::vector<std::string>& sourceLines);
+	bool HasLabel(std::string name);
 };

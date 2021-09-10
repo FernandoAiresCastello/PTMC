@@ -40,6 +40,7 @@ namespace Command
 		OP("GFX.BGC.SET", 0x43, O_GfxBackColorSet);
 		OP("GFX.TITLE.SET", 0x44, O_GfxTitleSet);
 		OP("GFX.PAL.SET", 0x45, O_GfxPaletteSet);
+		OP("GFX.PUT", 0x46, O_GfxPut);
 		
 		// ===[ Arithmetic ]===
 		OP("INC", 0x50, O_Increment);
@@ -52,8 +53,8 @@ namespace Command
 		OP("DEBUG.ON", 0xf0, O_DebugOn);
 		OP("DEBUG.OFF", 0xf1, O_DebugOff);
 		OP("DEBUG.BRK", 0xf2, O_DebugBreak);
-		OP("DEBUG.STK.PARAMS", 0xf3, O_DebugParamStackDump);
-		OP("DEBUG.STK.CALL", 0xf4, O_DebugCallStackDump);
+		OP("DEBUG.PSTK", 0xf3, O_DebugParamStackDump);
+		OP("DEBUG.CSTK", 0xf4, O_DebugCallStackDump);
 		OP("DEBUG.MEM", 0xf5, O_DebugMemoryDump);
 		
 		// ===[ System ]===

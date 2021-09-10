@@ -214,7 +214,7 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 		bytecode.push_back(nibbles[1]);
 		bytecode.push_back(nibbles[0]);
 	}
-	// === PUSH / PUSHA ===
+	// === PUSH ===
 	else if (command == "PUSH" || command == "PUSHA" || command == "PUSHB") {
 		int count = numericParams.size();
 		if (count == 0) {
@@ -274,6 +274,10 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 void Compiler::ResolveLabels(std::vector<byte>& program)
 {
 	for (auto& origLabel : LabelOrigAddr) {
+		if (!HasLabel(origLabel.Name)) {
+			Abort("Undefined label " + origLabel.Name);
+			return;
+		}
 		for (auto& destLabel : LabelDestAddr) {
 			if (origLabel.Name == destLabel.Name) {
 				byte destAddrBytes[2];
@@ -317,4 +321,13 @@ void Compiler::ReplaceConstants(Program* program, std::vector<std::string>& sour
 			}
 		}
 	}
+}
+
+bool Compiler::HasLabel(std::string name)
+{
+	for (auto& label : LabelDestAddr)
+		if (label.Name == name)
+			return true;
+
+	return false;
 }

@@ -160,6 +160,17 @@ void Machine::O_GfxPaletteSet()
 	Pal->Set(ix, r, g, b);
 }
 
+void Machine::O_GfxPut()
+{
+	int bgc = Pop();
+	int fgc = Pop();
+	int ch = Pop();
+	int y = Pop();
+	int x = Pop();
+	
+	Wnd->DrawChar(Chr, Pal, ch, fgc, bgc, x, y);
+}
+
 void Machine::O_Increment()
 {
 	int value = Pop();

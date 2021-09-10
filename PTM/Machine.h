@@ -38,6 +38,7 @@ public:
 	void O_GfxBackColorSet();
 	void O_GfxTitleSet();
 	void O_GfxPaletteSet();
+	void O_GfxPut();
 	void O_Increment();
 	void O_Decrement();
 	void O_PushRandom();
