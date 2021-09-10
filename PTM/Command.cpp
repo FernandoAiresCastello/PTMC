@@ -19,7 +19,11 @@ namespace Command
 		OP("POP", 0x13, O_Pop);
 
 		// ===[ Memory ]===
-		OP("STS", 0x20, O_StoreString);
+		OP("STORE", 0x20, O_StoreIntDirect);
+		OP("STORE.I", 0x21, O_StoreIntIndirect);
+		OP("STORE.S", 0x22, O_StoreString);
+		OP("LOAD", 0x23, O_LoadIntDirect);
+		OP("LOAD.I", 0x24, O_LoadIntIndirect);
 
 		// ===[ Control flow ]===
 		OP("GOTO", 0x30, O_Goto);

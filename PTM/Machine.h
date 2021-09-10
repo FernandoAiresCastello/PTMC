@@ -21,7 +21,11 @@ public:
 	void O_PushIntArrayConst();
 	void O_PushStringConst();
 	void O_Pop();
+	void O_StoreIntDirect();
+	void O_StoreIntIndirect();
 	void O_StoreString();
+	void O_LoadIntDirect();
+	void O_LoadIntIndirect();
 	void O_Goto();
 	void O_Pause();
 	void O_GfxCreate();
@@ -56,6 +60,7 @@ private:
 	int BackColor = 0;
 	unsigned long PauseCycles = 0;
 
+	void InitDefaultPalette();
 	bool HandleGlobalEvents(SDL_Event& e);
 	void ClearMemory();
 	byte& NextProgramByte();

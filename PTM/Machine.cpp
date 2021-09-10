@@ -40,6 +40,19 @@ void Machine::O_Pop()
 	ParamStack.pop();
 }
 
+void Machine::O_StoreIntDirect()
+{
+	DataMemory[NextProgramUint()] = Pop();
+}
+
+void Machine::O_StoreIntIndirect()
+{
+	int ptr = NextProgramUint();
+	int addr = DataMemory[ptr];
+	int value = Pop();
+	DataMemory[addr] = value;
+}
+
 void Machine::O_StoreString()
 {
 	int addr = NextProgramUint();
@@ -48,6 +61,19 @@ void Machine::O_StoreString()
 		DataMemory[addr++] = Pop();
 
 	DataMemory[addr] = 0;
+}
+
+void Machine::O_LoadIntDirect()
+{
+	ParamStack.push(DataMemory[NextProgramUint()]);
+}
+
+void Machine::O_LoadIntIndirect()
+{
+	int ptr = NextProgramUint();
+	int addr = DataMemory[ptr];
+	int value = DataMemory[addr];
+	ParamStack.push(value);
 }
 
 void Machine::O_Goto()
@@ -117,6 +143,7 @@ void Machine::O_Exit()
 
 Machine::Machine()
 {
+	InitDefaultPalette();
 }
 
 Machine::~Machine()
@@ -179,13 +206,13 @@ bool Machine::HandleGlobalEvents(SDL_Event& e)
 		Running = false;
 		return true;
 	}
-	else if (e.type == SDL_KEYDOWN) {
+	if (e.type == SDL_KEYDOWN) {
 		const SDL_Keycode key = e.key.keysym.sym;
 		if (key == SDLK_PAUSE) {
 			Running = false;
 			return true;
 		}
-		else if (key == SDLK_RETURN && TKey::Alt() && Wnd != nullptr) {
+		if (key == SDLK_RETURN && TKey::Alt() && Wnd != nullptr) {
 			Wnd->ToggleFullscreen();
 			Wnd->Update();
 			return true;
@@ -325,4 +352,13 @@ std::string Machine::GetStringFromMemory(int ptr)
 	}
 
 	return std::string(mem.begin(), mem.end());
+}
+
+void Machine::InitDefaultPalette()
+{
+	Pal->Clear();
+	Pal->Set(0, 0x000000);
+	Pal->Set(1, 0xff0000);
+	Pal->Set(2, 0x00ff00);
+	Pal->Set(3, 0x0000ff);
 }

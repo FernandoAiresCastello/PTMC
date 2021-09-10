@@ -201,8 +201,10 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 		bytecode.push_back(0);
 		bytecode.push_back(0);
 	}
-	// === STS ===
-	else if (command == "STS") {
+	// === STO / STS / LOAD ===
+	else if (command == "STORE" || command == "STORE.I" || command == "STORE.S" ||
+			 command == "LOAD" || command == "LOAD.I") {
+
 		int count = numericParams.size();
 		if (count != 1) {
 			ABORT_COMPILATION("Pointer expected");
