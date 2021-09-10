@@ -47,7 +47,7 @@ void Machine::O_StoreString()
 	for (int i = 0; i < length; i++)
 		DataMemory[addr++] = Pop();
 
-	DumpMemoryToFile("memdump.txt", 0xf000, 0xf020);
+	DataMemory[addr] = 0;
 }
 
 void Machine::O_Goto()
@@ -92,7 +92,7 @@ void Machine::O_GfxBackColorSet()
 
 void Machine::O_GfxTitleSet()
 {
-	std::string title = "TODO"; // todo
+	std::string title = GetStringFromMemory(Pop());
 	Wnd->SetTitle(title);
 }
 
@@ -312,4 +312,17 @@ void Machine::DumpMemoryToFile(std::string filename, int firstAddr, int lastAddr
 	dump.push_back(ascii);
 
 	TFile::WriteLines(filename, dump);
+}
+
+std::string Machine::GetStringFromMemory(int ptr)
+{
+	std::vector<int> mem;
+	int ch = -1;
+
+	while (ch != 0) {
+		ch = DataMemory[ptr++];
+		mem.push_back(ch);
+	}
+
+	return std::string(mem.begin(), mem.end());
 }

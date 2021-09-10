@@ -15,7 +15,7 @@ using namespace CppUtils;
 #define SYM_DATA_PTR	'&'
 #define SYM_COMMENT		';'
 #define SYM_LABEL		':'
-#define SYM_VARIABLE	'$'
+#define SYM_CONST		'$'
 
 //=============================================================================
 //	Constants
@@ -29,6 +29,7 @@ using namespace CppUtils;
 //=============================================================================
 
 #define ABORT_COMPILATION(msg) Abort(msg, srcln); bytecode.clear(); return bytecode;
+#define BREAK SDL_TriggerBreakpoint();
 #define BREAK_ON(cmd) if (command == cmd) SDL_TriggerBreakpoint();
 
 
@@ -94,10 +95,10 @@ std::vector<std::string> Compiler::LoadSource(std::string filename)
 
 Program* Compiler::Compile(std::string srcfile, std::string dstfile)
 {
+	unsigned long progAddr = 0;
 	auto lines = LoadSource(srcfile);
 	Program* program = new Program();
-	CompileData(program, lines);
-	unsigned long progAddr = 0;
+	ReplaceConstants(program, lines);
 
 	for (int srcln = 0; srcln < lines.size(); srcln++) {
 		std::string line = String::Trim(lines[srcln]);
@@ -156,9 +157,23 @@ std::vector<byte> Compiler::CompileLine(Program* program, std::string line, int 
 				identifier = strParams;
 			}
 			else {
-				// It's numbers
 				for (auto& strParam : String::Split(strParams, SYM_SEPARATOR)) {
-					numericParams.push_back(String::ToInt(strParam));
+					if (strParam[0] == SYM_CONST) {
+						// It's a constant
+						std::string id = String::Skip(strParam, 1);
+						if (ConstDefs.find(id) == ConstDefs.end()) {
+							ABORT_COMPILATION(String::Format("Undefined constant %s", id.c_str()));
+						}
+						strParam = ConstDefs[id];
+					}
+					if (String::StartsAndEndsWith(strParam, SYM_STRING)) {
+						// It's a string literal
+						stringLiteral = String::RemoveFirstAndLast(strParam);
+					}
+					else {
+						// It's a literal integer
+						numericParams.push_back(String::ToInt(strParam));
+					}
 				}
 			}
 		}
@@ -259,16 +274,13 @@ void Compiler::ResolveLabels(std::vector<byte>& program)
 }
 
 //=============================================================================
-//	Data compilation
+//	Constants
 //=============================================================================
 
-void Compiler::CompileData(Program* program, std::vector<std::string>& sourceLines)
+void Compiler::ReplaceConstants(Program* program, std::vector<std::string>& sourceLines)
 {
-	Data.clear();
-	DataPtr.clear();
-	DataDirectoryAddress = -1;
+	ConstDefs.clear();
 
-	// STEP 1: find and process data directives
 	for (int srcLineNumber = 0; srcLineNumber < sourceLines.size(); srcLineNumber++) {
 		std::string srcLine = sourceLines[srcLineNumber];
 		std::string line = String::Trim(srcLine);
@@ -281,78 +293,16 @@ void Compiler::CompileData(Program* program, std::vector<std::string>& sourceLin
 			int ixSecondSpace = line.find_first_of(SYM_SEPARATOR, ixFirstSpace + 1);
 
 			std::string directive = String::Trim(String::ToLower(line.substr(1, ixFirstSpace - 1)));
-			
-			if (directive == "data") {
-				std::string address = String::Trim(line.substr(ixFirstSpace));
-				DataDirectoryAddress = String::ToInt(address);
-				continue;
-			}
-			if (ixFirstSpace <= 0 || ixSecondSpace <= 0) {
-				Abort("Invalid data directive", srcLineNumber);
-				return;
-			}
-			if (DataDirectoryAddress < 0) {
-				Abort("Undefined data directory address");
-				return;
-			}
-
 			std::string id = String::Trim(line.substr(ixFirstSpace + 1, ixSecondSpace - ixFirstSpace));
 			std::string data = String::Trim(line.substr(ixSecondSpace));
 
-			if (directive == "byte") {
-				Data.push_back(CompileByteData(id, data, srcLineNumber));
-			}
-			else if (directive == "text") {
-				Data.push_back(CompileTextData(id, data, srcLineNumber));
+			if (directive == "def") {
+				ConstDefs[id] = data;
 			}
 			else {
-				Abort(String::Format("Invalid data directive .%s", directive.c_str()), srcLineNumber);
+				Abort(String::Format("Invalid directive .%s", directive.c_str()), srcLineNumber);
 				return;
 			}
 		}
 	}
-
-	// STEP 2: Insert compiled data bytes into bytecode
-	for (auto& item : Data) {
-		std::string id = item.Id;
-		DataPtr[id] = DataDirectoryAddress;
-		for (auto& byte : item.Data) {
-			program->Bytecode[DataDirectoryAddress] = byte;
-			DataDirectoryAddress++;
-		}
-	}
-}
-
-DataItem Compiler::CompileByteData(std::string id, std::string data, int srcln)
-{
-	DataItem item;
-	item.Id = id;
-	item.Address = 0;
-
-	auto bytes = String::Split(data, SYM_SEPARATOR);
-	for (auto& strByte : bytes) {
-		int byte = String::ToInt(strByte);
-		if (byte < 0 || byte > BYTE_MAX) {
-			Abort("Invalid byte value", srcln);
-			return item;
-		}
-		else {
-			item.Data.push_back(byte);
-		}
-	}
-
-	return item;
-}
-
-DataItem Compiler::CompileTextData(std::string id, std::string data, int srcln)
-{
-	DataItem item;
-	item.Id = id;
-
-	std::string text = String::RemoveFirstAndLast(data);
-	for (char& ch : text)
-		item.Data.push_back(ch);
-
-	item.Data.push_back(0);
-	return item;
 }

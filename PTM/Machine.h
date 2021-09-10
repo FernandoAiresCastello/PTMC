@@ -68,4 +68,5 @@ private:
 	int Pop();
 	std::vector<int> GetValuesInMemoryRegion(int firstAddr, int lastAddr);
 	void DumpMemoryToFile(std::string filename, int firstAddr, int lastAddr);
+	std::string GetStringFromMemory(int ptr);
 };
