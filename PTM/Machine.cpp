@@ -124,18 +124,67 @@ void Machine::O_GfxClear()
 
 void Machine::O_GfxBackColorSet()
 {
-	BackColor = Pop();
+	int paletteIndex = Pop();
+	if (paletteIndex < 0 || paletteIndex >= Pal->GetSize()) {
+		Abort("Parameter value out of range");
+		return;
+	}
+
+	BackColor = paletteIndex;
 }
 
 void Machine::O_GfxTitleSet()
 {
-	std::string title = GetStringFromMemory(Pop());
-	Wnd->SetTitle(title);
+	Wnd->SetTitle(GetStringFromMemory(Pop()));
+}
+
+void Machine::O_GfxPaletteSet()
+{
+	int b = Pop();
+	int g = Pop();
+	int r = Pop();
+	int ix = Pop();
+
+	Pal->Set(ix, r, g, b);
+}
+
+void Machine::O_Increment()
+{
+	int value = Pop();
+	value++;
+	ParamStack.push(value);
+}
+
+void Machine::O_Decrement()
+{
+	int value = Pop();
+	value--;
+	ParamStack.push(value);
+}
+
+void Machine::O_PushRandom()
+{
+	int max = Pop();
+	int min = Pop();
+	ParamStack.push(Util::Random(min, max));
+}
+
+void Machine::O_DebugOn()
+{
+	DebugEnabled = true;
+}
+
+void Machine::O_DebugOff()
+{
+	DebugEnabled = false;
 }
 
 void Machine::O_DebugBreak()
 {
-	SDL_TriggerBreakpoint();
+	if (!DebugEnabled)
+		return;
+	
+	MessageBox("Breakpoint");
 }
 
 void Machine::O_DebugMsgBoxShow()
@@ -144,6 +193,9 @@ void Machine::O_DebugMsgBoxShow()
 
 void Machine::O_DebugParamStackDump()
 {
+	if (!DebugEnabled)
+		return;
+
 	std::string dump = "Parameter stack:\n\n";
 	dump.append(StackToString(ParamStack));
 	MessageBox(dump);
@@ -151,6 +203,9 @@ void Machine::O_DebugParamStackDump()
 
 void Machine::O_DebugCallStackDump()
 {
+	if (!DebugEnabled)
+		return;
+
 	std::string dump = "Call stack:\n\n";
 	dump.append(StackToString(CallStack));
 	MessageBox(dump);
@@ -158,6 +213,9 @@ void Machine::O_DebugCallStackDump()
 
 void Machine::O_DebugMemoryDump()
 {
+	if (!DebugEnabled)
+		return;
+
 	std::string dump = "Memory:\n\n";
 	int lastAddr = Pop();
 	int firstAddr = Pop();
@@ -181,6 +239,7 @@ void Machine::O_Exit()
 
 Machine::Machine()
 {
+	Util::Randomize();
 	InitDefaultPalette();
 }
 
@@ -452,7 +511,5 @@ void Machine::InitDefaultPalette()
 {
 	Pal->Clear();
 	Pal->Set(0, 0x000000);
-	Pal->Set(1, 0xff0000);
-	Pal->Set(2, 0x00ff00);
-	Pal->Set(3, 0x0000ff);
+	Pal->Set(1, 0xffffff);
 }

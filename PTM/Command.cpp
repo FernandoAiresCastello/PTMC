@@ -37,12 +37,22 @@ namespace Command
 		OP("GFX.CLEAR", 0x42, O_GfxClear);
 		OP("GFX.BGC.SET", 0x43, O_GfxBackColorSet);
 		OP("GFX.TITLE.SET", 0x44, O_GfxTitleSet);
+		OP("GFX.PAL.SET", 0x45, O_GfxPaletteSet);
 		
+		// ===[ Arithmetic ]===
+		OP("INC", 0x50, O_Increment);
+		OP("DEC", 0x51, O_Decrement);
+
+		// ===[ Utils ]===
+		OP("RND.GET", 0xe0, O_PushRandom);
+
 		// ===[ Debugging ]===
-		OP("DEBUG.BRK", 0xf0, O_DebugBreak);
-		OP("DEBUG.STK.PARAMS", 0xf1, O_DebugParamStackDump);
-		OP("DEBUG.STK.CALL", 0xf2, O_DebugCallStackDump);
-		OP("DEBUG.MEM", 0xf3, O_DebugMemoryDump);
+		OP("DEBUG.ON", 0xf0, O_DebugOn);
+		OP("DEBUG.OFF", 0xf1, O_DebugOff);
+		OP("DEBUG.BRK", 0xf2, O_DebugBreak);
+		OP("DEBUG.STK.PARAMS", 0xf3, O_DebugParamStackDump);
+		OP("DEBUG.STK.CALL", 0xf4, O_DebugCallStackDump);
+		OP("DEBUG.MEM", 0xf5, O_DebugMemoryDump);
 		
 		// ===[ System ]===
 		OP("HALT", 0xfe, O_Halt);

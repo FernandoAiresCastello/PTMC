@@ -35,6 +35,12 @@ public:
 	void O_GfxClear();
 	void O_GfxBackColorSet();
 	void O_GfxTitleSet();
+	void O_GfxPaletteSet();
+	void O_Increment();
+	void O_Decrement();
+	void O_PushRandom();
+	void O_DebugOn();
+	void O_DebugOff();
 	void O_DebugBreak();
 	void O_DebugMsgBoxShow();
 	void O_DebugParamStackDump();
@@ -60,6 +66,7 @@ private:
 	std::stack<int> ParamStack;
 	std::stack<int> CallStack;
 	bool Halted = false;
+	bool DebugEnabled = true;
 	TWindow* Wnd = nullptr;
 	TPalette* Pal = TPalette::Default;
 	TCharset* Chr = TCharset::Default;
