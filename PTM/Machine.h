@@ -35,7 +35,11 @@ public:
 	void O_GfxClear();
 	void O_GfxBackColorSet();
 	void O_GfxTitleSet();
-	void O_Break();
+	void O_DebugBreak();
+	void O_DebugMsgBoxShow();
+	void O_DebugParamStackDump();
+	void O_DebugCallStackDump();
+	void O_DebugMemoryDump();
 	void O_Halt();
 	void O_Exit();
 
@@ -71,10 +75,14 @@ private:
 	std::vector<int> NextProgramIntArray();
 	StringLiteral NextProgramStringLiteral();
 	void Abort(std::string msg);
+	void MessageBox(std::string msg);
+	void MessageBox(std::string title, std::string msg);
 	void Execute(byte opcode);
 	int Pop();
 	std::vector<int> GetValuesInMemoryRegion(int firstAddr, int lastAddr);
 	void DumpMemoryToFile(std::string filename, int firstAddr, int lastAddr);
+	std::string StackToString(std::stack<int>& stk);
+	std::string MemoryToString(int firstAddr, int lastAddr);
 	std::string GetStringFromMemory(int ptr);
 	void Call();
 	void Return();

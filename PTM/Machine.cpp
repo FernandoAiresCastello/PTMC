@@ -1,3 +1,4 @@
+#include <sstream>
 #include "Machine.h"
 #include "Command.h"
 
@@ -132,9 +133,36 @@ void Machine::O_GfxTitleSet()
 	Wnd->SetTitle(title);
 }
 
-void Machine::O_Break()
+void Machine::O_DebugBreak()
 {
 	SDL_TriggerBreakpoint();
+}
+
+void Machine::O_DebugMsgBoxShow()
+{
+}
+
+void Machine::O_DebugParamStackDump()
+{
+	std::string dump = "Parameter stack:\n\n";
+	dump.append(StackToString(ParamStack));
+	MessageBox(dump);
+}
+
+void Machine::O_DebugCallStackDump()
+{
+	std::string dump = "Call stack:\n\n";
+	dump.append(StackToString(CallStack));
+	MessageBox(dump);
+}
+
+void Machine::O_DebugMemoryDump()
+{
+	std::string dump = "Memory:\n\n";
+	int lastAddr = Pop();
+	int firstAddr = Pop();
+	dump.append(MemoryToString(firstAddr, lastAddr));
+	MessageBox(dump);
 }
 
 void Machine::O_Halt()
@@ -288,8 +316,18 @@ StringLiteral Machine::NextProgramStringLiteral()
 void Machine::Abort(std::string msg)
 {
 	Running = false;
-	MsgBox::Error("PTM", String::Format("Runtime error at program index %i (0x%x):\n\n%s",
+	MsgBox::Error(String::Format("Runtime error at program index %i (0x%x):\n\n%s",
 		ExecPtr, ExecPtr, msg.c_str()));
+}
+
+void Machine::MessageBox(std::string msg)
+{
+	MessageBox("PTM", msg);
+}
+
+void Machine::MessageBox(std::string title, std::string msg)
+{
+	MsgBox::Info(title, msg);
 }
 
 void Machine::Execute(byte opcode)
@@ -318,7 +356,6 @@ int Machine::Pop()
 std::vector<int> Machine::GetValuesInMemoryRegion(int firstAddr, int lastAddr)
 {
 	std::vector<int> mem;
-	
 	for (int addr = firstAddr; addr <= lastAddr; addr++)
 		mem.push_back(DataMemory[addr]);
 
@@ -348,6 +385,37 @@ void Machine::DumpMemoryToFile(std::string filename, int firstAddr, int lastAddr
 	dump.push_back(ascii);
 
 	TFile::WriteLines(filename, dump);
+}
+
+std::string Machine::StackToString(std::stack<int>& stk)
+{
+	std::stringstream ss;
+	std::stack<int> params = stk;
+	for (int i = 0; i < stk.size(); i++) {
+		int value = params.top();
+		char ch = (value >= 0x20 && value < 0x7f) ? (char)value : '.';
+		params.pop();
+		ss << value << " / 0x" << 
+			String::IntToHex(value, true) << " / " << ch << "\n";
+	}
+
+	std::string str = ss.str();
+	return str.empty() ? "(Empty)" : str;
+}
+
+std::string Machine::MemoryToString(int firstAddr, int lastAddr)
+{
+	std::stringstream ss;
+	auto values = GetValuesInMemoryRegion(firstAddr, lastAddr);
+	for (int i = 0; i < values.size(); i++) {
+		int value = values[i];
+		char ch = (value >= 0x20 && value < 0x7f) ? (char)value : '.';
+		ss << String::Format("[0x%04X] ", firstAddr + i) <<
+			value << " / 0x" << 
+			String::IntToHex(values[i], true) <<  " / " << ch << "\n";
+	}
+
+	return ss.str();
 }
 
 std::string Machine::GetStringFromMemory(int ptr)

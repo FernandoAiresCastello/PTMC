@@ -39,7 +39,10 @@ namespace Command
 		OP("GFX.TITLE.SET", 0x44, O_GfxTitleSet);
 		
 		// ===[ Debugging ]===
-		OP("BREAK", 0xf0, O_Break);
+		OP("DEBUG.BRK", 0xf0, O_DebugBreak);
+		OP("DEBUG.STK.PARAMS", 0xf1, O_DebugParamStackDump);
+		OP("DEBUG.STK.CALL", 0xf2, O_DebugCallStackDump);
+		OP("DEBUG.MEM", 0xf3, O_DebugMemoryDump);
 		
 		// ===[ System ]===
 		OP("HALT", 0xfe, O_Halt);
