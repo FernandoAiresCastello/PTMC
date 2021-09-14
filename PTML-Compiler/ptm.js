@@ -5,6 +5,8 @@
 //      https://github.com/FernandoAiresCastello
 //
 //=============================================================================
+//  *** INTERNAL SYSTEM CLASSES ***
+//=============================================================================
 
 class Util {
 
@@ -220,76 +222,6 @@ class Palette {
     InitDefault() {
         this.Add(0x000000);
         this.Add(0xffffff);
-        this.Add(0xe0e0e0);
-        this.Add(0xc0c0c0);
-        this.Add(0x808080);
-        this.Add(0x505050);
-        this.Add(0x303030);
-        this.Add(0x101010);
-        this.Add(0x500000);
-        this.Add(0x800000);
-        this.Add(0xc00000);
-        this.Add(0xff0000);
-        this.Add(0xff5050);
-        this.Add(0xff8080);
-        this.Add(0xffc0c0);
-        this.Add(0xffe0e0);
-        this.Add(0xc02000);
-        this.Add(0xff5000);
-        this.Add(0xff8000);
-        this.Add(0xffc000);
-        this.Add(0xffc050);
-        this.Add(0xffc080);
-        this.Add(0xffa050);
-        this.Add(0x808050);
-        this.Add(0x505000);
-        this.Add(0x808000);
-        this.Add(0xc0c000);
-        this.Add(0xffff00);
-        this.Add(0xffff50);
-        this.Add(0xffff80);
-        this.Add(0xffffc0);
-        this.Add(0xc0c080);
-        this.Add(0x005000);
-        this.Add(0x008000);
-        this.Add(0x00c000);
-        this.Add(0x00ff00);
-        this.Add(0x80ff00);
-        this.Add(0x80ff80);
-        this.Add(0xc0ff00);
-        this.Add(0xc0ff80);
-        this.Add(0x005050);
-        this.Add(0x008080);
-        this.Add(0x00c0c0);
-        this.Add(0x00ffff);
-        this.Add(0x80e0ff);
-        this.Add(0x00ffc0);
-        this.Add(0x00ff80);
-        this.Add(0x00ff50);
-        this.Add(0x000050);
-        this.Add(0x000080);
-        this.Add(0x0000c0);
-        this.Add(0x0000ff);
-        this.Add(0x0050ff);
-        this.Add(0x0080ff);
-        this.Add(0x00a0ff);
-        this.Add(0x00c0ff);
-        this.Add(0x200050);
-        this.Add(0x300050);
-        this.Add(0x500080);
-        this.Add(0x8000ff);
-        this.Add(0x8050ff);
-        this.Add(0xc080ff);
-        this.Add(0xc0a0ff);
-        this.Add(0xc0c0ff);
-        this.Add(0x500050);
-        this.Add(0x800080);
-        this.Add(0xc000c0);
-        this.Add(0xff00ff);
-        this.Add(0xff50ff);
-        this.Add(0xff80ff);
-        this.Add(0xffc0ff);
-        this.Add(0xffe0ff);
     }
 }
 
@@ -321,12 +253,12 @@ class GraphicsDriver {
     Overlay = null;
     Tileset = null;
     Palette = null;
-    BackColor = 0;
-    BorderColor = 7;
-    TextColor = 1;
+
     ScreenWidth = 160;
     ScreenHeight = 144;
     ScreenZoom = 4;
+    BackColor = 0;
+
     TilePxCountX = 8;
     TilePxCountY = 8;
     Cols = this.ScreenWidth / this.TilePxCountX;
@@ -347,17 +279,12 @@ class GraphicsDriver {
         this.Tileset = new Tileset();
         this.Palette = new Palette();
 
-        document.body.style.backgroundColor = this.Palette.Colors[this.BorderColor].RGB;
-        document.body.style.color = this.Palette.Colors[this.TextColor].RGB;
-
+        this.Overlay = document.getElementById('overlay');
         const canvasElement = document.getElementsByTagName('canvas')[0];
         canvasElement.width = this.CanvasWidth;
         canvasElement.height = this.CanvasHeight;
         this.Canvas = canvasElement.getContext('2d');
         this.Canvas.imageSmoothingEnabled = false;
-
-        this.Overlay = document.getElementById('overlay');
-
         this.ClearBackground();
     }
 
@@ -426,10 +353,13 @@ class Display {
         this.Gfx = new GraphicsDriver();
     }
 
-    ClearBackground(backColor) {
+    SetBackgroundColor(backColor) {
         if (backColor != null) {
             this.Gfx.BackColor = backColor;
         }
+    }
+
+    ClearBackground() {
         this.Gfx.ClearBackground();
     }
 
@@ -811,54 +741,43 @@ class Machine {
 }
 
 //=============================================================================
+//  *** INTERNAL SYSTEM FUNCTIONS ***
+//=============================================================================
 
-class Test {
-    Ptm = null;
-    Global = null;
+function Sys_Init() {
+    document.body.style.backgroundColor = '#000000';
+    window.ptm = new Machine();
+}
 
-    constructor() {
-        this.Ptm = new Machine();
-        this.Global = window;
+function Sys_Error(text) {
+    const msg = `ERROR: ${text}`;
+    console.error(msg);
+    ptm.Display.Gfx.Overlay.innerHTML = `<span style="color:#f00">${msg}</span>`;
+}
+
+//=============================================================================
+//  *** PUBLIC API ***
+//=============================================================================
+
+function Api_Log(text) {
+    console.log(text);
+}
+
+function Api_Display_ClearBackground() {
+    ptm.Display.ClearBackground();
+}
+
+function Api_Display_SetBackColor(ixPalette) {
+    if (ixPalette >= 0 && ixPalette < ptm.Display.Gfx.Palette.Colors.length) {
+        ptm.Display.SetBackgroundColor(ixPalette);
     }
-
-    Test01() {
-        console.log('Test01 started');
-        this.Ptm.Display.ClearBackground(50);
-
-        this.Ptm.Display.MapViews = [];
-
-        this.Global.objectMap = new ObjectMap(2, 10, 10);
-        this.Global.mapView = new MapView(0, 0, 10, 10);
-        this.Ptm.Display.AddMapView(mapView, objectMap);
-
-        this.Global.layer0 = this.Ptm.Display.MapViews[0].ObjectMap.Layers[0];
-        this.Global.layer1 = this.Ptm.Display.MapViews[0].ObjectMap.Layers[1];
-        this.Global.obj1 = new GameObject(new Tile('-', 55, 59));
-        this.Global.obj1.AddTile(new Tile('+', 55, 59));
-        this.Global.obj2 = new GameObject(new Tile('X', 10, 15));
-        this.Global.obj2.AddTile(new Tile('O', 15, 10));
-
-        layer0.Fill(obj1);
-        layer1.SetObject(obj2, 0, 0);
-        layer1.SetObject(obj2, 1, 0);
-        layer1.SetObject(obj2, 0, 1);
-        layer1.SetObject(obj2, objectMap.Cols - 1, 0);
-        layer1.SetObject(obj2, objectMap.Cols - 2, 0);
-        layer1.SetObject(obj2, objectMap.Cols - 1, 1);
-        layer1.SetObject(obj2, 0, objectMap.Rows - 1);
-        layer1.SetObject(obj2, 0, objectMap.Rows - 2);
-        layer1.SetObject(obj2, 1, objectMap.Rows - 1);
-        layer1.SetObject(obj2, objectMap.Cols - 1, objectMap.Rows - 1);
-        layer1.SetObject(obj2, objectMap.Cols - 1, objectMap.Rows - 2);
-        layer1.SetObject(obj2, objectMap.Cols - 2, objectMap.Rows - 1);
-
-        this.Ptm.Run();
+    else {
+        Sys_Error('Palette index out of range');
     }
 }
 
 //=============================================================================
-//  User code
+//  *** USER CODE ***
 //=============================================================================
 
 [[[COMPILED_JS]]]
-//=============================================================================

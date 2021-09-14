@@ -11,5 +11,10 @@ namespace PTMLCompiler
         public CompilerException(string message) : base(message)
         {
         }
+
+        public CompilerException(string message, int srcLineNr, string srcLineCode) :
+            base(string.Format("COMPILE ERROR: {0} (at line {1}: {2})", message, srcLineNr, srcLineCode))
+        {
+        }
     }
 }

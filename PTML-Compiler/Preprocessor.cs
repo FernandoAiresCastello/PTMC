@@ -20,9 +20,12 @@ namespace PTMLCompiler
         {
             var lines = new List<SourceLine>();
             bool mainFunctionFound = false;
+            int srcLineNr = 0;
 
             for (int i = 0; i < RawSrcLines.Length; i++)
             {
+                srcLineNr++;
+
                 // Replace tabs with spaces
                 RawSrcLines[i] = RawSrcLines[i]
                     .Replace('\t', ' ')
@@ -39,10 +42,15 @@ namespace PTMLCompiler
                         .Substring(0, lastIndexOfComment)
                         .Trim();
 
+                if (RawSrcLines[i].ToUpper().StartsWith("FN SYS_"))
+                    throw new CompilerException("Cannot redefine system function", srcLineNr, RawSrcLines[i]);
+                if (RawSrcLines[i].ToUpper().StartsWith("FN API_"))
+                    throw new CompilerException("Cannot redefine API function", srcLineNr, RawSrcLines[i]);
+
                 if (RawSrcLines[i].ToUpper() == "FN MAIN")
                 {
                     mainFunctionFound = true;
-                    RawSrcLines[i] = "FN main";
+                    RawSrcLines[i] = "FN Sys_Main";
                 }
 
                 lines.Add(new SourceLine(i + 1, RawSrcLines[i]));

@@ -37,7 +37,7 @@ namespace PTMLCompiler
                     }
                     catch (CompilerException cex)
                     {
-                        Console.WriteLine("COMPILE ERROR: " + cex.Message);
+                        Console.WriteLine(cex.Message);
                     }
                     catch (Exception ex)
                     {

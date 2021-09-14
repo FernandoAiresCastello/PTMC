@@ -77,6 +77,11 @@ namespace PTMLCompiler
             Output.Add(CompileCommand(commandName, parameters));
         }
 
+        private string ErrorLine()
+        {
+            return string.Format(">>>>> SYNTAX ERROR AT LINE {0}: {1}", CurLine.LineNr, CurLine.Code);
+        }
+
         private string CompileCommand(string name, string param)
         {
             string cmd = null;
@@ -88,6 +93,8 @@ namespace PTMLCompiler
                 case FunctionBodyStart: cmd = CmdFunctionBodyStart(); break;
                 case FunctionBodyEnd: cmd = CmdFunctionBodyEnd(); break;
                 case "CALL": cmd = CmdCall(param); break;
+                case "BGCOLOR": cmd = CmdSetBackColor(param); break;
+                case "CLS": cmd = CmdClearScreen(param); break;
 
                 default: cmd = ErrorLine(); break;
             }
@@ -100,14 +107,19 @@ namespace PTMLCompiler
             return cmd;
         }
 
-        private string ErrorLine()
+        private string CmdSetBackColor(string param)
         {
-            return string.Format(">>>>> SYNTAX ERROR AT LINE {0}: {1}", CurLine.LineNr, CurLine.Code);
+            return string.Format("Api_Display_SetBackColor({0});", param);
+        }
+
+        private string CmdClearScreen(string param)
+        {
+            return "Api_Display_ClearBackground();";
         }
 
         private string CmdLog(string param)
         {
-            return string.Format("console.log({0});", param);
+            return string.Format("Api_Log({0});", param);
         }
 
         private string CmdFunction(string param)
