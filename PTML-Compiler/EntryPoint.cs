@@ -22,23 +22,32 @@ namespace PTMLCompiler
                         if (!dstFilePath.EndsWith(".html") && !dstFilePath.EndsWith(".htm"))
                             dstFilePath += ".html";
 
+                        File.Delete(dstFilePath);
+
                         string[] srcFileLines = File.ReadAllLines(srcFilePath);
                         string baseJs = Properties.Resources.ptm_js;
                         string baseHtml = Properties.Resources.ptm_html;
 
                         Compiler compiler = new Compiler(srcFileLines, baseJs, baseHtml);
                         Console.WriteLine(string.Format("Compiling \"{0}\" into \"{1}\" ...", srcFilePath, dstFilePath));
-                        compiler.Run();
+                        
+                        string compiledCode = compiler.Run();
+                        File.WriteAllText(dstFilePath, compiledCode);
+                        Console.WriteLine("Compilation successful!");
+                    }
+                    catch (CompilerException cex)
+                    {
+                        Console.WriteLine("COMPILE ERROR: " + cex.Message);
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Unexpected error: " + ex.Message);
+                        Console.WriteLine("UNEXPECTED ERROR: " + ex.Message);
                         Console.WriteLine(ex.StackTrace);
                     }
                 }
                 else
                 {
-                    Console.WriteLine(string.Format("Error: source file \"{0}\" not found", srcFilePath));
+                    Console.WriteLine(string.Format("ERROR: source file \"{0}\" not found", srcFilePath));
                 }
             }
             else

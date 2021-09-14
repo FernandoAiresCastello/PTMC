@@ -1,16 +1,22 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace PTMLCompiler
 {
     class Compiler
     {
+        private const string OutputFilePlaceholder = "[[[COMPILED_JS]]]";
+        private const string FunctionBodyStart = "{";
+        private const string FunctionBodyEnd = "}";
+
         private string[] RawSrcLines;
         private string BaseJs;
         private string BaseHtml;
         private List<SourceLine> Source;
         private List<string> Output;
-        private int CurLineNr;
-        private string CurLineCode;
+        private SourceLine CurLine;
+        private int Identation = 0;
 
         public Compiler(string[] srcLines, string baseJs, string baseHtml)
         {
@@ -21,21 +27,109 @@ namespace PTMLCompiler
             Output = new List<string>();
         }
 
-        public void Run()
+        public string Run()
         {
             Source = new Preprocessor(RawSrcLines).Run();
 
-            for (int i = 0; i < RawSrcLines.Length; i++)
+            for (int i = 0; i < Source.Count; i++)
             {
-                CurLineNr = i;
-                CurLineCode = RawSrcLines[i];
+                CurLine = Source[i];
                 CompileCurrentLine();
             }
+
+            string compiledCode = string.Join(Environment.NewLine, Output.ToArray());
+            string outputJs = InjectCompiledJsIntoBaseJs(compiledCode);
+            string outputHtml = InjectOutputJsIntoBaseHtml(outputJs);
+
+            return outputHtml;
+        }
+        
+        private string InjectCompiledJsIntoBaseJs(string js)
+        {
+            return BaseJs.Replace(OutputFilePlaceholder, js);
+        }
+
+        private string InjectOutputJsIntoBaseHtml(string js)
+        {
+            return BaseHtml.Replace(OutputFilePlaceholder, js);
         }
 
         private void CompileCurrentLine()
         {
+            string code = CurLine.Code;
+            string commandName = null;
+            string parameters = null;
 
+            int firstIndexOfSpace = code.IndexOf(' ');
+
+            if (firstIndexOfSpace > 0)
+            {
+                commandName = code.Substring(0, firstIndexOfSpace).Trim();
+                parameters = code.Substring(firstIndexOfSpace).Trim();
+            }
+            else
+            {
+                commandName = code;
+                parameters = "";
+            }
+
+            commandName = commandName.ToUpper();
+            Output.Add(CompileCommand(commandName, parameters));
+        }
+
+        private string CompileCommand(string name, string param)
+        {
+            string cmd = null;
+
+            switch (name)
+            {
+                case "LOG": cmd = CmdLog(param); break;
+                case "FN": cmd = CmdFunction(param); break;
+                case FunctionBodyStart: cmd = CmdFunctionBodyStart(); break;
+                case FunctionBodyEnd: cmd = CmdFunctionBodyEnd(); break;
+                case "CALL": cmd = CmdCall(param); break;
+
+                default: cmd = ErrorLine(); break;
+            }
+
+            if (Identation == 1 && cmd != "{")
+                cmd = "\t" + cmd;
+            if (cmd == "}")
+                cmd += Environment.NewLine;
+
+            return cmd;
+        }
+
+        private string ErrorLine()
+        {
+            return string.Format(">>>>> SYNTAX ERROR AT LINE {0}: {1}", CurLine.LineNr, CurLine.Code);
+        }
+
+        private string CmdLog(string param)
+        {
+            return string.Format("console.log({0});", param);
+        }
+
+        private string CmdFunction(string param)
+        {
+            return string.Format("function {0}()", param);
+        }
+
+        private string CmdFunctionBodyStart()
+        {
+            Identation = 1;
+            return FunctionBodyStart;
+        }
+
+        private string CmdFunctionBodyEnd()
+        {
+            Identation = 0;
+            return FunctionBodyEnd;
+        }
+
+        private string CmdCall(string param)
+        {
+            return string.Format("{0}();", param);
         }
     }
 }
