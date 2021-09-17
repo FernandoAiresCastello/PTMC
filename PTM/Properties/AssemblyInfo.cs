@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("PTML-Editor")]
+[assembly: AssemblyTitle("PTM")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("PTML-Editor")]
+[assembly: AssemblyProduct("PTM")]
 [assembly: AssemblyCopyright("Copyright ©  2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("bc77044f-8562-4ef0-8239-d96fc3fc2b2f")]
+[assembly: Guid("3b8fbad5-26a7-445a-990f-a68736ff43f5")]
 
 // Version information for an assembly consists of the following four values:
 //

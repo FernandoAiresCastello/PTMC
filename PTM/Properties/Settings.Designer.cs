@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace PTML_Editor.Properties
+namespace PTM.Properties
 {
 
 
