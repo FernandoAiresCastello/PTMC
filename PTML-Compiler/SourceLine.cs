@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace PTMLCompiler
 {
-    struct SourceLine
+    public struct SourceLine
     {
         public int LineNr { get; private set; }
         public string Code { get; private set; }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 
 namespace PTMLCompiler
 {
@@ -58,19 +59,23 @@ namespace PTMLCompiler
         {
             string code = CurLine.Code;
             string commandName = null;
-            string parameters = null;
+            string[] parameters = null;
 
             int firstIndexOfSpace = code.IndexOf(' ');
 
             if (firstIndexOfSpace > 0)
             {
                 commandName = code.Substring(0, firstIndexOfSpace).Trim();
-                parameters = code.Substring(firstIndexOfSpace).Trim();
+                string rest = code.Substring(firstIndexOfSpace).Trim();
+                if (rest.Contains("\""))
+                    parameters = new string[] { rest };
+                else
+                    parameters = rest.Split(' ');
             }
             else
             {
                 commandName = code;
-                parameters = "";
+                parameters = null;
             }
 
             commandName = commandName.ToUpper();
@@ -82,7 +87,12 @@ namespace PTMLCompiler
             return string.Format(">>>>> SYNTAX ERROR AT LINE {0}: {1}", CurLine.LineNr, CurLine.Code);
         }
 
-        private string CompileCommand(string name, string param)
+        private string Quote(string text)
+        {
+            return string.Format("\'{0}\'", text);
+        }
+
+        private string CompileCommand(string name, string[] param)
         {
             string cmd = null;
 
@@ -95,8 +105,10 @@ namespace PTMLCompiler
                 case "CALL": cmd = CmdCall(param); break;
                 case "BGCOLOR": cmd = CmdSetBackColor(param); break;
                 case "CLS": cmd = CmdClearScreen(param); break;
+                case "PAL": cmd = CmdSetPalette(param); break;
 
-                default: cmd = ErrorLine(); break;
+                //default: cmd = ErrorLine(); break;
+                default: throw new CompilerException("Syntax error", CurLine);
             }
 
             if (Identation == 1 && cmd != "{")
@@ -107,24 +119,44 @@ namespace PTMLCompiler
             return cmd;
         }
 
-        private string CmdSetBackColor(string param)
+        private string CmdSetPalette(string[] param)
         {
-            return string.Format("Api_Display_SetBackColor({0});", param);
+            string ix = param[0];
+
+            if (param.Length == 2)
+            {
+                string rgb = param[1];
+                return string.Format("Api_Palette_Set({0}, {1});", ix, rgb);
+            }
+            else if (param.Length == 4)
+            {
+                string r = param[1];
+                string g = param[2];
+                string b = param[3];
+                return string.Format("Api_Palette_Set({0}, {1}, {2}, {3});", ix, r, g, b);
+            }
+
+            return null;
         }
 
-        private string CmdClearScreen(string param)
+        private string CmdSetBackColor(string[] param)
+        {
+            return string.Format("Api_Display_SetBackColor({0});", param[0]);
+        }
+
+        private string CmdClearScreen(string[] param)
         {
             return "Api_Display_ClearBackground();";
         }
 
-        private string CmdLog(string param)
+        private string CmdLog(string[] param)
         {
-            return string.Format("Api_Log({0});", param);
+            return string.Format("Api_Log({0});", param[0]);
         }
 
-        private string CmdFunction(string param)
+        private string CmdFunction(string[] param)
         {
-            return string.Format("function {0}()", param);
+            return string.Format("function {0}()", param[0]);
         }
 
         private string CmdFunctionBodyStart()
@@ -139,9 +171,9 @@ namespace PTMLCompiler
             return FunctionBodyEnd;
         }
 
-        private string CmdCall(string param)
+        private string CmdCall(string[] param)
         {
-            return string.Format("{0}();", param);
+            return string.Format("{0}();", param[0]);
         }
     }
 }

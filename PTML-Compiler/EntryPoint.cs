@@ -34,26 +34,31 @@ namespace PTMLCompiler
                         string compiledCode = compiler.Run();
                         File.WriteAllText(dstFilePath, compiledCode);
                         Console.WriteLine("Compilation successful!");
+                        Environment.ExitCode = 0;
                     }
                     catch (CompilerException cex)
                     {
                         Console.WriteLine(cex.Message);
+                        Environment.ExitCode = 1;
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine("UNEXPECTED ERROR: " + ex.Message);
                         Console.WriteLine(ex.StackTrace);
+                        Environment.ExitCode = 1;
                     }
                 }
                 else
                 {
                     Console.WriteLine(string.Format("ERROR: source file \"{0}\" not found", srcFilePath));
+                    Environment.ExitCode = 1;
                 }
             }
             else
             {
                 Console.WriteLine("Error: missing source file path");
                 Console.WriteLine("Syntax: ptmc \"source.ptml\" \"output.html\"");
+                Environment.ExitCode = 1;
             }
         }
     }
