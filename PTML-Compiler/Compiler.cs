@@ -106,6 +106,9 @@ namespace PTMLCompiler
                 case "BGCOLOR": cmd = CmdSetBackColor(param); break;
                 case "CLS": cmd = CmdClearScreen(param); break;
                 case "PAL": cmd = CmdSetPalette(param); break;
+                case "CHR": cmd = CmdSetCharset(param); break;
+                case "PUTC": cmd = CmdPutChar(param); break;
+                case "VAR": cmd = CmdSetVar(param); break;
 
                 //default: cmd = ErrorLine(); break;
                 default: throw new CompilerException("Syntax error", CurLine);
@@ -119,24 +122,80 @@ namespace PTMLCompiler
             return cmd;
         }
 
+        private string CmdSetVar(string[] param)
+        {
+            if (param[0][0] != '$')
+                throw new CompilerException("Variable identifier must start with '$'", CurLine);
+
+            string name = param[0];
+            string value = param[1];
+
+            return string.Format("var {0} = {1}", name, value);
+        }
+
+        private string CmdPutChar(string[] param)
+        {
+            int ch = ParseChar(param[2]);
+
+            return string.Format("Api_PutChar({0}, {1}, {2}, {3}, {4});", 
+                param[0], param[1], ch, param[3], param[4]);
+        }
+
+        private int ParseChar(string str)
+        {
+            int ch = 0;
+
+            if (str.StartsWith("'") && str.EndsWith("'"))
+            {
+                str = str.Substring(1, str.Length - 2);
+                ch = str[0];
+            }
+            else
+            {
+                ch = ParseNumber(str);
+            }
+
+            return ch;
+        }
+
+        private int ParseNumber(string str)
+        {
+            int number = 0;
+
+            if (str.StartsWith("0x"))
+                number = Convert.ToInt32(str.Substring(2), 16);
+            else if (str.StartsWith("0b"))
+                number = Convert.ToInt32(str.Substring(2), 2);
+            else
+                number = Convert.ToInt32(str, 10);
+
+            return number;
+        }
+
+        private string ParseRGB(string sr, string sg, string sb)
+        {
+            int r = ParseNumber(sr);
+            int g = ParseNumber(sg);
+            int b = ParseNumber(sb);
+            return string.Format("0x{0}{1}{2}", r.ToString("x2"), g.ToString("x2"), b.ToString("x2"));
+        }
+
         private string CmdSetPalette(string[] param)
         {
             string ix = param[0];
+            string rgb = "";
 
             if (param.Length == 2)
-            {
-                string rgb = param[1];
-                return string.Format("Api_Palette_Set({0}, {1});", ix, rgb);
-            }
+                rgb = param[1];
             else if (param.Length == 4)
-            {
-                string r = param[1];
-                string g = param[2];
-                string b = param[3];
-                return string.Format("Api_Palette_Set({0}, {1}, {2}, {3});", ix, r, g, b);
-            }
+                rgb = ParseRGB(param[1], param[2], param[3]);
 
-            return null;
+            return string.Format("Api_Palette_Set({0}, {1});", ix, rgb);
+        }
+
+        private string CmdSetCharset(string[] param)
+        {
+            return string.Format("Api_Charset_Set({0}, {1}, {2});", param[0], param[1], param[2]);
         }
 
         private string CmdSetBackColor(string[] param)

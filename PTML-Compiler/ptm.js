@@ -6,6 +6,12 @@
     
 =============================================================================*/
 
+String.prototype.replaceAt = function (index, replacement) {
+    return this.substr(0, index) + replacement + this.substr(index + replacement.length);
+}
+
+/*===========================================================================*/
+
 class Util {
 
     static ByteToBinaryString(value) {
@@ -13,7 +19,7 @@ class Util {
     }
 }
 
-/*============================================================================*/
+/*===========================================================================*/
 
 class Random {
 
@@ -56,6 +62,13 @@ class PixelBlock {
         this.Pixels += Util.ByteToBinaryString(row7);
     }
 
+    SetRow(row, value) {
+        const pos = row * this.Width;
+        let pixels = Util.ByteToBinaryString(value);
+        for (let i = 0; i < this.Width; i++)
+            this.Pixels = this.Pixels.replaceAt(pos + i, pixels[i]);
+    }
+
     SetBlank() {
         this.Set(0, 0, 0, 0, 0, 0, 0, 0);
     }
@@ -82,8 +95,16 @@ class Tileset {
         this.Tiles[index].Set(row0, row1, row2, row3, row4, row5, row6, row7);
     }
 
+    SetRow(index, row, value) {
+        this.Tiles[index].SetRow(row, value);
+    }
+
     SetBlank(index) {
         this.Tiles[index].SetBlank();
+    }
+
+    Get(index) {
+        return this.Tiles[index];
     }
 
     InitDefault() {
@@ -756,17 +777,29 @@ class Machine {
 function Sys_Init() {
     document.body.style.backgroundColor = '#000000';
     window.ptm = new Machine();
+    window.display = ptm.Display;
+    window.gfx = display.Gfx;
+    window.tileset = gfx.Tileset;
+    window.palette = gfx.Palette;
 }
 
 function Sys_Error(text) {
     const msg = `ERROR: ${text}`;
     console.error(msg);
-    ptm.Display.Gfx.Overlay.innerHTML = `<span style="color:#f00">${msg}</span>`;
+    gfx.Overlay.innerHTML = `<span style="color:#f00">${msg}</span>`;
 }
 
 function Sys_AssertPaletteIndex(ixPalette) {
-    if (ixPalette < 0 || ixPalette >= ptm.Display.Gfx.Palette.Colors.length) {
+    if (ixPalette < 0 || ixPalette >= palette.Colors.length) {
         Sys_Error('Palette index out of range');
+        return false;
+    }
+    return true;
+}
+
+function Sys_AssertCharsetIndex(ixCharset) {
+    if (ixCharset < 0 || ixCharset >= tileset.Tiles.length) {
+        Sys_Error('Charset index out of range');
         return false;
     }
     return true;
@@ -780,17 +813,29 @@ function Api_Log(text) {
 
 function Api_Palette_Set(ixPalette, rgb) {
     if (Sys_AssertPaletteIndex(ixPalette)) {
-        ptm.Display.Gfx.Palette.Colors[ixPalette] = new Color(rgb);
+        palette.Colors[ixPalette] = new Color(rgb);
     }
 }
 
 function Api_Display_ClearBackground() {
-    ptm.Display.ClearBackground();
+    display.ClearBackground();
 }
 
 function Api_Display_SetBackColor(ixPalette) {
     if (Sys_AssertPaletteIndex(ixPalette)) {
-        ptm.Display.SetBackgroundColor(ixPalette);
+        display.SetBackgroundColor(ixPalette);
+    }
+}
+
+function Api_Charset_Set(ixCharset, pixelRow, byte) {
+    if (Sys_AssertCharsetIndex(ixCharset)) {
+        tileset.SetRow(ixCharset, pixelRow, byte);
+    }
+}
+
+function Api_PutChar(col, row, ixCh, ixPalFg, ixPalBg) {
+    if (Sys_AssertCharsetIndex(ixCh) && Sys_AssertPaletteIndex(ixPalFg) && Sys_AssertPaletteIndex(ixPalBg)) {
+        gfx.RenderPixelBlock(tileset.Get(ixCh), ixPalFg, ixPalBg, col, row);
     }
 }
 

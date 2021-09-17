@@ -22,12 +22,10 @@ namespace PTML_Editor
         public MainWindow()
         {
             InitializeComponent();
-            //Resize += MainWindow_Resize;
 
             StartPosition = FormStartPosition.Manual;
             Location = new Point(360, 115);
             Size = new Size(640, 610);
-            TopMost = true;
             ToolBar.Visible = false;
             KeyPreview = true;
             TxtSource.BackColor = Color.FromArgb(28, 28, 32);
@@ -56,8 +54,7 @@ namespace PTML_Editor
 
         private void MiProgCompileRun_Click(object sender, EventArgs e)
         {
-            if (SaveAndCompile())
-                Run();
+            SaveCompileAndRun();
         }
 
         private void MiProgCompile_Click(object sender, EventArgs e)
@@ -76,7 +73,7 @@ namespace PTML_Editor
             {
                 e.Handled = true;
                 e.SuppressKeyPress = true;
-                SaveAndCompile();
+                SaveCompileAndRun();
             }
         }
 
@@ -130,9 +127,16 @@ namespace PTML_Editor
             return proc.ExitCode == 0;
         }
 
+        private void SaveCompileAndRun()
+        {
+            if (SaveAndCompile())
+                Run();
+        }
+
         private void Run()
         {
-            Process.Start(TestDstFile);
+            //Process.Start(TestDstFile);
+            Interop.RefreshChrome("PTM", this);
         }
 
         private void ClearLog()
