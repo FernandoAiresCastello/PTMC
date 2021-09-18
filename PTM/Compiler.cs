@@ -15,33 +15,47 @@ namespace PTM
         public string CompileLine(string src)
         {
             string srcLine = src.Trim();
+            if (string.IsNullOrEmpty(srcLine))
+                return src;
+
             string line = null;
             string cmd = null;
-            string param = null;
+            string singleParam = null;
+            string[] param = null;
 
             int ixFirstSpace = srcLine.IndexOf(' ');
             if (ixFirstSpace > 0)
             {
                 cmd = srcLine.Substring(0, ixFirstSpace).Trim().ToUpper();
-                param = srcLine.Substring(ixFirstSpace).Trim();
+                singleParam = srcLine.Substring(ixFirstSpace).Trim();
+                param = singleParam.Split(' ');
             }
             else
             {
                 cmd = srcLine.ToUpper();
-                param = "";
+                param = new string[1];
             }
 
-            if (cmd == "INIT")
+            if (cmd == ";")
             {
-                line = "ptm->Init();";
-            }
-            else if (cmd == "QUIT")
-            {
-                line = "ptm->Quit();";
+                line = "// " + singleParam;
             }
             else if (cmd == "DEBUG")
             {
-                line = string.Format("PrintDebug({0});", param);
+                line = string.Format("DbgMsgBox({0});", singleParam);
+            }
+            else if (cmd == "SCREEN")
+            {
+                line = string.Format("ScrOpenWindow({0}, {1}, {2}, {3});",
+                    param[0], param[1], param[2], param[3]);
+            }
+            else if (cmd == "EXIT")
+            {
+                line = "SysExit();";
+            }
+            else if (cmd == "HALT")
+            {
+                line = "SysHalt();";
             }
             else
             {

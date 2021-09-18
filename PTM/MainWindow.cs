@@ -4,8 +4,11 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Text;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -21,13 +24,100 @@ namespace PTM
         private readonly string TestCppOutputFile = "test.cpp";
         private readonly string TestExecOutputFile = "test.exe";
         private readonly Compiler Compiler = new Compiler();
+        private readonly UserSettings UserSettings = new UserSettings();
+
+        [DllImport("gdi32.dll")]
+        private static extern IntPtr AddFontMemResourceEx(IntPtr pbFont, uint cbFont,
+            IntPtr pdv, [In] ref uint pcFonts);
+
+        private PrivateFontCollection CustomFonts = new PrivateFontCollection();
+        private Font CustomFont;
 
         public MainWindow()
         {
             InitializeComponent();
-            ClearLog();
+            DoubleBuffered = true;
+            ApplyUserSettings();
             LoadTemplateFile();
             LoadFile(TestSourceFile);
+            ClearLog();
+            Log("Welcome to the PTM compiler");
+            Log("Shift+Enter to compile/run");
+        }
+
+        private void ApplyUserSettings()
+        {
+            if (!UserSettings.Load())
+                return;
+
+            SetWindowSize(UserSettings.GetAsNumber("width"), UserSettings.GetAsNumber("height"));
+            SetBorderSize(UserSettings.GetAsNumber("hborder"), UserSettings.GetAsNumber("vborder"));
+            SetMenuColors(UserSettings.GetAsNumber("menufgc"), UserSettings.GetAsNumber("menubgc"));
+            SetColors(UserSettings.GetAsNumber("srcfgc"), UserSettings.GetAsNumber("srcbgc"),
+                UserSettings.GetAsNumber("srcbdc"), UserSettings.GetAsNumber("wndbgc"));
+            SetFont(UserSettings.GetAsString("fontfile"));
+            SetFontSize(UserSettings.GetAsNumber("fontsize"));
+            if (UserSettings.GetAsNumber("wndbdr") > 0)
+                FormBorderStyle = FormBorderStyle.Sizable;
+            else
+                FormBorderStyle = FormBorderStyle.None;
+        }
+
+        private void SetFont(string file)
+        {
+            CustomFont = LoadFontFromFile(file);
+            TxtSource.Font = CustomFont;
+            TxtOutput.Font = CustomFont;
+        }
+
+        private Font LoadFontFromFile(string filename)
+        {
+            byte[] resource = File.ReadAllBytes(filename);
+            IntPtr fontPtr = Marshal.AllocCoTaskMem(resource.Length);
+            Marshal.Copy(resource, 0, fontPtr, resource.Length);
+            uint dummy = 0;
+            CustomFonts.AddMemoryFont(fontPtr, resource.Length);
+            AddFontMemResourceEx(fontPtr, (uint)resource.Length, IntPtr.Zero, ref dummy);
+            Marshal.FreeCoTaskMem(fontPtr);
+            return new Font(CustomFonts.Families[CustomFonts.Families.Length - 1], 16.0f);
+        }
+
+        private void SetWindowSize(uint w, uint h)
+        {
+            Size = new Size((int)w, (int)h);
+        }
+
+        private void SetFontSize(float size)
+        {
+            TxtSource.Font = new Font(TxtSource.Font.FontFamily, size);
+            TxtOutput.Font = new Font(TxtOutput.Font.FontFamily, size);
+        }
+
+        private void SetColors(uint foreColor, uint backColor, uint borderColor, uint windowColor)
+        {
+            BackColor = HexToColor(windowColor);
+            SourcePanel.BackColor = HexToColor(borderColor);
+            TxtSource.ForeColor = HexToColor(foreColor);
+            TxtSource.BackColor = HexToColor(backColor);
+            TxtOutput.ForeColor = HexToColor(foreColor);
+            TxtOutput.BackColor = HexToColor(backColor);
+        }
+
+        private void SetMenuColors(uint foreColor, uint backColor)
+        {
+            MenuPanel.ForeColor = HexToColor(foreColor);
+            MenuPanel.BackColor = HexToColor(backColor);
+        }
+
+        private void SetBorderSize(uint horizontal, uint vertical)
+        {
+            MainPanel.Padding = new Padding((int)horizontal, (int)vertical, (int)horizontal, (int)vertical);
+        }
+
+        private Color HexToColor(uint rgb)
+        {
+            string hex = "ff" + rgb.ToString("X6");
+            return Color.FromArgb(int.Parse(hex, NumberStyles.HexNumber));
         }
 
         private void LoadTemplateFile()
@@ -39,11 +129,39 @@ namespace PTM
 
         private void TxtSource_KeyDown(object sender, KeyEventArgs e)
         {
+            e.Handled = true;
+            e.SuppressKeyPress = true;
+
             if (e.KeyCode == Keys.Return && e.Modifiers == Keys.Shift)
             {
-                e.Handled = true;
-                e.SuppressKeyPress = true;
                 SaveAndCompileAndRun();
+            }
+            else if (e.KeyCode == Keys.Oemplus && e.Modifiers == Keys.Control)
+            {
+                if (TxtSource.Font.Size < 100)
+                    SetFontSize(TxtSource.Font.Size + 1);
+            }
+            else if (e.KeyCode == Keys.OemMinus && e.Modifiers == Keys.Control)
+            {
+                if (TxtSource.Font.Size > 1)
+                    SetFontSize(TxtSource.Font.Size - 1);
+            }
+            else if (e.KeyCode == Keys.Tab)
+            {
+                int tabSize = 2;
+                int caretPos = TxtSource.SelectionStart;
+                TxtSource.Text = TxtSource.Text.Insert(caretPos, new string(' ', tabSize));
+                TxtSource.SelectionStart = caretPos + tabSize;
+            }
+            else if (e.KeyCode == Keys.S && e.Modifiers == Keys.Control)
+            {
+                SaveFile(TestSourceFile);
+            }
+            else
+            {
+                e.Handled = false;
+                e.SuppressKeyPress = false;
+                //Debugger.Break();
             }
         }
 
@@ -179,6 +297,31 @@ namespace PTM
             
             finalLines.InsertRange(ixBeginUserMain, userLines);
             return finalLines;
+        }
+
+        private void BtnExit_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
+        private void BtnMinimize_Click(object sender, EventArgs e)
+        {
+            WindowState = FormWindowState.Minimized;
+        }
+
+        private void BtnMaximize_Click(object sender, EventArgs e)
+        {
+            if (WindowState == FormWindowState.Maximized)
+                WindowState = FormWindowState.Normal;
+            else if (WindowState == FormWindowState.Normal)
+                WindowState = FormWindowState.Maximized;
+        }
+
+        private void BtnSettings_Click(object sender, EventArgs e)
+        {
+            //SettingsWindow win = new SettingsWindow(this);
+            //win.ShowDialog(this);
+            Process.Start("settings.ini");
         }
     }
 }
