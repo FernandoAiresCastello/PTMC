@@ -1,28 +1,19 @@
 //#############################################################################
 //#     INCLUDES                                                              #
 //#############################################################################
-#include <SDL2/SDL.h>
 #include <windows.h>
-#include <cstdio>
-#include <cstdarg>
-#include <cctype>
+#include <SDL.h>
 #include <string>
 #include <vector>
-#include <iostream>
-#include <sstream>
-#include <fstream>
-#include <algorithm>
-#include <bitset>
 //#############################################################################
 //#     DEFINES                                                               #
 //#############################################################################
 #define WINDOW_TITLE "PTM"
-#define WINDOW_FULL 0
-#define SCREEN_WIDTH 160
-#define SCREEN_HEIGHT 144
-#define SCREEN_ZOOM 3
-#define WINDOW_WIDTH SCREEN_WIDTH * SCREEN_ZOOM
-#define WINDOW_HEIGHT SCREEN_HEIGHT * SCREEN_ZOOM
+//#############################################################################
+//#     TYPEDEFS                                                              #
+//#############################################################################
+typedef int ColorRGB;
+typedef int PaletteIx;
 //#############################################################################
 //#     VARIABLES                                                             #
 //#############################################################################
@@ -41,20 +32,74 @@ int ScrCols = 0;
 int ScrRows = 0;
 int WndWidth = 0;
 int WndHeight = 0;
+SDL_Event SDLGlobalEvent = { 0 };
+int PauseTime = 0;
+PaletteIx ScrBackColorIx = 0;
+std::vector<ColorRGB> ScrPalette;
 //#############################################################################
 //#     FUNCTION PROTOTYPES                                                   #
 //#############################################################################
 void SysExit();
 void SysHalt();
+void SysPause(int ms);
+void SysProcGlobalEvents();
 void DbgMsgBox(std::string value, std::string title = "");
 void DbgMsgBox(int value, std::string title = "");
+void SysAbort(std::string msg);
 void ScrOpenWindow(int scrW, int scrH, int scrZ, bool full);
 void ScrCloseWindow();
 void ScrUpdate();
-void ScrClearToRGB(int rgb);
+void ScrClearToRGB(ColorRGB rgb);
+void ScrClearToBackColor(PaletteIx ix);
 void ScrToggleFull();
+void ScrSetPixel(int x, int y, ColorRGB rgb);
+void ScrSetBackColorIx(PaletteIx ix);
+void ScrInitDefaultPalette();
+void ScrPaletteAdd(ColorRGB rgb);
+ColorRGB& ScrPaletteGet(PaletteIx ix);
+void AssertPaletteIx(PaletteIx ix);
 //#############################################################################
 //#     FUNCTIONS                                                             #
+//#############################################################################
+void AssertPaletteIx(PaletteIx ix)
+{
+	if (ix < 0 || ix >= ScrPalette.size())
+		SysAbort("Palette index out of range");
+}
+//#############################################################################
+void ScrPaletteAdd(ColorRGB rgb)
+{
+	ScrPalette.push_back(rgb);
+}
+//#############################################################################
+ColorRGB& ScrPaletteGet(PaletteIx ix)
+{
+	AssertPaletteIx(ix);
+	return ScrPalette[ix];
+}
+//#############################################################################
+void ScrInitDefaultPalette()
+{
+	ScrPaletteAdd(0x000000);
+	ScrPaletteAdd(0xffffff);
+}
+//#############################################################################
+void ScrSetBackColorIx(PaletteIx ix)
+{
+	AssertPaletteIx(ix);
+	ScrBackColorIx = ix;
+}
+//#############################################################################
+void ScrClearToBackColor()
+{
+	ScrClearToRGB(ScrPaletteGet(ScrBackColorIx));
+}
+//#############################################################################
+void SysAbort(std::string msg)
+{
+	MessageBox(NULL, msg.c_str(), "PTM - Application error", MB_ICONERROR | MB_OK);
+	SysExit();
+}
 //#############################################################################
 void DbgMsgBox(std::string value, std::string title)
 {
@@ -62,8 +107,8 @@ void DbgMsgBox(std::string value, std::string title)
 	if (!title.empty())
 		msg.append("\n\n");
 	msg.append(value);
-
-	MessageBoxA(NULL, msg.c_str(), "Debug", MB_ICONINFORMATION | MB_OK);
+	
+	MessageBox(NULL, msg.c_str(), "Debug", MB_ICONINFORMATION | MB_OK);
 }
 //#############################################################################
 void DbgMsgBox(int value, std::string title)
@@ -79,26 +124,39 @@ void SysExit()
 //#############################################################################
 void SysHalt()
 {
-	int running = 1;
-	SDL_Event e;
-	while (running) {
-		while (SDL_WaitEvent(&e) >= 0) {
-			if (e.type == SDL_QUIT) {
-				running = false;
-				break;
-			}
-			else if (e.type == SDL_KEYDOWN) {
-				if (e.key.keysym.sym == SDLK_RETURN && SDL_GetModState() & KMOD_ALT) {
-					ScrToggleFull();
-				}
-			}
-		}
+	while (true) {
+		SysProcGlobalEvents();
 		SDL_Delay(1);
+	}
+}
+//#############################################################################
+void SysPause(int ms)
+{
+	PauseTime = ms;
+	while (PauseTime > 0) {
+		SysProcGlobalEvents();
+		SDL_Delay(1);
+		PauseTime--;
+	}
+}
+//#############################################################################
+void SysProcGlobalEvents()
+{
+	SDL_PollEvent(&SDLGlobalEvent);
+	if (SDLGlobalEvent.type == SDL_QUIT) {
+		SysExit();
+	}
+	else if (SDLGlobalEvent.type == SDL_KEYDOWN) {
+		if (SDLGlobalEvent.key.keysym.sym == SDLK_RETURN && SDL_GetModState() & KMOD_ALT) {
+			ScrToggleFull();
+		}
 	}
 }
 //#############################################################################
 void ScrOpenWindow(int scrW, int scrH, int scrZ, bool full)
 {
+	ScrInitDefaultPalette();
+
 	ScrWidth = scrW;
 	ScrHeight = scrH;
 	ScrZoom = scrZ;
@@ -155,7 +213,7 @@ void ScrUpdate()
 	SDL_RenderPresent(Renderer);
 }
 //#############################################################################
-void ScrClearToRGB(int rgb)
+void ScrClearToRGB(ColorRGB rgb)
 {
 	for (int y = 0; y < ScrHeight; y++)
 		for (int x = 0; x < ScrWidth; x++)
@@ -169,6 +227,12 @@ void ScrToggleFull()
 	SDL_SetWindowFullscreen(Window, isFullscreen ? 0 : fullscreenFlag);
 	SDL_ShowCursor(isFullscreen);
 	ScrUpdate();
+}
+//#############################################################################
+void ScrSetPixel(int x, int y, ColorRGB rgb)
+{
+	if (x >= 0 && y >= 0 && x < ScrWidth && y < ScrHeight)
+		ScrBuf[y * ScrWidth + x] = rgb;
 }
 //#############################################################################
 //#     MAIN                                                                  #

@@ -266,9 +266,11 @@ namespace PTM
                 Log("Compiled ok!");
                 return true;
             }
-            catch (SyntaxError)
+            catch (SyntaxError e)
             {
-                Log(string.Format("Syntax error at line {0}: {1}", srcLineNr, srcLine));
+                Log(string.Format("Syntax error at line {0}: {1}", srcLineNr, srcLine.Trim()));
+                if (!string.IsNullOrWhiteSpace(e.Message))
+                    Log("Hint: " + e.Message);
             }
             catch (Exception e)
             {

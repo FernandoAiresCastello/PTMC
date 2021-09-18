@@ -8,7 +8,11 @@ namespace PTM
 {
     public class SyntaxError : Exception
     {
-        public SyntaxError()
+        public SyntaxError() : base(null)
+        {
+        }
+
+        public SyntaxError(string msg) : base(msg)
         {
         }
     }
