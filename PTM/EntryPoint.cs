@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace PTM
 {
-    static class Program
+    static class EntryPoint
     {
         [STAThread]
         static void Main()
