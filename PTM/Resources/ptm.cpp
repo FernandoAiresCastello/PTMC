@@ -220,6 +220,11 @@ void ScrClearToRGB(ColorRGB rgb)
 			ScrBuf[y * ScrWidth + x] = rgb;
 }
 //#############################################################################
+void ScrClearToBackColor(PaletteIx ix)
+{
+	ScrClearToRGB(ScrPalette[ix]);
+}
+//#############################################################################
 void ScrToggleFull()
 {
 	Uint32 fullscreenFlag = SDL_WINDOW_FULLSCREEN_DESKTOP;
