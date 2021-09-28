@@ -7,7 +7,7 @@
     <ProjectGuid>{3B8FBAD5-26A7-445A-990F-A68736FF43F5}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <RootNamespace>PTM</RootNamespace>
-    <AssemblyName>PTM</AssemblyName>
+    <AssemblyName>ptmc</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

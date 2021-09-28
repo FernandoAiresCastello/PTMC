@@ -141,7 +141,7 @@ namespace PTM
             }
             else if (cmd == "LOOP")
             {
-                line = "while (true) { SysProcGlobalEvents();";
+                line = "while (true) { System::ProcGlobalEvents();";
             }
             else if (cmd == "FOR")
             {
@@ -155,7 +155,7 @@ namespace PTM
             }
             else if (cmd == "PAUSE")
             {
-                line = string.Format("SysPause({0});", singleParam);
+                line = string.Format("System::Pause({0});", singleParam);
             }
             else if (cmd == "VAR")
             {
@@ -164,37 +164,50 @@ namespace PTM
             }
             else if (cmd == "DEBUG")
             {
-                line = string.Format("DbgMsgBox({0});", singleParam);
+                line = string.Format("Debug::MsgBox({0});", singleParam);
             }
             else if (cmd == "EXIT")
             {
-                line = "SysExit();";
+                line = "System::Exit();";
             }
             else if (cmd == "HALT")
             {
-                line = "SysHalt();";
+                line = "System::Halt();";
             }
             else if (cmd == "DRAW")
             {
-                line = "ScrUpdate();";
+                line = "Screen::Update();";
             }
             else if (cmd == "SCREEN")
             {
-                line = string.Format("ScrOpenWindow({0}, {1}, {2}, {3});",
+                line = string.Format("Screen::OpenWindow({0}, {1}, {2}, {3});",
                     param[0], param[1], param[2], param[3]);
             }
             else if (cmd == "BGCOLOR")
             {
-                line = string.Format("ScrSetBackColorIx({0});", singleParam);
+                line = string.Format("Screen::SetBackColorIx({0});", singleParam);
             }
             else if (cmd == "CLS")
             {
-                line = "ScrClearToBackColor();";
+                line = "Screen::ClearToBackColor();";
+            }
+            else if (cmd == "PAL")
+            {
+                line = string.Format("Screen::PaletteSet({0}, {1});", param[0], param[1]);
+            }
+            else if (cmd == "CHR")
+            {
+                line = string.Format("Screen::TilesetSetPixelRow({0}, {1}, \"{2}\");", param[0], param[1], param[2]);
             }
             else if (cmd == "PSET")
             {
-                line = string.Format("ScrSetPixel({0}, {1}, {2});",
+                line = string.Format("Screen::SetPixelIndexed({0}, {1}, {2});",
                     param[0], param[1], param[2]);
+            }
+            else if (cmd == "PTILE")
+            {
+                line = string.Format("Screen::DrawSpriteTile({0}, {1}, {2}, {3}, {4}, {5}, {6});",
+                    param[0], param[1], param[2], param[3], param[4], param[5], param[6]);
             }
             else
             {

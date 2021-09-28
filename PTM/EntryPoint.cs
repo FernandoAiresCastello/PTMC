@@ -12,6 +12,8 @@ namespace PTM
         [STAThread]
         static void Main(string[] args)
         {
+            Log("*** Programmable Tile Machine Compiler ***");
+
             if (args.Length != 2)
             {
                 Log("Missing arguments");
@@ -24,19 +26,21 @@ namespace PTM
                 Log("Source file \"" + srcFile + "\" not found");
                 return;
             }
+
+            string exeFile = args[1];
+            File.Delete(exeFile);
             
             string[] srcLines = File.ReadAllLines(srcFile);
-
             Compiler compiler = new Compiler();
             string cppFile = "__generated__.cpp";
+
             bool ok = compiler.CompilePtmlToCpp(srcLines, cppFile);
             if (ok)
             {
-                string exeFile = args[1];
                 ok = compiler.CompileCppToExe(cppFile, exeFile);
                 if (ok)
                 {
-                    File.Delete(cppFile);
+                    //File.Delete(cppFile);
                 }
             }
         }
