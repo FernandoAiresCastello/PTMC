@@ -14,6 +14,20 @@ namespace PTM
         private readonly List<string> TemplateLines = new List<string>();
         private readonly string TemplateInjectionPointMarker = "// _PTM_BEGIN_USER_MAIN_";
 
+        private struct Variable
+        {
+            public string Name { set; get; }
+            public string Type { set; get; }
+
+            public Variable(string name, string type)
+            {
+                Name = name;
+                Type = type;
+            }
+        }
+
+        private readonly List<Variable> Vars = new List<Variable>();
+
         public Compiler()
         {
             TemplateLines.Clear();
@@ -48,9 +62,9 @@ namespace PTM
                 Log("Compiled OK!");
                 return true;
             }
-            catch (SyntaxError e)
+            catch (CompileError e)
             {
-                Log(string.Format("Syntax error at line {0}: {1}", srcLineNr, srcLine.Trim()));
+                Log(string.Format("Error at line {0}: {1}", srcLineNr, srcLine.Trim()));
                 if (!string.IsNullOrEmpty(e.Message))
                     Log("Hint: " + e.Message);
             }
@@ -159,8 +173,36 @@ namespace PTM
             }
             else if (cmd == "VAR")
             {
-                AssertVariableParam(param[0]);
-                line = string.Format("int {0} = {1};", param[0], param[1]);
+                AssertParamCount(param, 3);
+
+                string type = param[0].ToUpper();
+                string name = param[1];
+                string value = param[2];
+
+                AssertVariableParam(name);
+
+                if (type == "NUMBER")
+                    line = string.Format("int {0} = {1};", name, value);
+                else if (type == "STRING")
+                    line = string.Format("std::string {0} = {1};", name, value);
+                else
+                    throw new CompileError("Unknown variable type: " + type);
+
+                DeclareVar(name, type);
+            }
+            else if (cmd == "SET")
+            {
+                string name = param[0];
+                AssertVariableDeclared(name);
+
+                if (param[1] != "=")
+                    throw new CompileError("Equals sign expected");
+
+                StringBuilder expr = new StringBuilder();
+                for (int i = 2; i < param.Length; i++)
+                    expr.Append(param[i]).Append(' ');
+
+                line = string.Format("{0} = {1};", name, expr.ToString().Trim());
             }
             else if (cmd == "DEBUG")
             {
@@ -206,12 +248,12 @@ namespace PTM
             }
             else if (cmd == "PTILE")
             {
-                line = string.Format("Screen::DrawSpriteTile({0}, {1}, {2}, {3}, {4}, {5}, {6});",
+                line = string.Format("Screen::DrawTile({0}, {1}, {2}, {3}, {4}, {5}, {6});",
                     param[0], param[1], param[2], param[3], param[4], param[5], param[6]);
             }
             else
             {
-                throw new SyntaxError("Invalid command");
+                throw new CompileError("Invalid command");
             }
 
             return "\t" + line;
@@ -220,7 +262,37 @@ namespace PTM
         private void AssertVariableParam(string param)
         {
             if (!param.StartsWith("$"))
-                throw new SyntaxError("Variable identifier must start with '$'");
+                throw new CompileError("Variable identifier must start with '$'");
+        }
+
+        private void AssertParamCount(string[] param, int count)
+        {
+            if (param.Length != count)
+                throw new CompileError(string.Format(
+                    "Invalid number of parameters: expected {0}, got {1}", count, param.Length));
+        }
+
+        private void AssertNoDuplicateVariable(string name)
+        {
+            if (HasVar(name))
+                throw new CompileError("Duplicate variable declaration");
+        }
+
+        private void AssertVariableDeclared(string name)
+        {
+            if (!HasVar(name))
+                throw new CompileError("Undefined variable: " + name);
+        }
+
+        private void DeclareVar(string name, string type)
+        {
+            AssertNoDuplicateVariable(name);
+            Vars.Add(new Variable(name, type));
+        }
+
+        private bool HasVar(string name)
+        {
+            return Vars.FindAll(var => var.Name == name).Count > 0;
         }
     }
 }

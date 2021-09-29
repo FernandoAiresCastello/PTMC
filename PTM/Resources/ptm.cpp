@@ -3,8 +3,16 @@
 //#############################################################################
 #include <windows.h>
 #include <SDL.h>
+#include <map>
 #include <string>
 #include <vector>
+//#############################################################################
+//#     DEFINES                                                               #
+//#############################################################################
+#define PIXEL_CODE_0 '0'
+#define PIXEL_CODE_1 '1'
+#define PIXEL_CODE_2 '2'
+#define PIXEL_CODE_3 '3'
 //#############################################################################
 //#     TYPEDEFS                                                              #
 //#############################################################################
@@ -27,13 +35,69 @@ namespace System {
 namespace Debug {
 	void MsgBox(std::string value, std::string title = "");
 	void MsgBox(int value, std::string title = "");
+	void Log(std::string text);
 }
+/*
+enum class VarType {
+	Undefined, Int, String
+};
+struct Variable {
+	std::string Name = "";
+	VarType Type = VarType::Undefined;
+	int IntValue = 0;
+	std::string StringValue = "";
 
-struct TilePixels {
-	std::string blankRow = std::string(8, '0');
+	void Init(std::string& name, VarType type, std::string& value)
+	{
+		Name = name;
+		Type = type;
+		Set(value);
+	}
+
+	void Set(std::string& value)
+	{
+		StringValue = value;
+		IntValue = atoi(value.c_str());
+	}
+};
+namespace Variables {
+	std::map<std::string, Variable> Vars;
+
+	bool Exists(std::string& name)
+	{
+		return Vars.find(name) != Vars.end();
+	}
+
+	Variable* Get(std::string& name)
+	{
+		if (Exists(name))
+			return &Vars[name];
+
+		return nullptr;
+	}
+
+	void Set(std::string& name, VarType type, std::string& value)
+	{
+		Variable* varptr = Get(name);
+		if (varptr == nullptr) {
+			Variable var;
+			var.Init(name, type, value);
+			Vars[name] = var;
+		}
+		else {
+			varptr->Set(value);
+		}
+	}
+}
+*/
+class TilePixels {
+private:
+	const std::string BlankRow = std::string(8, PIXEL_CODE_0);
+
+public:
 	std::string Rows[8] = {
-		blankRow, blankRow, blankRow, blankRow,
-		blankRow, blankRow, blankRow, blankRow
+		BlankRow, BlankRow, BlankRow, BlankRow,
+		BlankRow, BlankRow, BlankRow, BlankRow
 	};
 
 	std::string ToString()
@@ -50,16 +114,15 @@ struct TilePixels {
 		return str;
 	}
 };
-
 namespace Screen {
 	const int TileWidth = 8;
 	const int TileHeight = 8;
 	SDL_Window* Window = nullptr;
 	SDL_Renderer* Renderer = nullptr;
-	SDL_Texture* Texture = nullptr;
-	int* Buf = nullptr;
+	SDL_Texture* MainTexture = nullptr;
+	int* MainBuf = nullptr;
+	int MainBufLen = 0;
 	int PixelFmt = 0;
-	int BufLength = 0;
 	int Width = 0;
 	int Height = 0;
 	int Zoom = 0;
@@ -74,7 +137,6 @@ namespace Screen {
 	void OpenWindow(int scrW, int scrH, int scrZ, bool full);
 	void CloseWindow();
 	void Update();
-	void ClearToRgb(ColorRGB rgb);
 	void ClearToPaletteIndex(PaletteIx ix);
 	void ClearToBackColor();
 	void ToggleFull();
@@ -88,9 +150,8 @@ namespace Screen {
 	ColorRGB& PaletteGet(PaletteIx ix);
 	void AssertPaletteIx(PaletteIx ix);
 	void AssertTilesetIx(TilesetIx ix);
-	void SetPixelRgb(int x, int y, ColorRGB rgb);
 	void SetPixelIndexed(int x, int y, PaletteIx ix);
-	void DrawSpriteTile(int x, int y, TilesetIx tileIx, PaletteIx c0, PaletteIx c1, PaletteIx c2, PaletteIx c3);
+	void DrawTile(int x, int y, TilesetIx tileIx, PaletteIx c0, PaletteIx c1, PaletteIx c2, PaletteIx c3);
 }
 //#############################################################################
 //#     FUNCTIONS                                                             #
@@ -191,6 +252,11 @@ void Debug::MsgBox(int value, std::string title)
 	Debug::MsgBox(std::to_string(value), title);
 }
 //#############################################################################
+void Debug::Log(std::string text)
+{
+
+}
+//#############################################################################
 void System::Exit()
 {
 	Screen::CloseWindow();
@@ -241,8 +307,8 @@ void Screen::OpenWindow(int scrW, int scrH, int scrZ, bool full)
 	Cols = scrW / TileWidth;
 	Rows = scrH / TileHeight;
 	PixelFmt = SDL_PIXELFORMAT_ARGB8888;
-	BufLength = sizeof(int) * Width * Height;
-	Buf = new int[BufLength];
+	MainBufLen = sizeof(int) * Width * Height;
+	MainBuf = new int[MainBufLen];
 
 	SDL_Init(SDL_INIT_EVERYTHING);
 	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "direct3d");
@@ -257,9 +323,10 @@ void Screen::OpenWindow(int scrW, int scrH, int scrZ, bool full)
 
 	SDL_RenderSetLogicalSize(Renderer, Width, Height);
 
-	Texture = SDL_CreateTexture(Renderer, PixelFmt, SDL_TEXTUREACCESS_STREAMING, Width, Height);
+	MainTexture = SDL_CreateTexture(Renderer, PixelFmt, SDL_TEXTUREACCESS_STREAMING, Width, Height);
 
-	ClearToRgb(0x000000);
+	SetBackColorIx(0);
+	ClearToBackColor();
 	Update();
 
 	SDL_SetWindowPosition(Window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
@@ -268,12 +335,12 @@ void Screen::OpenWindow(int scrW, int scrH, int scrZ, bool full)
 //#############################################################################
 void Screen::CloseWindow()
 {
-	SDL_DestroyTexture(Texture);
+	SDL_DestroyTexture(MainTexture);
 	SDL_DestroyRenderer(Renderer);
 	SDL_DestroyWindow(Window);
 	SDL_Quit();
 
-	delete[] Buf;
+	delete[] MainBuf;
 }
 //#############################################################################
 void Screen::Update()
@@ -281,25 +348,26 @@ void Screen::Update()
 	static int pitch;
 	static void* pixels;
 
-	SDL_LockTexture(Texture, nullptr, &pixels, &pitch);
-	SDL_memcpy(pixels, Buf, BufLength);
-	SDL_UnlockTexture(Texture);
-	SDL_RenderCopy(Renderer, Texture, nullptr, nullptr);
+	SDL_LockTexture(MainTexture, nullptr, &pixels, &pitch);
+	SDL_memcpy(pixels, MainBuf, MainBufLen);
+	SDL_UnlockTexture(MainTexture);
+	SDL_RenderCopy(Renderer, MainTexture, nullptr, nullptr);
 	SDL_RenderPresent(Renderer);
-}
-//#############################################################################
-void Screen::ClearToRgb(ColorRGB rgb)
-{
-	for (int y = 0; y < Height; y++)
-		for (int x = 0; x < Width; x++)
-			Buf[y * Width + x] = rgb;
 }
 //#############################################################################
 void Screen::ClearToPaletteIndex(PaletteIx ix)
 {
 	for (int y = 0; y < Height; y++)
 		for (int x = 0; x < Width; x++)
-			Buf[y * Width + x] = Palette[ix];
+			MainBuf[y * Width + x] = Palette[ix];
+}
+//#############################################################################
+void Screen::SetPixelIndexed(int x, int y, PaletteIx ix)
+{
+	if (x >= 0 && y >= 0 && x < Width && y < Height) {
+		AssertPaletteIx(ix);
+		MainBuf[y * Width + x] = Palette[ix];
+	}
 }
 //#############################################################################
 void Screen::ToggleFull()
@@ -311,44 +379,36 @@ void Screen::ToggleFull()
 	Update();
 }
 //#############################################################################
-void Screen::SetPixelRgb(int x, int y, ColorRGB rgb)
-{
-	if (x >= 0 && y >= 0 && x < Width && y < Height)
-		Buf[y * Width + x] = rgb;
-}
-//#############################################################################
-void Screen::SetPixelIndexed(int x, int y, PaletteIx ix)
-{
-	if (x >= 0 && y >= 0 && x < Width && y < Height) {
-		AssertPaletteIx(ix);
-		Buf[y * Width + x] = Palette[ix];
-	}
-}
-//#############################################################################
-void Screen::DrawSpriteTile(int x, int y, TilesetIx tileIx, PaletteIx c0, PaletteIx c1, PaletteIx c2, PaletteIx c3)
+void Screen::DrawTile(int x, int y, TilesetIx tileIx, PaletteIx c0, PaletteIx c1, PaletteIx c2, PaletteIx c3)
 {
 	AssertTilesetIx(tileIx);
 
+	x *= TileWidth;
+	y *= TileHeight;
+
+	int i = 0;
 	int px = x;
 	TilePixels* tile = &Tileset[tileIx];
 	for (char pixelCode : tile->ToString()) {
 		PaletteIx ix = -1;
-		if (pixelCode == 48)
+		if (pixelCode == PIXEL_CODE_0)
 			ix = c0;
-		else if (pixelCode == 49)
+		else if (pixelCode == PIXEL_CODE_1)
 			ix = c1;
-		else if (pixelCode == 50)
+		else if (pixelCode == PIXEL_CODE_2)
 			ix = c2;
-		else if (pixelCode == 51)
+		else if (pixelCode == PIXEL_CODE_3)
 			ix = c3;
 		else {
-			System::Abort("Invalid tile pixel code: " + std::to_string((int)pixelCode));
+			System::Abort("Invalid tile pixel code: " + std::string(1, pixelCode));
 			return;
 		}
 
 		SetPixelIndexed(x, y, ix);
 		x++;
-		if (x >= TileWidth) {
+		i++;
+		if (i >= TileWidth) {
+			i = 0;
 			x = px;
 			y++;
 		}

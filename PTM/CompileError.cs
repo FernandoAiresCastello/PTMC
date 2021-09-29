@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace PTM
 {
-    public class SyntaxError : Exception
+    public class CompileError : Exception
     {
-        public SyntaxError() : base(null)
+        public CompileError() : base(null)
         {
         }
 
-        public SyntaxError(string msg) : base(msg)
+        public CompileError(string msg) : base(msg)
         {
         }
     }
