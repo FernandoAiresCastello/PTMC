@@ -11,39 +11,38 @@ STR
 
 MSGBOX
 [
-	system->ShowMsgBox({0});
+	System::ShowMsgBox({0});
 ]
 
 HALT
 [
-	system->Halt();
+	System::Halt();
 ]
 
 EXIT
 [
-	system->Exit();
-	exit(0);
+	System::Exit();
 ]
 
 SCREEN
 [
-	screen->OpenWindow({0}, {1}, {2}, {3});
+	Screen::OpenWindow({0}, {1}, {2}, {3});
 ]
 
 BGCOLOR
 [
-	screen->SetBackColorIx({0});
+	Screen::SetBackColorIx({0});
 ]
 
 CLS
 [
-	screen->Clear();
+	Screen::Clear();
 ]
 
 LOOP
 [
 	while (true) { 
-		system->ProcessGlobalEvents();
+		System::ProcessGlobalEvents();
 ]
 
 FOR

@@ -61,7 +61,73 @@ namespace PTM.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to .
+        ///   Looks up a localized string similar to 
+        ///INT
+        ///[
+        ///	int {0} = {1};
+        ///]
+        ///
+        ///STR
+        ///[
+        ///	std::string {0} = {1};
+        ///]
+        ///
+        ///MSGBOX
+        ///[
+        ///	Sys-&gt;ShowMsgBox({0});
+        ///]
+        ///
+        ///HALT
+        ///[
+        ///	Sys-&gt;Halt();
+        ///]
+        ///
+        ///EXIT
+        ///[
+        ///	Sys-&gt;Exit();
+        ///]
+        ///
+        ///SCREEN
+        ///[
+        ///	Scr-&gt;OpenWindow({0}, {1}, {2}, {3});
+        ///]
+        ///
+        ///BGCOLOR
+        ///[
+        ///	Scr-&gt;SetBackColorIx({0});
+        ///]
+        ///
+        ///CLS
+        ///[
+        ///	Scr-&gt;Clear();
+        ///]
+        ///
+        ///LOOP
+        ///[
+        ///	while (true) { 
+        ///		Sys-&gt;ProcessGlobalEvents();
+        ///]
+        ///
+        ///FOR
+        ///[
+        ///	for ({0} = {1}; {0} &lt; {2}; {0} += {3}) {{
+        ///]
+        ///
+        ///NEXT
+        ///[
+        ///	}
+        ///]
+        ///
+        ///CALL
+        ///[
+        ///	{0}();
+        ///]
+        ///
+        ///RET
+        ///[
+        ///	}
+        ///]
+        ///.
         /// </summary>
         internal static string cmd {
             get {
@@ -70,22 +136,27 @@ namespace PTM.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to #include &lt;windows.h&gt;
+        ///   Looks up a localized string similar to //=============================================================================
+        /////	INCLUDES
+        /////=============================================================================
+        ///#include &lt;windows.h&gt;
         ///#include &lt;SDL.h&gt;
         ///#include &lt;map&gt;
         ///#include &lt;string&gt;
         ///#include &lt;vector&gt;
         ///
-        ///// _PTM_BEGIN_USER_MAIN_
+        /////=============================================================================
+        /////	FORWARD DECLARATIONS
+        /////=============================================================================
+        ///class Context;
+        ///class System;
+        ///class Screen;
         ///
-        ///int main(int argc, char* argv[])
-        ///{
-        ///	return 0;
-        ///}.
+        /////==== [rest of string was truncated]&quot;;.
         /// </summary>
-        internal static string ptm {
+        internal static string ptm_cpp {
             get {
-                return ResourceManager.GetString("ptm", resourceCulture);
+                return ResourceManager.GetString("ptm_cpp", resourceCulture);
             }
         }
     }
