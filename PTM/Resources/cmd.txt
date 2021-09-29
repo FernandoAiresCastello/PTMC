@@ -1,38 +1,64 @@
 
+INT
+[
+	int {0} = {1};
+]
+
+STR
+[
+	std::string {0} = {1};
+]
+
+MSGBOX
+[
+	system->ShowMsgBox({0});
+]
+
 HALT
 [
-	system.Halt();
+	system->Halt();
+]
+
+EXIT
+[
+	system->Exit();
+	exit(0);
 ]
 
 SCREEN
 [
-	screen.OpenWindow({0}, {1}, {2}, {3});
+	screen->OpenWindow({0}, {1}, {2}, {3});
 ]
 
 BGCOLOR
 [
-	screen.SetBackColorIx({0});
+	screen->SetBackColorIx({0});
 ]
 
 CLS
 [
-	screen.Clear();
+	screen->Clear();
 ]
 
 LOOP
 [
 	while (true) { 
-		system.ProcessGlobalEvents();
+		system->ProcessGlobalEvents();
 ]
 
 FOR
 [
-	for ({0} = {1}; {0} < {2}; {0}++) {{
+	for ({0} = {1}; {0} < {2}; {0} += {3}) {{
 ]
 
 NEXT
 [
 	}
+]
+
+CALL
+[
+	{0}();
 ]
 
 RET

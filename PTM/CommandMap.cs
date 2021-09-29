@@ -49,7 +49,7 @@ namespace PTM
                     if (ixFirstSpace > 0)
                     {
                         CurCommand = line.Substring(0, ixFirstSpace).Trim().ToUpper();
-                        CurArgs = line.Substring(ixFirstSpace).Trim();
+                        CurArgs = line.Substring(ixFirstSpace);
                     }
                     else
                     {
@@ -65,7 +65,7 @@ namespace PTM
 
                         PtmlToCppMapping mapping = new PtmlToCppMapping();
                         mapping.Ptml = CurCommand.Trim() + (CurArgs != "" ? " " + CurArgs.Trim() : "");
-                        mapping.Cpp = string.Join("\n", cppLines);
+                        mapping.Cpp = string.Join(Environment.NewLine, cppLines);
                         Mappings.Add(CurCommand, mapping);
 
                         cppLines.Clear();

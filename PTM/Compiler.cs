@@ -13,7 +13,7 @@ namespace PTM
     {
         private readonly string TemplateFile = Properties.Resources.ptm;
         private readonly List<string> TemplateLines = new List<string>();
-        private readonly string TemplateInjectionPointMarker = "// _PTM_BEGIN_USER_MAIN_";
+        private readonly string TemplateInjectionPointMarker = "// _PTM_BEGIN_CLASS_";
         private readonly List<Variable> Vars = new List<Variable>();
         private readonly CommandMap CmdMap = new CommandMap();
 
@@ -55,7 +55,12 @@ namespace PTM
                 {
                     srcLineNr++;
                     srcLine = rawSrcLine;
-                    cppLines.Add(CompileLine(srcLine));
+
+                    string compiledLine = CompileLine(srcLine);
+                    if (compiledLine.Trim() != "")
+                        compiledLine = "\t" + compiledLine + " // " + srcLineNr;
+
+                    cppLines.Add(compiledLine);
                 }
 
                 List<string> outputLines = InjectLinesIntoCppTemplate(cppLines);
@@ -128,6 +133,30 @@ namespace PTM
             return finalLines;
         }
 
+        public string[] ParseArgs(string src)
+        {
+            List<string> args = new List<string>();
+            bool quote = false;
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = 0; i < src.Length; i++)
+            {
+                char ch = src[i];
+                if (ch == '"')
+                    quote = !quote;
+
+                sb.Append(ch);
+
+                if ((ch == ' ' && !quote) || i == src.Length - 1)
+                {
+                    args.Add(sb.ToString().Trim());
+                    sb.Clear();
+                }
+            }
+
+            return args.ToArray();
+        }
+
         public string CompileLine(string src)
         {
             string srcLine = src.Trim();
@@ -136,15 +165,13 @@ namespace PTM
 
             string line = null;
             string cmd = null;
-            string singleParam = null;
-            string[] param = null;
+            string[] args = null;
 
             int ixFirstSpace = srcLine.IndexOf(' ');
             if (ixFirstSpace > 0)
             {
                 cmd = srcLine.Substring(0, ixFirstSpace).Trim().ToUpper();
-                singleParam = srcLine.Substring(ixFirstSpace).Trim();
-                param = singleParam.Split(' ');
+                args = ParseArgs(srcLine.Substring(ixFirstSpace).Trim());
             }
             else
             {
@@ -155,7 +182,7 @@ namespace PTM
             {
                 string function = cmd.Substring(0, cmd.Length - 1);
                 if (function.ToLower() == "main")
-                    return "int main(int argc, char* argv[]) {";
+                    return "void __ptm_main__() {";
                 else
                     return string.Format("void {0}() {{", function);
             }
@@ -167,10 +194,21 @@ namespace PTM
 
             string cpp = CmdMap.Mappings[cmd].Cpp;
 
-            if (param == null)
+            if (args == null)
+            {
                 line = cpp;
+            }
             else
-                line = string.Format(cpp, param);
+            {
+                try
+                {
+                    line = string.Format(cpp, args);
+                }
+                catch (FormatException ex)
+                {
+                    throw new CompileError("Incomplete argument list");
+                }
+            }
 
             return line;
         }
