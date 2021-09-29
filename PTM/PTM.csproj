@@ -49,6 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommandMap.cs" />
     <Compile Include="Compiler.cs" />
     <Compile Include="EntryPoint.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -78,6 +79,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\ptm.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\cmd.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

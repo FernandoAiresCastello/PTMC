@@ -11,7 +11,6 @@ debug
 *.pdb
 *.map
 *.exp
-*.dia
-*.dia~
+*.lnk
 Debug
 Docs/Generated

@@ -61,28 +61,27 @@ namespace PTM.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to #include &lt;SDL2/SDL.h&gt;
-        ///#include &lt;windows.h&gt;
-        ///#include &lt;cstdio&gt;
-        ///#include &lt;cstdarg&gt;
-        ///#include &lt;cctype&gt;
+        ///   Looks up a localized string similar to .
+        /// </summary>
+        internal static string cmd {
+            get {
+                return ResourceManager.GetString("cmd", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to #include &lt;windows.h&gt;
+        ///#include &lt;SDL.h&gt;
+        ///#include &lt;map&gt;
         ///#include &lt;string&gt;
         ///#include &lt;vector&gt;
-        ///#include &lt;iostream&gt;
-        ///#include &lt;sstream&gt;
-        ///#include &lt;fstream&gt;
-        ///#include &lt;algorithm&gt;
-        ///#include &lt;bitset&gt;
         ///
-        ///#define WINDOW_TITLE &quot;Hello World!&quot;
-        ///#define WINDOW_WIDTH 640
-        ///#define WINDOW_HEIGHT 480
-        ///#define WINDOW_FULLSCREEN 0
-        ///#define SCREEN_WIDTH 160
-        ///#define SCREEN_HEIGHT 96
+        ///// _PTM_BEGIN_USER_MAIN_
         ///
-        /////=============================================================================
-        /////      UTIL        /// [rest of string was truncated]&quot;;.
+        ///int main(int argc, char* argv[])
+        ///{
+        ///	return 0;
+        ///}.
         /// </summary>
         internal static string ptm {
             get {

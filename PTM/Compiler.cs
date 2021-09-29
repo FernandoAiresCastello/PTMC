@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace PTM
 {
@@ -13,6 +14,8 @@ namespace PTM
         private readonly string TemplateFile = Properties.Resources.ptm;
         private readonly List<string> TemplateLines = new List<string>();
         private readonly string TemplateInjectionPointMarker = "// _PTM_BEGIN_USER_MAIN_";
+        private readonly List<Variable> Vars = new List<Variable>();
+        private readonly CommandMap CmdMap = new CommandMap();
 
         private struct Variable
         {
@@ -25,8 +28,6 @@ namespace PTM
                 Type = type;
             }
         }
-
-        private readonly List<Variable> Vars = new List<Variable>();
 
         public Compiler()
         {
@@ -70,7 +71,9 @@ namespace PTM
             }
             catch (Exception e)
             {
-                Log(string.Format("Unhandled exception compiling line {0}: {1}", srcLineNr, srcLine));
+                string msg = string.Format("Unhandled exception compiling line {0}: {1}", srcLineNr, srcLine);
+                MessageBox.Show(msg);
+                Log(msg);
             }
 
             return false;
@@ -126,6 +129,53 @@ namespace PTM
         }
 
         public string CompileLine(string src)
+        {
+            string srcLine = src.Trim();
+            if (string.IsNullOrEmpty(srcLine))
+                return src;
+
+            string line = null;
+            string cmd = null;
+            string singleParam = null;
+            string[] param = null;
+
+            int ixFirstSpace = srcLine.IndexOf(' ');
+            if (ixFirstSpace > 0)
+            {
+                cmd = srcLine.Substring(0, ixFirstSpace).Trim().ToUpper();
+                singleParam = srcLine.Substring(ixFirstSpace).Trim();
+                param = singleParam.Split(' ');
+            }
+            else
+            {
+                cmd = srcLine;
+            }
+
+            if (cmd.EndsWith(":"))
+            {
+                string function = cmd.Substring(0, cmd.Length - 1);
+                if (function.ToLower() == "main")
+                    return "int main(int argc, char* argv[]) {";
+                else
+                    return string.Format("void {0}() {{", function);
+            }
+
+            cmd = cmd.ToUpper();
+
+            if (!CmdMap.Mappings.ContainsKey(cmd))
+                throw new CompileError("Invalid command: " + cmd);
+
+            string cpp = CmdMap.Mappings[cmd].Cpp;
+
+            if (param == null)
+                line = cpp;
+            else
+                line = string.Format(cpp, param);
+
+            return line;
+        }
+
+        public string CompileLine_Old(string src)
         {
             string srcLine = src.Trim();
             if (string.IsNullOrEmpty(srcLine))

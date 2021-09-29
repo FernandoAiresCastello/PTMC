@@ -1,0 +1,41 @@
+
+HALT
+[
+	system.Halt();
+]
+
+SCREEN
+[
+	screen.OpenWindow({0}, {1}, {2}, {3});
+]
+
+BGCOLOR
+[
+	screen.SetBackColorIx({0});
+]
+
+CLS
+[
+	screen.Clear();
+]
+
+LOOP
+[
+	while (true) { 
+		system.ProcessGlobalEvents();
+]
+
+FOR
+[
+	for ({0} = {1}; {0} < {2}; {0}++) {{
+]
+
+NEXT
+[
+	}
+]
+
+RET
+[
+	}
+]
