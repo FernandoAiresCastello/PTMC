@@ -21,6 +21,7 @@ namespace PTM
             }
 
             string srcFile = args[0];
+
             if (!File.Exists(srcFile))
             {
                 Log("Source file \"" + srcFile + "\" not found");
@@ -28,11 +29,13 @@ namespace PTM
             }
 
             string exeFile = args[1];
+            string cppFile = "__generated__.cpp";
+
             File.Delete(exeFile);
+            File.Delete(cppFile);
             
             string[] srcLines = File.ReadAllLines(srcFile);
             Compiler compiler = new Compiler();
-            string cppFile = "__generated__.cpp";
 
             bool ok = compiler.CompilePtmlToCpp(srcLines, cppFile);
             if (ok)

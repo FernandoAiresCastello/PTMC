@@ -29,6 +29,11 @@ EXIT
 	System::Exit();
 ]
 
+PAUSE
+[
+	System::Pause({0});
+]
+
 SCREEN
 [
 	Screen::OpenWindow({0}, {1}, {2}, {3});
@@ -41,7 +46,7 @@ BGCOLOR
 
 CLS
 [
-	Screen::Clear();
+	Screen::ClearBackground();
 ]
 
 LOOP
@@ -68,4 +73,9 @@ CALL
 RET
 [
 	}
+]
+
+REFS
+[
+	Screen::Update();
 ]

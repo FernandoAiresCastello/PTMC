@@ -5,13 +5,13 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("PTM")]
-[assembly: AssemblyDescription("PTM - Programmable Tile Machine")]
+[assembly: AssemblyTitle("Programmable Tile Machine Compiler")]
+[assembly: AssemblyDescription("Programmable Tile Machine Compiler")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("")]
+[assembly: AssemblyCompany("Fernando Aires Castello")]
+[assembly: AssemblyProduct("Programmable Tile Machine Compiler")]
 [assembly: AssemblyCopyright("Copyright ©  2021")]
-[assembly: AssemblyTrademark("")]
+[assembly: AssemblyTrademark("Fernando Aires Castello")]
 [assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible

@@ -26,7 +26,7 @@ typedef int ColorRgb;
 //=============================================================================
 //	ENUMERATIONS
 //=============================================================================
-enum class Flag { OFF = 0, ON = 1 };
+
 //=============================================================================
 //	DECLARATIONS
 //=============================================================================
@@ -71,8 +71,8 @@ namespace Screen {
 	int Rows = 0;
 	int WndWidth = 0;
 	int WndHeight = 0;
-	ColorRgb* Pixels = nullptr;
-	int PixelCount = 0;
+	ColorRgb* RgbBuffer = nullptr;
+	int RgbBufferLen = 0;
 	std::vector<ColorRgb> Palette;
 	PaletteIx BackColorIx = 0;
 	const int LayerCount = 3;
@@ -91,6 +91,8 @@ namespace Screen {
 	void ClearLayers();
 	void ClearLayer(ScreenLayer& layer);
 	void ToggleFull();
+	void DrawLayers();
+	void DrawLayer(ScreenLayer& layer, int index);
 	void Update();
 }
 
@@ -193,8 +195,8 @@ void Screen::OpenWindow(int w, int h, int z, int full) {
 	WndHeight = h * z;
 	Cols = w / TileWidth;
 	Rows = h / TileHeight;
-	PixelCount = w * h;
-	Pixels = new int[PixelCount];
+	RgbBufferLen = sizeof(int) * w * h;
+	RgbBuffer = new int[RgbBufferLen];
 
 	SDL_Init(SDL_INIT_EVERYTHING);
 	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "direct3d");
@@ -233,14 +235,22 @@ void Screen::CloseWindow() {
 	SDL_DestroyWindow(Window);
 	SDL_Quit();
 
-	delete[] Pixels;
-	Pixels = nullptr;
-	PixelCount = 0;
+	delete[] RgbBuffer;
+	RgbBuffer = nullptr;
+	RgbBufferLen = 0;
 }
 void Screen::InitDefaultPalette() {
 	ClearPalette();
 	AddPaletteColor(0x000000);
 	AddPaletteColor(0xffffff);
+	AddPaletteColor(0xff0000);
+	AddPaletteColor(0x00ff00);
+	AddPaletteColor(0x0000ff);
+	AddPaletteColor(0xff00ff);
+	AddPaletteColor(0xffff00);
+	AddPaletteColor(0x00ffff);
+	AddPaletteColor(0xff8000);
+	AddPaletteColor(0x808080);
 }
 void Screen::ClearPalette() {
 	Palette.clear();
@@ -259,8 +269,8 @@ ColorRgb Screen::GetPaletteColor(PaletteIx ix) {
 	return 0;
 }
 void Screen::ClearBackground() {
-	for (int i = 0; i < PixelCount; i++)
-		Pixels[i] = GetPaletteColor(BackColorIx);
+	for (int i = 0; i < RgbBufferLen; i++)
+		RgbBuffer[i] = GetPaletteColor(BackColorIx);
 }
 void Screen::ClearLayers() {
 	for (int i = 0; i < LayerCount; i++)
@@ -277,11 +287,23 @@ void Screen::ToggleFull() {
 	SDL_ShowCursor(isFullscreen);
 	Update();
 }
+void Screen::DrawLayers() {
+	ClearBackground();
+	for (int i = 0; i < LayerCount; i++)
+		DrawLayer(Layers[i], i);
+}
+void Screen::DrawLayer(ScreenLayer& layer, int index) {
+	for (int i = 0; i < layer.Length; i++) {
+		PaletteIx& pix = layer.Pixels[i];
+		if (i == 0 || pix > 0)
+			RgbBuffer[i] = GetPaletteColor(pix);
+	}
+}
 void Screen::Update() {
 	static int pitch;
 	static void* pixels;
 	SDL_LockTexture(MainTexture, nullptr, &pixels, &pitch);
-	SDL_memcpy(pixels, Pixels, PixelCount);
+	SDL_memcpy(pixels, RgbBuffer, RgbBufferLen);
 	SDL_UnlockTexture(MainTexture);
 	SDL_RenderCopy(Renderer, MainTexture, nullptr, nullptr);
 	SDL_RenderPresent(Renderer);
