@@ -1,4 +1,14 @@
 
+LOG
+[
+	Debug::Log({0});
+]
+
+MSGBOX
+[
+	Debug::MsgBox({0});
+]
+
 INT
 [
 	int {0} = {1};
@@ -7,11 +17,6 @@ INT
 STR
 [
 	std::string {0} = {1};
-]
-
-MSGBOX
-[
-	System::ShowMsgBox({0});
 ]
 
 HALT

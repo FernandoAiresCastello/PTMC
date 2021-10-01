@@ -8,12 +8,15 @@ namespace PTM
 {
     public class CompileError : Exception
     {
+        public bool ShowSourceLine { get; private set; }
+
         public CompileError() : base(null)
         {
         }
 
-        public CompileError(string msg) : base(msg)
+        public CompileError(string msg, bool showSrcLine = true) : base(msg)
         {
+            ShowSourceLine = showSrcLine;
         }
     }
 }
