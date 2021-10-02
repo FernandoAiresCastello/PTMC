@@ -41,12 +41,27 @@ SCREEN
 
 BGCOLOR
 [
-	Screen::SetBackColorIx({0});
+	Screen::SetBackColor({0});
 ]
 
 CLS
 [
-	Screen::ClearBackground();
+	Screen::ClearLayers();
+]
+
+FILL
+[
+	Screen::FillLayer({0}, {1});
+]
+
+ENAL
+[
+	Screen::EnableLayer({0}, true);
+]
+
+DISL
+[
+	Screen::EnableLayer({0}, false);
 ]
 
 LOOP
@@ -77,5 +92,26 @@ RET
 
 REFS
 [
+	Screen::DrawLayers();
 	Screen::Update();
+]
+
+PSET
+[
+	Screen::PutPixel({0}, {1}, {2}, {3});
+]
+
+PAL
+[
+	Screen::SetPaletteColor({0}, {1});
+]
+
+CHR
+[
+	Screen::SetTilesetTile({0}, {1}, "{2}");
+]
+
+PUT
+[
+	Screen::PutTile({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7});
 ]
