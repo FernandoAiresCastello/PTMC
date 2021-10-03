@@ -419,6 +419,7 @@ void Screen::DrawLayer(LayerIx layerIx) {
 	}
 }
 void Screen::Update() {
+	DrawLayers();
 	static int pitch;
 	static void* pixels;
 	SDL_LockTexture(MainTexture, nullptr, &pixels, &pitch);
@@ -471,7 +472,5 @@ void Screen::PutTile(TilesetIx tileIx, LayerIx layerIx, int x, int y,
 }
 
 // _BEGIN_DECLS_
-
 // _BEGIN_MAIN_
-
 // _BEGIN_DEFS_

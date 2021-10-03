@@ -43,19 +43,25 @@ namespace PTM
             StringBuilder main = new StringBuilder();
             StringBuilder defs = new StringBuilder();
 
+            bool hasMain = false;
+            
             foreach (Function fn in Functions)
             {
                 bool isMain = fn.Name.ToLower() == "main";
 
                 if (isMain)
                 {
+                    hasMain = true;
                     main.AppendLine("int main(int argc, char* argv[])");
                     main.AppendLine("{");
                     main.AppendLine("\tSystem::Init();");
+                    main.AppendLine("");
                     foreach (string fnLine in fn.Body)
                         main.AppendLine("\t" + fnLine);
+                    main.AppendLine("");
+                    main.AppendLine("\tSystem::Eof();");
                     main.AppendLine("\treturn 0;");
-                    main.Append("}");
+                    main.AppendLine("}");
                 }
                 else
                 {
@@ -65,14 +71,19 @@ namespace PTM
                     defs.AppendLine("{");
                     foreach (string fnLine in fn.Body)
                         defs.AppendLine("\t" + fnLine);
-                    defs.Append("}");
+                    defs.AppendLine("}");
+                    defs.AppendLine("");
                 }
             }
+
+            if (!hasMain)
+                throw new CompileError("Function main not found");
 
             string output = TemplateCpp;
             output = output.Replace(BeginDecls, decls.ToString());
             output = output.Replace(BeginMain, main.ToString());
             output = output.Replace(BeginDefs, defs.ToString());
+            output = output.Trim() + Environment.NewLine;
             File.WriteAllText(outputFileName, output);
             Log("Compiled OK!");
 
@@ -114,7 +125,7 @@ namespace PTM
             if (string.IsNullOrEmpty(srcLine))
                 return srcLine;
             if (srcLine.StartsWith(";"))
-                return "// " + srcLine.Substring(1);
+                return "//" + srcLine.Substring(1);
 
             string cppLine = "";
             string cmd = null;

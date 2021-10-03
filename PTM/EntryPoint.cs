@@ -28,23 +28,30 @@ namespace PTM
                 return;
             }
 
-            string exeFile = args[1];
-            string cppFile = "__generated__.cpp";
-
-            File.Delete(exeFile);
-            File.Delete(cppFile);
-            
-            string[] srcLines = File.ReadAllLines(srcFile);
-            Compiler compiler = new Compiler();
-
-            bool ok = compiler.CompilePtmlToCpp(srcLines, cppFile);
-            if (ok)
+            try
             {
-                ok = compiler.CompileCppToExe(cppFile, exeFile);
+                string exeFile = args[1];
+                string cppFile = "__generated__.cpp";
+
+                File.Delete(exeFile);
+                File.Delete(cppFile);
+
+                string[] srcLines = File.ReadAllLines(srcFile);
+                Compiler compiler = new Compiler();
+
+                bool ok = compiler.CompilePtmlToCpp(srcLines, cppFile);
                 if (ok)
                 {
-                    //File.Delete(cppFile);
+                    ok = compiler.CompileCppToExe(cppFile, exeFile);
+                    if (ok)
+                    {
+                        //File.Delete(cppFile);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Log(ex.Message);
             }
         }
 
