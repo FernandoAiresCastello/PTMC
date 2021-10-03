@@ -55,6 +55,8 @@ namespace PTM
                     main.AppendLine("int main(int argc, char* argv[])");
                     main.AppendLine("{");
                     main.AppendLine("\tSystem::Init();");
+                    main.AppendLine("\t___InitPalette___();");
+                    main.AppendLine("\t___InitTileset___();");
                     main.AppendLine("");
                     foreach (string fnLine in fn.Body)
                         main.AppendLine("\t" + fnLine);
@@ -220,6 +222,57 @@ namespace PTM
                         else if (fnLine != "{")
                         {
                             fn.Body.Add(fnLine);
+                        }
+                    }
+                }
+                else if (line.ToUpper().StartsWith("PAL"))
+                {
+                    List<string> body = new List<string>();
+                    Function fn = new Function("___InitPalette___", body);
+                    Functions.Add(fn);
+                    int index = 0;
+
+                    bool insidePal = true;
+                    while (insidePal)
+                    {
+                        lineNr++;
+                        string rgb = srcLines[lineNr].Trim();
+                        if (rgb == "}")
+                            insidePal = false;
+                        else if (rgb != "{")
+                            fn.Body.Add(string.Format("PAL {0} {1}", index++, rgb));
+
+                    }
+                }
+                else if (line.ToUpper().StartsWith("CHR"))
+                {
+                    List<string> body = new List<string>();
+                    Function fn = new Function("___InitTileset___", body);
+                    Functions.Add(fn);
+                    int tilesetIx = 0;
+                    int tileRowNr = 0;
+
+                    bool insideChr = true;
+                    while (insideChr)
+                    {
+                        lineNr++;
+                        string rgb = srcLines[lineNr].Trim();
+                        if (rgb == "")
+                            continue;
+
+                        if (rgb == "}")
+                        {
+                            insideChr = false;
+                        }
+                        else if (rgb != "{")
+                        {
+                            fn.Body.Add(string.Format("CHR {0} {1} {2}", tilesetIx, tileRowNr, rgb));
+                            tileRowNr++;
+                            if (tileRowNr >= 8)
+                            {
+                                tileRowNr = 0;
+                                tilesetIx++;
+                            }
                         }
                     }
                 }
