@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace PTM
 {
@@ -13,77 +12,71 @@ namespace PTM
     {
         private readonly string TemplateCpp = Properties.Resources.ptm_cpp;
         private readonly string BeginDecls = "// _BEGIN_DECLS_";
+        private readonly string BeginMain = "// _BEGIN_MAIN_";
         private readonly string BeginDefs = "// _BEGIN_DEFS_";
         private readonly CommandMap CmdMap = new CommandMap();
-        private readonly List<string> Functions = new List<string>();
-        private bool IsMainDefined = false;
+        private readonly List<Function> Functions = new List<Function>();
 
-        public Compiler()
+        private struct Function
         {
+            public string Name { set; get; }
+            public List<string> Body { set; get; }
+
+            public Function(string name, List<string> body)
+            {
+                Name = name;
+                Body = body;
+            }
         }
 
-        private void Log(string text)
-        {
-            Console.WriteLine(text);
-        }
-
-        public bool CompilePtmlToCpp(string[] srcLines, string outputFile)
+        public bool CompilePtmlToCpp(string[] srcLines, string outputFileName)
         {
             Log("Compiling PTML to C++...");
 
-            int srcLineNr = 0;
-            string srcLine = null;
-            IsMainDefined = false;
+            ParseFunctions(srcLines);
 
-            try
+            foreach (Function fn in Functions)
+                for (int fnLineNr = 0; fnLineNr < fn.Body.Count; fnLineNr++)
+                    fn.Body[fnLineNr] = CompileLine(fn.Body[fnLineNr]);
+
+            StringBuilder decls = new StringBuilder();
+            StringBuilder main = new StringBuilder();
+            StringBuilder defs = new StringBuilder();
+
+            foreach (Function fn in Functions)
             {
-                StringBuilder cppLines = new StringBuilder();
+                bool isMain = fn.Name.ToLower() == "main";
 
-                foreach (string rawSrcLine in srcLines)
+                if (isMain)
                 {
-                    srcLineNr++;
-                    srcLine = rawSrcLine;
-
-                    string compiledLine = CompileLine(srcLine);
-                    if (compiledLine.Trim() != "")
-                        compiledLine = compiledLine + " // " + srcLineNr;
-
-                    cppLines.AppendLine(compiledLine);
-                }
-
-                cppLines.AppendLine("System::Eof();");
-                cppLines.AppendLine("return 0;");
-                cppLines.AppendLine("}");
-
-                if (!IsMainDefined)
-                    throw new CompileError("Function main is not defined", false);
-
-                string output = InjectLinesIntoCppTemplate(cppLines.ToString());
-                File.WriteAllText(outputFile, output);
-                Log("Compiled OK!");
-                return true;
-            }
-            catch (CompileError e)
-            {
-                if (e.ShowSourceLine)
-                {
-                    Log(string.Format("Error at line {0}: {1}", srcLineNr, srcLine.Trim()));
-                    if (!string.IsNullOrEmpty(e.Message))
-                        Log("Hint: " + e.Message);
+                    main.AppendLine("int main(int argc, char* argv[])");
+                    main.AppendLine("{");
+                    main.AppendLine("\tSystem::Init();");
+                    foreach (string fnLine in fn.Body)
+                        main.AppendLine("\t" + fnLine);
+                    main.AppendLine("\treturn 0;");
+                    main.Append("}");
                 }
                 else
                 {
-                    Log("Error: " + e.Message);
+                    decls.AppendLine(string.Format("void {0}();", fn.Name));
+
+                    defs.AppendLine(string.Format("void {0}()", fn.Name));
+                    defs.AppendLine("{");
+                    foreach (string fnLine in fn.Body)
+                        defs.AppendLine("\t" + fnLine);
+                    defs.Append("}");
                 }
             }
-            catch (Exception e)
-            {
-                string msg = string.Format("Unhandled exception compiling line {0}: {1}", srcLineNr, srcLine);
-                MessageBox.Show(msg);
-                Log(msg);
-            }
 
-            return false;
+            string output = TemplateCpp;
+            output = output.Replace(BeginDecls, decls.ToString());
+            output = output.Replace(BeginMain, main.ToString());
+            output = output.Replace(BeginDefs, defs.ToString());
+            File.WriteAllText(outputFileName, output);
+            Log("Compiled OK!");
+
+            return true;
         }
 
         public bool CompileCppToExe(string cppFile, string exeFile)
@@ -116,18 +109,52 @@ namespace PTM
             return proc.ExitCode == 0;
         }
 
-        private string InjectLinesIntoCppTemplate(string userLines)
+        private string CompileLine(string srcLine)
         {
-            string output = TemplateCpp;
-            StringBuilder functionPrototypes = new StringBuilder();
+            if (string.IsNullOrEmpty(srcLine))
+                return srcLine;
+            if (srcLine.StartsWith(";"))
+                return "// " + srcLine.Substring(1);
 
-            foreach (string fn in Functions)
-                functionPrototypes.Append(string.Format("void {0}();", fn));
+            string cppLine = "";
+            string cmd = null;
+            string[] args = null;
 
-            output = output.Replace(BeginDecls, functionPrototypes.ToString());
-            output = output.Replace(BeginDefs, userLines);
+            int ixFirstSpace = srcLine.IndexOf(' ');
+            if (ixFirstSpace > 0)
+            {
+                cmd = srcLine.Substring(0, ixFirstSpace).Trim().ToUpper();
+                args = ParseArgs(srcLine.Substring(ixFirstSpace).Trim());
+            }
+            else
+            {
+                cmd = srcLine;
+            }
 
-            return output;
+            cmd = cmd.ToUpper();
+            if (!CmdMap.Mappings.ContainsKey(cmd))
+                throw new CompileError("Invalid command: " + cmd);
+
+            string cpp = CmdMap.Mappings[cmd].Cpp;
+
+            if (args == null)
+            {
+                cppLine = cpp;
+            }
+            else
+            {
+                try
+                {
+                    cppLine = string.Format(cpp, args);
+                }
+                catch (FormatException ex)
+                {
+                    throw new CompileError("Incomplete argument list");
+                }
+            }
+
+
+            return cppLine;
         }
 
         public string[] ParseArgs(string src)
@@ -154,72 +181,43 @@ namespace PTM
             return args.ToArray();
         }
 
-        public string CompileLine(string src)
+        private void ParseFunctions(string[] srcLines)
         {
-            string srcLine = src.Trim();
-            if (string.IsNullOrEmpty(srcLine))
-                return src;
-            if (srcLine.StartsWith(";"))
-                return "// " + srcLine.Substring(1);
-
-            string line = null;
-            string cmd = null;
-            string[] args = null;
-
-            int ixFirstSpace = srcLine.IndexOf(' ');
-            if (ixFirstSpace > 0)
+            for (int lineNr = 0; lineNr < srcLines.Length; lineNr++)
             {
-                cmd = srcLine.Substring(0, ixFirstSpace).Trim().ToUpper();
-                args = ParseArgs(srcLine.Substring(ixFirstSpace).Trim());
-            }
-            else
-            {
-                cmd = srcLine;
-            }
+                string line = srcLines[lineNr].Trim();
+                if (string.IsNullOrWhiteSpace(line))
+                    continue;
 
-            if (cmd.EndsWith(":"))
-            {
-                string function = cmd.Substring(0, cmd.Length - 1);
-
-                if (function.ToLower() == "main")
+                if (line.ToUpper().StartsWith("FN "))
                 {
-                    IsMainDefined = true;
-                    StringBuilder main = new StringBuilder();
-                    main.AppendLine("int main(int argc, char* argv[]) {");
-                    main.AppendLine("System::Init();");
-                    return main.ToString();
-                }
-                else
-                {
-                    Functions.Add(function);
-                    return string.Format("void {0}() {{", function);
+                    string name = line.Substring(3);
+                    List<string> body = new List<string>();
+                    Function fn = new Function(name, body);
+                    Functions.Add(fn);
+
+                    bool insideFunction = true;
+                    while (insideFunction)
+                    {
+                        lineNr++;
+                        string fnLine = srcLines[lineNr].Trim();
+
+                        if (fnLine == "}")
+                        {
+                            insideFunction = false;
+                        }
+                        else if (fnLine != "{")
+                        {
+                            fn.Body.Add(fnLine);
+                        }
+                    }
                 }
             }
+        }
 
-            cmd = cmd.ToUpper();
-
-            if (!CmdMap.Mappings.ContainsKey(cmd))
-                throw new CompileError("Invalid command: " + cmd);
-
-            string cpp = CmdMap.Mappings[cmd].Cpp;
-
-            if (args == null)
-            {
-                line = cpp;
-            }
-            else
-            {
-                try
-                {
-                    line = string.Format(cpp, args);
-                }
-                catch (FormatException ex)
-                {
-                    throw new CompileError("Incomplete argument list");
-                }
-            }
-
-            return line;
+        private void Log(string text)
+        {
+            Console.WriteLine(text);
         }
     }
 }

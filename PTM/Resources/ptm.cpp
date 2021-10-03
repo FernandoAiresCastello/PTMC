@@ -66,9 +66,9 @@ namespace ColorCode {
 	const char C4 = '4';
 };
 struct TilePixelData {
-	static const int TileWidth = 8;
-	static const int TileHeight = 8;
-	static const int Length = TileWidth * TileHeight;
+	static const int Width = 8;
+	static const int Height = 8;
+	static const int Length = Width * Height;
 	ColorCodes Pixels = String::Repeat(ColorCode::Transparent, Length);
 };
 struct ScreenLayer {
@@ -99,6 +99,7 @@ namespace Screen {
 	const int LayerCount = 3;
 	ScreenLayer Layers[LayerCount];
 	
+	void Init();
 	void OpenWindow(int w, int h, int z, int full);
 	ScreenLayer CreateLayer(int w, int h);
 	void DestroyLayer(LayerIx ix);
@@ -134,9 +135,6 @@ namespace Screen {
 	void PutTile(TilesetIx tileIx, LayerIx layerIx, int x, int y,
 		PaletteIx c1, PaletteIx c2, PaletteIx c3, PaletteIx c4);
 }
-
-// _BEGIN_DECLS_
-
 //=============================================================================
 //	DEFINITIONS
 //=============================================================================
@@ -184,6 +182,7 @@ void Debug::MsgBox(const char* fmt, ...) {
 void System::Init() {
 	Debug::ClearFile();
 	Debug::Log("System started");
+	Screen::Init();
 }
 void System::Exit() {
 	Screen::CloseWindow();
@@ -240,14 +239,20 @@ void Screen::DestroyLayer(LayerIx ix) {
 	layer.Pixels = nullptr;
 	layer.Length = 0;
 }
+void Screen::Init() {
+	InitDefaultTileset();
+	InitDefaultPalette();
+	SetBackColor(0);
+	ClearBackground();
+}
 void Screen::OpenWindow(int w, int h, int z, int full) {
 	Width = w;
 	Height = h;
 	Zoom = z;
 	WndWidth = w * z;
 	WndHeight = h * z;
-	Cols = w / TilePixelData::TileWidth;
-	Rows = h / TilePixelData::TileHeight;
+	Cols = w / TilePixelData::Width;
+	Rows = h / TilePixelData::Height;
 	RgbBufferLen = sizeof(int) * w * h;
 	RgbBuffer = new int[RgbBufferLen];
 
@@ -268,10 +273,6 @@ void Screen::OpenWindow(int w, int h, int z, int full) {
 	for (int i = 0; i < LayerCount; i++)
 		Layers[i] = CreateLayer(w, h);
 
-	InitDefaultTileset();
-	InitDefaultPalette();
-	SetBackColor(0);
-	ClearBackground();
 	Update();
 
 	SDL_SetWindowPosition(Window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
@@ -311,8 +312,8 @@ void Screen::SetTilesetTile(TilesetIx ix, ColorCodes pixels) {
 }
 void Screen::SetTilesetTile(TilesetIx ix, int row, ColorCodes pixels) {
 	AssertTilesetIxRange(ix);
-	int pixelIx = row * TilePixelData::TileWidth;
-	for (int i = 0; i < TilePixelData::TileWidth; i++)
+	int pixelIx = row * TilePixelData::Width;
+	for (int i = 0; i < TilePixelData::Width; i++)
 		Tileset[ix].Pixels[pixelIx + i] = pixels[i];
 }
 void Screen::SetTilesetTile(TilesetIx ix,
@@ -375,7 +376,7 @@ void Screen::AssertLayerIxRange(LayerIx ix) {
 }
 void Screen::EnableLayer(LayerIx ix, bool enable) {
 	AssertLayerIxRange(ix);
-	Layers[ix].Enabled = enable;
+	Layers[ix].Enabled = enable;	
 }
 void Screen::ClearLayers() {
 	for (int i = 0; i < LayerCount; i++)
@@ -461,12 +462,16 @@ void Screen::PutTile(TilesetIx tileIx, LayerIx layerIx, int x, int y,
 		x++;
 		widthCounter++;
 
-		if (widthCounter >= TilePixelData::TileWidth) {
+		if (widthCounter >= TilePixelData::Width) {
 			widthCounter = 0;
 			x = initialX;
 			y++;
 		}
 	}
 }
+
+// _BEGIN_DECLS_
+
+// _BEGIN_MAIN_
 
 // _BEGIN_DEFS_
