@@ -77,18 +77,22 @@ struct ScreenLayer {
 	int Width = 0;
 	int Height = 0;
 	bool Enabled = false;
+	int ScrollX = 0;
+	int ScrollY = 0;
 };
 namespace Screen {
 	SDL_Window* Window = nullptr;
 	SDL_Renderer* Renderer = nullptr;
 	SDL_Texture* MainTexture = nullptr;
-	int Width = 0;
-	int Height = 0;
-	int Zoom = 0;
+	int BufWidth = 0;
+	int BufHeight = 0;
 	int Cols = 0;
 	int Rows = 0;
+	int HorizontalRes = 0;
+	int VerticalRes = 0;
 	int WndWidth = 0;
 	int WndHeight = 0;
+	SDL_Rect WndViewport = { 0 };
 	ColorRgb* RgbBuffer = nullptr;
 	int RgbBufferLen = 0;
 	std::vector<ColorRgb> Palette;
@@ -100,7 +104,7 @@ namespace Screen {
 	ScreenLayer Layers[LayerCount];
 	
 	void Init();
-	void OpenWindow(int w, int h, int z, int full);
+	void OpenWindow(int bufWidth, int bufHeight, int horizontalRes, int verticalRes, int wndWidth, int wndHeight, int full);
 	ScreenLayer CreateLayer(int w, int h);
 	void DestroyLayer(LayerIx ix);
 	void CloseWindow();
@@ -134,6 +138,8 @@ namespace Screen {
 	void PutPixel(LayerIx layerIx, int x, int y, PaletteIx color);
 	void PutTile(TilesetIx tileIx, LayerIx layerIx, int x, int y,
 		PaletteIx c1, PaletteIx c2, PaletteIx c3, PaletteIx c4);
+	void ScrollLayerDist(LayerIx layerIx, int dx, int dy);
+	void ScrollLayerTo(LayerIx layerIx, int x, int y);
 }
 //=============================================================================
 //	DEFINITIONS
@@ -245,15 +251,21 @@ void Screen::Init() {
 	SetBackColor(0);
 	ClearBackground();
 }
-void Screen::OpenWindow(int w, int h, int z, int full) {
-	Width = w;
-	Height = h;
-	Zoom = z;
-	WndWidth = w * z;
-	WndHeight = h * z;
-	Cols = w / TilePixelData::Width;
-	Rows = h / TilePixelData::Height;
-	RgbBufferLen = sizeof(int) * w * h;
+void Screen::OpenWindow(int bufWidth, int bufHeight, int horizontalRes, int verticalRes, int wndWidth, int wndHeight, int full) {
+	BufWidth = bufWidth;
+	BufHeight = bufHeight;
+	HorizontalRes = horizontalRes;
+	VerticalRes = verticalRes;
+	WndWidth = wndWidth;
+	WndHeight = wndHeight;
+	WndViewport.x = 0;
+	WndViewport.y = 0;
+	WndViewport.w = horizontalRes;
+	WndViewport.h = verticalRes;
+
+	Cols = BufWidth / TilePixelData::Width;
+	Rows = BufHeight / TilePixelData::Height;
+	RgbBufferLen = sizeof(int) * BufWidth * BufHeight;
 	RgbBuffer = new int[RgbBufferLen];
 
 	SDL_Init(SDL_INIT_EVERYTHING);
@@ -267,12 +279,12 @@ void Screen::OpenWindow(int w, int h, int z, int full) {
 	Renderer = SDL_CreateRenderer(Window, -1,
 		SDL_RENDERER_PRESENTVSYNC | SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
 	
-	SDL_RenderSetLogicalSize(Renderer, Width, Height);
-	MainTexture = SDL_CreateTexture(Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, Width, Height);
+	SDL_RenderSetLogicalSize(Renderer, WndWidth, WndHeight);
+	MainTexture = SDL_CreateTexture(Renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, BufWidth, BufHeight);
 
 	for (int i = 0; i < LayerCount; i++)
-		Layers[i] = CreateLayer(w, h);
-
+		Layers[i] = CreateLayer(BufWidth, BufHeight);
+	
 	Update();
 
 	SDL_SetWindowPosition(Window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
@@ -407,29 +419,35 @@ void Screen::DrawLayers() {
 void Screen::DrawLayer(LayerIx layerIx) {
 	AssertLayerIxRange(layerIx);
 	ScreenLayer& layer = Layers[layerIx];
+	
 	for (int i = 0; i < layer.Length; i++) {
 		if (layer.Enabled) {
-			if (layer.Pixels[i] > 0) {
+			if (layer.Pixels[i] > 0)
 				RgbBuffer[i] = GetPaletteColor(layer.Pixels[i]);
-			}
-			else if (layerIx == 0) {
+			else if (layerIx == 0)
 				RgbBuffer[i] = GetPaletteColor(BackColor);
-			}
 		}
 	}
 }
 void Screen::Update() {
-	DrawLayers();
+	
 	static int pitch;
 	static void* pixels;
+	static SDL_Rect dstRect = { 0, 0, WndWidth, WndHeight };
+	
+	DrawLayers();
 	SDL_LockTexture(MainTexture, nullptr, &pixels, &pitch);
 	SDL_memcpy(pixels, RgbBuffer, RgbBufferLen);
 	SDL_UnlockTexture(MainTexture);
-	SDL_RenderCopy(Renderer, MainTexture, nullptr, nullptr);
+	SDL_RenderCopy(Renderer, MainTexture, &WndViewport, &dstRect);
 	SDL_RenderPresent(Renderer);
 }
 void Screen::PutPixel(LayerIx layerIx, int x, int y, PaletteIx color) {
 	AssertLayerIxRange(layerIx);
+	
+	x += Layers[layerIx].ScrollX;
+	y += Layers[layerIx].ScrollY;
+
 	if (x >= 0 && y >= 0 && x < Layers[layerIx].Width && y < Layers[layerIx].Height)
 		Layers[layerIx].Pixels[y * Layers[layerIx].Width + x] = color;
 }
@@ -469,6 +487,16 @@ void Screen::PutTile(TilesetIx tileIx, LayerIx layerIx, int x, int y,
 			y++;
 		}
 	}
+}
+void Screen::ScrollLayerDist(LayerIx layerIx, int dx, int dy) {
+	AssertLayerIxRange(layerIx);
+	Layers[layerIx].ScrollX += dx;
+	Layers[layerIx].ScrollY += dy;
+}
+void Screen::ScrollLayerTo(LayerIx layerIx, int x, int y) {
+	AssertLayerIxRange(layerIx);
+	Layers[layerIx].ScrollX = x;
+	Layers[layerIx].ScrollY = y;
 }
 
 // _BEGIN_DECLS_

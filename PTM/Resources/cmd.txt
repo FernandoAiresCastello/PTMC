@@ -31,7 +31,7 @@ PAUSE
 
 SCREEN
 [
-	Screen::OpenWindow({0}, {1}, {2}, {3});
+	Screen::OpenWindow({0}, {1}, {2}, {3}, {4}, {5}, {6});
 ]
 
 BGCOLOR
@@ -42,6 +42,11 @@ BGCOLOR
 CLS
 [
 	Screen::ClearLayers();
+]
+
+CL
+[
+	Screen::ClearLayer({0});
 ]
 
 FILL
@@ -115,7 +120,28 @@ ADD
 	{0} += {1};
 ]
 
+SUB
+[
+	{0} -= {1};
+]
+
+INC
+[
+	{0}++;
+]
+
+DEC
+[
+	{0}--;
+]
+
 SET
 [
 	{0} = {1};
 ]
+
+SCRL
+[
+	Screen::ScrollLayerTo({0}, {1}, {2});
+]
+	

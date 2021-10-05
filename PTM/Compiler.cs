@@ -225,7 +225,7 @@ namespace PTM
                         }
                     }
                 }
-                else if (line.ToUpper().StartsWith("PAL"))
+                else if (line.ToUpper() == "PAL")
                 {
                     List<string> body = new List<string>();
                     Function fn = new Function("___InitPalette___", body);
@@ -244,7 +244,7 @@ namespace PTM
 
                     }
                 }
-                else if (line.ToUpper().StartsWith("CHR"))
+                else if (line.ToUpper() == "CHR")
                 {
                     List<string> body = new List<string>();
                     Function fn = new Function("___InitTileset___", body);
