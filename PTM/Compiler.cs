@@ -16,6 +16,7 @@ namespace PTM
         private readonly string BeginDefs = "// _BEGIN_DEFS_";
         private readonly CommandMap CmdMap = new CommandMap();
         private readonly List<Function> Functions = new List<Function>();
+        private readonly List<string> Vars = new List<string>();
 
         private struct Function
         {
@@ -42,6 +43,10 @@ namespace PTM
             StringBuilder decls = new StringBuilder();
             StringBuilder main = new StringBuilder();
             StringBuilder defs = new StringBuilder();
+
+            foreach (string var in Vars)
+                decls.AppendLine(CompileLine(var));
+            decls.AppendLine();
 
             bool hasMain = false;
             
@@ -158,17 +163,7 @@ namespace PTM
             {
                 try
                 {
-                    if (cpp == "")
-                    {
-                        if (cmd == "IF")
-                            cppLine = string.Format("if ({0}) {{", JoinArgs(args));
-                        else if (cmd == "SET")
-                            cppLine = string.Format("{0} = {1};", args[0], JoinArgs(args, 1));
-                    }
-                    else
-                    {
-                        cppLine = string.Format(cpp, args);
-                    }
+                    cppLine = string.Format(cpp, args);
                 }
                 catch (FormatException ex)
                 {
@@ -200,9 +195,10 @@ namespace PTM
                 if (ch == '"')
                     quote = !quote;
 
-                sb.Append(ch);
+                if (ch != ',' || quote)
+                    sb.Append(ch);
 
-                if ((ch == ' ' && !quote) || i == src.Length - 1)
+                if ((ch == ',' && !quote) || i == src.Length - 1)
                 {
                     args.Add(sb.ToString().Trim());
                     sb.Clear();
@@ -243,6 +239,20 @@ namespace PTM
                         }
                     }
                 }
+                else if (line.ToUpper() == "VAR")
+                {
+                    bool insideVars = true;
+                    while (insideVars)
+                    {
+                        lineNr++;
+                        string def = srcLines[lineNr].Trim();
+                        if (def == "}")
+                            insideVars = false;
+                        else if (def != "{")
+                            Vars.Add(def);
+
+                    }
+                }
                 else if (line.ToUpper() == "PAL")
                 {
                     List<string> body = new List<string>();
@@ -258,7 +268,7 @@ namespace PTM
                         if (rgb == "}")
                             insidePal = false;
                         else if (rgb != "{")
-                            fn.Body.Add(string.Format("PAL {0} {1}", index++, rgb));
+                            fn.Body.Add(string.Format("PAL {0}, {1}", index++, rgb));
 
                     }
                 }
@@ -284,7 +294,7 @@ namespace PTM
                         }
                         else if (rgb != "{")
                         {
-                            fn.Body.Add(string.Format("CHR {0} {1} {2}", tilesetIx, tileRowNr, rgb));
+                            fn.Body.Add(string.Format("CHR {0}, {1}, {2}", tilesetIx, tileRowNr, rgb));
                             tileRowNr++;
                             if (tileRowNr >= 8)
                             {
@@ -293,6 +303,10 @@ namespace PTM
                             }
                         }
                     }
+                }
+                else
+                {
+                    throw new CompileError("Invalid section: " + line);
                 }
             }
         }
