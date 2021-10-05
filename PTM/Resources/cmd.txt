@@ -29,9 +29,14 @@ PAUSE
 	System::Pause({0});
 ]
 
-SCREEN
+WINDOW
 [
 	Screen::OpenWindow({0}, {1}, {2}, {3}, {4}, {5}, {6});
+]
+
+TITLE
+[
+	Screen::SetTitle({0});
 ]
 
 BGCOLOR
@@ -137,11 +142,18 @@ DEC
 
 SET
 [
-	{0} = {1};
 ]
 
 SCRL
 [
 	Screen::ScrollLayerTo({0}, {1}, {2});
 ]
-	
+
+IF
+[
+]
+
+ENDIF
+[
+	}
+]

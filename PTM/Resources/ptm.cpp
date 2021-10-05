@@ -81,6 +81,7 @@ struct ScreenLayer {
 	int ScrollY = 0;
 };
 namespace Screen {
+	std::string WndTitle = "";
 	SDL_Window* Window = nullptr;
 	SDL_Renderer* Renderer = nullptr;
 	SDL_Texture* MainTexture = nullptr;
@@ -105,6 +106,7 @@ namespace Screen {
 	
 	void Init();
 	void OpenWindow(int bufWidth, int bufHeight, int horizontalRes, int verticalRes, int wndWidth, int wndHeight, int full);
+	void SetTitle(std::string title);
 	ScreenLayer CreateLayer(int w, int h);
 	void DestroyLayer(LayerIx ix);
 	void CloseWindow();
@@ -286,9 +288,16 @@ void Screen::OpenWindow(int bufWidth, int bufHeight, int horizontalRes, int vert
 		Layers[i] = CreateLayer(BufWidth, BufHeight);
 	
 	Update();
+	if (WndTitle != "")
+		SetTitle(WndTitle);
 
 	SDL_SetWindowPosition(Window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 	SDL_RaiseWindow(Window);
+}
+void Screen::SetTitle(std::string title) {
+	WndTitle = title;
+	if (Window)
+		SDL_SetWindowTitle(Window, title.c_str());
 }
 void Screen::CloseWindow() {
 	if (Window == nullptr)

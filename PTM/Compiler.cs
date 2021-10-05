@@ -158,7 +158,17 @@ namespace PTM
             {
                 try
                 {
-                    cppLine = string.Format(cpp, args);
+                    if (cpp == "")
+                    {
+                        if (cmd == "IF")
+                            cppLine = string.Format("if ({0}) {{", JoinArgs(args));
+                        else if (cmd == "SET")
+                            cppLine = string.Format("{0} = {1};", args[0], JoinArgs(args, 1));
+                    }
+                    else
+                    {
+                        cppLine = string.Format(cpp, args);
+                    }
                 }
                 catch (FormatException ex)
                 {
@@ -168,6 +178,14 @@ namespace PTM
 
 
             return cppLine;
+        }
+
+        public string JoinArgs(string[] args, int initialIndex = 0)
+        {
+            if (initialIndex > 0)
+                return string.Join(" ", args, initialIndex, args.Length - 1).Trim();
+            else
+                return string.Join(" ", args).Trim();
         }
 
         public string[] ParseArgs(string src)
