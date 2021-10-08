@@ -80,11 +80,6 @@ FOR
 	for (int {0} = {1}; {0} < {2}; {0} += {3}) {{
 ]
 
-NEXT
-[
-	}
-]
-
 CALL
 [
 	{0}();
@@ -155,7 +150,27 @@ IF
 	if ({0}) {{
 ]
 
-ENDIF
+ELSE
+[
+	} else {
+]
+
+END
 [
 	}
+]
+
+INKEY
+[
+	System::GetKeyboardState();
+]
+
+HKEY
+[
+	if (System::KbdState[SDL_SCANCODE_{0}]) {{
+]
+
+KMOD
+[
+	if (SDL_GetModState() & KMOD_{0}) {{
 ]

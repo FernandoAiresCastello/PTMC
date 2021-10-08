@@ -49,6 +49,7 @@ namespace Debug {
 namespace System {
 	SDL_Event SDLGlobalEvent = { 0 };
 	int PauseTime = 0;
+	const Uint8* KbdState = nullptr;
 
 	void Init();
 	void Exit();
@@ -57,6 +58,7 @@ namespace System {
 	void Eof();
 	void Pause(int time);
 	void ProcessGlobalEvents();
+	void GetKeyboardState();
 }
 namespace ColorCode {
 	const char Transparent = '0';
@@ -221,6 +223,10 @@ void System::ProcessGlobalEvents() {
 			Screen::ToggleFull();
 		}
 	}
+}
+void System::GetKeyboardState() {
+	SDL_PumpEvents();
+	KbdState = SDL_GetKeyboardState(NULL);
 }
 void System::Pause(int time) {
 	PauseTime = time;
