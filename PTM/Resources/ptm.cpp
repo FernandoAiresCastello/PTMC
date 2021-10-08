@@ -37,6 +37,9 @@ namespace String {
 	std::string Format(const char* fmt, ...);
 	std::string ToUpper(std::string text);
 	bool ToBool(std::string str);
+	int ToInt(std::string str);
+	std::string ToString(int x);
+	std::string Skip(std::string text, int count);
 	std::string Repeat(char ch, int times);
 }
 namespace Debug {
@@ -50,6 +53,8 @@ namespace System {
 	SDL_Event SDLGlobalEvent = { 0 };
 	int PauseTime = 0;
 	const Uint8* KbdState = nullptr;
+	static SDL_Thread* Thread = nullptr;
+	std::vector<void(*)()> ThreadFunctions;
 
 	void Init();
 	void Exit();
@@ -59,6 +64,7 @@ namespace System {
 	void Pause(int time);
 	void ProcessGlobalEvents();
 	void GetKeyboardState();
+	int ThreadFn(void* ptr);
 }
 namespace ColorCode {
 	const char Transparent = '0';
@@ -162,8 +168,28 @@ bool String::ToBool(std::string str) {
 	str = ToUpper(str);
 	return str == "YES" || str == "ON" || str == "TRUE" || std::atoi(str.c_str()) > 0;
 }
-std::string String::Repeat(char ch, int times)
-{
+int String::ToInt(std::string str) {
+	int value = 0;
+	bool sign = str[0] == '-';
+	if (sign)
+		str = String::Skip(str, 1);
+
+	if (str[0] == '0' && str[1] == 'x')
+		sscanf(str.c_str(), "%x", &value);
+	else if (str[0] == '0' && str[1] == 'b')
+		value = stoi(String::Skip(str, 2), nullptr, 2);
+	else
+		value = atoi(str.c_str());
+
+	return sign ? -value : value;
+}
+std::string String::ToString(int x) {
+	return Format("%i", x);
+}
+std::string String::Skip(std::string text, int count) {
+	return text.substr(count);
+}
+std::string String::Repeat(char ch, int times) {
 	std::string str = "";
 	for (int i = 0; i < times; i++) {
 		str.push_back(ch);
@@ -193,9 +219,13 @@ void System::Init() {
 	Debug::ClearFile();
 	Debug::Log("System started");
 	Screen::Init();
+	Thread = SDL_CreateThread(ThreadFn, "ThreadFn", NULL);
 }
 void System::Exit() {
+	SDL_DetachThread(Thread);
+	Thread = nullptr;
 	Screen::CloseWindow();
+	SDL_Quit();
 	Debug::Log("System exited");
 	exit(0);
 }
@@ -227,6 +257,15 @@ void System::ProcessGlobalEvents() {
 void System::GetKeyboardState() {
 	SDL_PumpEvents();
 	KbdState = SDL_GetKeyboardState(NULL);
+}
+int System::ThreadFn(void* ptr) {
+	while (true) {
+		for (int i = 0; i < ThreadFunctions.size(); i++) {
+			auto fn = ThreadFunctions[i];
+			fn();
+		}
+	}
+	return 0;
 }
 void System::Pause(int time) {
 	PauseTime = time;
@@ -315,7 +354,6 @@ void Screen::CloseWindow() {
 	SDL_DestroyTexture(MainTexture);
 	SDL_DestroyRenderer(Renderer);
 	SDL_DestroyWindow(Window);
-	SDL_Quit();
 
 	delete[] RgbBuffer;
 	RgbBuffer = nullptr;

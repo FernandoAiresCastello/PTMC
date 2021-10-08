@@ -14,6 +14,16 @@ INT
 	int {0} = {1};
 ]
 
+STR
+[
+	std::string {0} = {1};
+]
+
+ITOS
+[
+	{0} = String::ToString({1});
+]
+
 HALT
 [
 	System::Halt();
@@ -173,4 +183,9 @@ HKEY
 KMOD
 [
 	if (SDL_GetModState() & KMOD_{0}) {{
+]
+
+THR
+[
+	System::ThreadFunctions.push_back({0});
 ]
