@@ -250,7 +250,7 @@ namespace PTM
                         }
                     }
                 }
-                else if (line.ToUpper() == "VAR")
+                else if (line.ToUpper() == "GLOBAL")
                 {
                     bool insideVars = true;
                     while (insideVars)

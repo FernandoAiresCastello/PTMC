@@ -148,12 +148,56 @@ namespace Screen {
 	void PutPixel(LayerIx layerIx, int x, int y, PaletteIx color);
 	void PutTile(TilesetIx tileIx, LayerIx layerIx, int x, int y,
 		PaletteIx c1, PaletteIx c2, PaletteIx c3, PaletteIx c4);
+	void PutTileAligned(TilesetIx tileIx, LayerIx layerIx, int x, int y,
+		PaletteIx c1, PaletteIx c2, PaletteIx c3, PaletteIx c4);
 	void ScrollLayerDist(LayerIx layerIx, int dx, int dy);
 	void ScrollLayerTo(LayerIx layerIx, int x, int y);
+}
+struct Tile {
+	int Index = 0;
+	int Color1 = 0;
+	int Color2 = 0;
+	int Color3 = 0;
+	int Color4 = 0;
+};
+struct GameObject {
+	std::vector<Tile> Tiles;
+	int X = 0;
+	int Y = 0;
+	int Z = 0;
+	int Layer = 0;
+	bool Visible = true;
+};
+namespace Scene {
+	std::vector<GameObject*> Objects;
+
+	void DrawObjects();
+	void AddObject(GameObject* o);
+	void DeleteObjects();
 }
 //=============================================================================
 //	DEFINITIONS
 //=============================================================================
+void Scene::DrawObjects() {
+	for (int i = 0; i < Objects.size(); i++) {
+		GameObject* o = Objects[i];
+		if (o->Visible) {
+			Tile* tile = &o->Tiles[0];
+			Screen::PutTile(tile->Index, o->Layer, o->X, o->Y, tile->Color1, tile->Color2, tile->Color3, tile->Color4);
+		}
+	}
+}
+void Scene::AddObject(GameObject* o) {
+	Objects.push_back(o);
+	// todo: sort objects by Z
+}
+void Scene::DeleteObjects() {
+	for (int i = 0; i < Objects.size(); i++) {
+		delete Objects[i];
+		Objects[i] = nullptr;
+	}
+	Objects.clear();
+}
 std::string String::Format(const char* fmt, ...) {
 	VARGS(str);
 	return str;
@@ -222,6 +266,7 @@ void System::Init() {
 	Thread = SDL_CreateThread(ThreadFn, "ThreadFn", NULL);
 }
 void System::Exit() {
+	Scene::DeleteObjects();
 	SDL_DetachThread(Thread);
 	Thread = nullptr;
 	Screen::CloseWindow();
@@ -540,6 +585,10 @@ void Screen::PutTile(TilesetIx tileIx, LayerIx layerIx, int x, int y,
 			y++;
 		}
 	}
+}
+void Screen::PutTileAligned(TilesetIx tileIx, LayerIx layerIx, int x, int y,
+	PaletteIx c1, PaletteIx c2, PaletteIx c3, PaletteIx c4) {
+	PutTile(tileIx, layerIx, x * TilePixelData::Width, y * TilePixelData::Height, c1, c2, c3, c4);
 }
 void Screen::ScrollLayerDist(LayerIx layerIx, int dx, int dy) {
 	AssertLayerIxRange(layerIx);
