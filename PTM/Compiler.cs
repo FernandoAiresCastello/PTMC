@@ -202,13 +202,23 @@ namespace PTM
             for (int i = 0; i < src.Length; i++)
             {
                 char ch = src[i];
+
                 if (ch == '"')
+                {
                     quote = !quote;
+                }
 
-                if (ch != ',' || quote)
+                if ((ch != ',' && ch != ';') || quote)
+                {
                     sb.Append(ch);
+                }
 
-                if ((ch == ',' && !quote) || i == src.Length - 1)
+                if (ch == ';' && !quote)
+                {
+                    args.Add(sb.ToString().Trim());
+                    break;
+                }
+                else if ((ch == ',' && !quote) || i == src.Length - 1)
                 {
                     args.Add(sb.ToString().Trim());
                     sb.Clear();
