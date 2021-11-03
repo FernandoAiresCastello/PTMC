@@ -152,7 +152,7 @@ namespace PTM
             int ixFirstSpace = srcLine.IndexOf(' ');
             if (ixFirstSpace > 0)
             {
-                cmd = srcLine.Substring(0, ixFirstSpace).Trim().ToUpper();
+                cmd = srcLine.Substring(0, ixFirstSpace).Trim();
                 args = ParseArgs(srcLine.Substring(ixFirstSpace).Trim());
             }
             else
@@ -160,9 +160,8 @@ namespace PTM
                 cmd = srcLine;
             }
 
-            cmd = cmd.ToUpper();
             if (!CmdMap.Mappings.ContainsKey(cmd))
-                throw new CompileError("Invalid command: " + cmd);
+                throw new CompileError("Invalid command: " + srcLine);
 
             string cpp = CmdMap.Mappings[cmd].Cpp;
 
@@ -176,9 +175,9 @@ namespace PTM
                 {
                     cppLine = string.Format(cpp, args);
                 }
-                catch (FormatException ex)
+                catch (FormatException)
                 {
-                    throw new CompileError("Incomplete argument list");
+                    throw new CompileError("Incomplete argument list: " + srcLine);
                 }
             }
 
@@ -219,15 +218,26 @@ namespace PTM
             return args.ToArray();
         }
 
+        private bool IsTopLevelKeyword(string keyword)
+        {
+            return keyword.StartsWith("FN ") || keyword == "GLOBAL" || keyword == "CHR" || keyword == "PAL";
+        }
+
         private void ParseFunctions(string[] srcLines)
         {
-            for (int lineNr = 0; lineNr < srcLines.Length; lineNr++)
+            int lineNr = 0;
+
+            while (true)
             {
-                string line = srcLines[lineNr].Trim();
-                if (string.IsNullOrWhiteSpace(line))
+                if (lineNr >= srcLines.Length)
+                    break;
+
+                string line = srcLines[lineNr++].Trim();
+
+                if (string.IsNullOrWhiteSpace(line) || line.StartsWith(";") || lineNr >= srcLines.Length)
                     continue;
 
-                if (line.ToUpper().StartsWith("FN "))
+                if (line.StartsWith("FN "))
                 {
                     string name = line.Substring(3);
                     List<string> body = new List<string>();
@@ -237,34 +247,41 @@ namespace PTM
                     bool insideFunction = true;
                     while (insideFunction)
                     {
-                        lineNr++;
                         string fnLine = srcLines[lineNr].Trim();
-
-                        if (fnLine == "}")
-                        {
+                        if (IsTopLevelKeyword(fnLine))
                             insideFunction = false;
-                        }
-                        else if (fnLine != "{")
+                        else
                         {
-                            fn.Body.Add(fnLine);
+                            if (!fnLine.StartsWith(";"))
+                                fn.Body.Add(fnLine);
+
+                            lineNr++;
+                            if (lineNr >= srcLines.Length)
+                                break;
                         }
                     }
                 }
-                else if (line.ToUpper() == "GLOBAL")
+                else if (line == "GLOBAL")
                 {
                     bool insideVars = true;
                     while (insideVars)
                     {
-                        lineNr++;
                         string def = srcLines[lineNr].Trim();
-                        if (def == "}")
+                        if (IsTopLevelKeyword(def))
                             insideVars = false;
-                        else if (def != "{")
-                            Vars.Add(def);
+                        else
+                        {
+                            if (!def.StartsWith(";"))
+                                Vars.Add(def);
+
+                            lineNr++;
+                            if (lineNr >= srcLines.Length)
+                                break;
+                        }
 
                     }
                 }
-                else if (line.ToUpper() == "PAL")
+                else if (line == "PAL")
                 {
                     List<string> body = new List<string>();
                     Function fn = new Function("___InitPalette___", body);
@@ -274,16 +291,22 @@ namespace PTM
                     bool insidePal = true;
                     while (insidePal)
                     {
-                        lineNr++;
                         string rgb = srcLines[lineNr].Trim();
-                        if (rgb == "}")
+                        if (IsTopLevelKeyword(rgb))
                             insidePal = false;
-                        else if (rgb != "{")
-                            fn.Body.Add(string.Format("PAL {0}, {1}", index++, rgb));
+                        else
+                        {
+                            if (!rgb.StartsWith(";"))
+                                fn.Body.Add(string.Format("PAL {0}, {1}", index++, rgb));
+
+                            lineNr++;
+                            if (lineNr >= srcLines.Length)
+                                break;
+                        }
 
                     }
                 }
-                else if (line.ToUpper() == "CHR")
+                else if (line == "CHR")
                 {
                     List<string> body = new List<string>();
                     Function fn = new Function("___InitTileset___", body);
@@ -294,24 +317,30 @@ namespace PTM
                     bool insideChr = true;
                     while (insideChr)
                     {
-                        lineNr++;
-                        string rgb = srcLines[lineNr].Trim();
-                        if (rgb == "")
+                        string chr = srcLines[lineNr].Trim();
+                        if (chr == "")
                             continue;
 
-                        if (rgb == "}")
+                        if (IsTopLevelKeyword(chr))
                         {
                             insideChr = false;
                         }
-                        else if (rgb != "{")
+                        else
                         {
-                            fn.Body.Add(string.Format("CHR {0}, {1}, {2}", tilesetIx, tileRowNr, rgb));
-                            tileRowNr++;
-                            if (tileRowNr >= 8)
+                            if (!chr.StartsWith(";"))
                             {
-                                tileRowNr = 0;
-                                tilesetIx++;
+                                fn.Body.Add(string.Format("CHR {0}, {1}, {2}", tilesetIx, tileRowNr, chr));
+                                tileRowNr++;
+                                if (tileRowNr >= 8)
+                                {
+                                    tileRowNr = 0;
+                                    tilesetIx++;
+                                }
                             }
+
+                            lineNr++;
+                            if (lineNr >= srcLines.Length)
+                                break;
                         }
                     }
                 }

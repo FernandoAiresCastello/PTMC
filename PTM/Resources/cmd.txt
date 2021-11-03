@@ -120,14 +120,29 @@ CHR
 	Screen::SetTilesetTile({0}, {1}, "{2}");
 ]
 
+LOCATE
+[
+	Screen::TileArgs.Layer = {0};
+	Screen::TileArgs.X = {1};
+	Screen::TileArgs.Y = {2};
+]
+
+COLOR
+[
+	Screen::TileArgs.Color1 = {0};
+	Screen::TileArgs.Color2 = {1};
+	Screen::TileArgs.Color3 = {2};
+	Screen::TileArgs.Color4 = {3};
+]
+
 PUT
 [
-	Screen::PutTile({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7});
+	Screen::PutTile({0}, false);
 ]
 
 PUTC
 [
-	Screen::PutTileAligned({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7});
+	Screen::PutTile({0}, true);
 ]
 
 ADD
@@ -180,6 +195,11 @@ END
 	}
 ]
 
+WKEY
+[
+	System::AwaitKey(SDL_SCANCODE_{0});
+]
+
 INKEY
 [
 	System::GetKeyboardState();
@@ -195,7 +215,12 @@ KMOD
 	if (SDL_GetModState() & KMOD_{0}) {{
 ]
 
-THR
+COLS
 [
-	System::ThreadFunctions.push_back({0});
+	int {0} = Screen::Cols;
+]
+
+ROWS
+[
+	int {0} = Screen::Rows;
 ]

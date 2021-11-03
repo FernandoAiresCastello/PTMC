@@ -27,7 +27,7 @@ typedef int LayerIx;
 typedef int ColorRgb;
 typedef std::string ColorCodes;
 //=============================================================================
-//	ENUMERATIONS
+//	ENUMS
 //=============================================================================
 
 //=============================================================================
@@ -54,7 +54,7 @@ namespace System {
 	int PauseTime = 0;
 	const Uint8* KbdState = nullptr;
 	static SDL_Thread* Thread = nullptr;
-	std::vector<void(*)()> ThreadFunctions;
+	unsigned long Timer = 0;
 
 	void Init();
 	void Exit();
@@ -65,6 +65,7 @@ namespace System {
 	void ProcessGlobalEvents();
 	void GetKeyboardState();
 	int ThreadFn(void* ptr);
+	void AwaitKey(SDL_Scancode key);
 }
 namespace ColorCode {
 	const char Transparent = '0';
@@ -78,6 +79,16 @@ struct TilePixelData {
 	static const int Height = 8;
 	static const int Length = Width * Height;
 	ColorCodes Pixels = String::Repeat(ColorCode::Transparent, Length);
+};
+struct TileParams {
+	int Layer = 0;
+	int X = 0;
+	int Y = 0;
+	TilesetIx Tile = 0;
+	PaletteIx Color1 = 0;
+	PaletteIx Color2 = 0;
+	PaletteIx Color3 = 0;
+	PaletteIx Color4 = 0;
 };
 struct ScreenLayer {
 	PaletteIx* Pixels = nullptr;
@@ -111,6 +122,7 @@ namespace Screen {
 	PaletteIx BackColor = 0;
 	const int LayerCount = 3;
 	ScreenLayer Layers[LayerCount];
+	TileParams TileArgs;
 	
 	void Init();
 	void OpenWindow(int bufWidth, int bufHeight, int horizontalRes, int verticalRes, int wndWidth, int wndHeight, int full);
@@ -146,58 +158,13 @@ namespace Screen {
 	void DrawLayer(LayerIx ix);
 	void Update();
 	void PutPixel(LayerIx layerIx, int x, int y, PaletteIx color);
-	void PutTile(TilesetIx tileIx, LayerIx layerIx, int x, int y,
-		PaletteIx c1, PaletteIx c2, PaletteIx c3, PaletteIx c4);
-	void PutTileAligned(TilesetIx tileIx, LayerIx layerIx, int x, int y,
-		PaletteIx c1, PaletteIx c2, PaletteIx c3, PaletteIx c4);
+	void PutTile(TilesetIx tileIx, bool align);
 	void ScrollLayerDist(LayerIx layerIx, int dx, int dy);
 	void ScrollLayerTo(LayerIx layerIx, int x, int y);
-}
-struct Tile {
-	int Index = 0;
-	int Color1 = 0;
-	int Color2 = 0;
-	int Color3 = 0;
-	int Color4 = 0;
-};
-struct GameObject {
-	std::vector<Tile> Tiles;
-	int X = 0;
-	int Y = 0;
-	int Z = 0;
-	int Layer = 0;
-	bool Visible = true;
-};
-namespace Scene {
-	std::vector<GameObject*> Objects;
-
-	void DrawObjects();
-	void AddObject(GameObject* o);
-	void DeleteObjects();
 }
 //=============================================================================
 //	DEFINITIONS
 //=============================================================================
-void Scene::DrawObjects() {
-	for (int i = 0; i < Objects.size(); i++) {
-		GameObject* o = Objects[i];
-		if (o->Visible) {
-			Tile* tile = &o->Tiles[0];
-			Screen::PutTile(tile->Index, o->Layer, o->X, o->Y, tile->Color1, tile->Color2, tile->Color3, tile->Color4);
-		}
-	}
-}
-void Scene::AddObject(GameObject* o) {
-	Objects.push_back(o);
-	// todo: sort objects by Z
-}
-void Scene::DeleteObjects() {
-	for (int i = 0; i < Objects.size(); i++) {
-		delete Objects[i];
-		Objects[i] = nullptr;
-	}
-	Objects.clear();
-}
 std::string String::Format(const char* fmt, ...) {
 	VARGS(str);
 	return str;
@@ -266,7 +233,6 @@ void System::Init() {
 	Thread = SDL_CreateThread(ThreadFn, "ThreadFn", NULL);
 }
 void System::Exit() {
-	Scene::DeleteObjects();
 	SDL_DetachThread(Thread);
 	Thread = nullptr;
 	Screen::CloseWindow();
@@ -305,12 +271,18 @@ void System::GetKeyboardState() {
 }
 int System::ThreadFn(void* ptr) {
 	while (true) {
-		for (int i = 0; i < ThreadFunctions.size(); i++) {
-			auto fn = ThreadFunctions[i];
-			fn();
-		}
+		Timer++;
 	}
 	return 0;
+}
+void System::AwaitKey(SDL_Scancode key) {
+	while (true) {
+		ProcessGlobalEvents();
+		GetKeyboardState();
+		if (KbdState[key]) {
+			break;
+		}
+	}
 }
 void System::Pause(int time) {
 	PauseTime = time;
@@ -528,7 +500,6 @@ void Screen::DrawLayer(LayerIx layerIx) {
 	}
 }
 void Screen::Update() {
-	
 	static int pitch;
 	static void* pixels;
 	static SDL_Rect dstRect = { 0, 0, WndWidth, WndHeight };
@@ -549,9 +520,15 @@ void Screen::PutPixel(LayerIx layerIx, int x, int y, PaletteIx color) {
 	if (x >= 0 && y >= 0 && x < Layers[layerIx].Width && y < Layers[layerIx].Height)
 		Layers[layerIx].Pixels[y * Layers[layerIx].Width + x] = color;
 }
-void Screen::PutTile(TilesetIx tileIx, LayerIx layerIx, int x, int y,
-	PaletteIx c1, PaletteIx c2, PaletteIx c3, PaletteIx c4) {
-	
+void Screen::PutTile(TilesetIx tileIx, bool align) {
+	int layerIx = Screen::TileArgs.Layer;
+	int x = align ? Screen::TileArgs.X * TilePixelData::Width : Screen::TileArgs.X;
+	int y = align ? Screen::TileArgs.Y * TilePixelData::Height : Screen::TileArgs.Y;
+	PaletteIx c1 = Screen::TileArgs.Color1;
+	PaletteIx c2 = Screen::TileArgs.Color2;
+	PaletteIx c3 = Screen::TileArgs.Color3;
+	PaletteIx c4 = Screen::TileArgs.Color4;
+
 	AssertLayerIxRange(layerIx);
 
 	int initialX = x;
@@ -585,10 +562,6 @@ void Screen::PutTile(TilesetIx tileIx, LayerIx layerIx, int x, int y,
 			y++;
 		}
 	}
-}
-void Screen::PutTileAligned(TilesetIx tileIx, LayerIx layerIx, int x, int y,
-	PaletteIx c1, PaletteIx c2, PaletteIx c3, PaletteIx c4) {
-	PutTile(tileIx, layerIx, x * TilePixelData::Width, y * TilePixelData::Height, c1, c2, c3, c4);
 }
 void Screen::ScrollLayerDist(LayerIx layerIx, int dx, int dy) {
 	AssertLayerIxRange(layerIx);
