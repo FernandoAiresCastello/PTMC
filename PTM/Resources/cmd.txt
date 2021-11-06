@@ -11,12 +11,12 @@ MSGBOX
 
 VAR
 [
-	auto {0} = {1};
+	*
 ]
 
 CONST
 [
-	const auto {0} = {1};
+	*
 ]
 
 ITOS
@@ -217,10 +217,10 @@ KMOD
 
 COLS
 [
-	int {0} = Screen::Cols;
+	{0} = Screen::Cols;
 ]
 
 ROWS
 [
-	int {0} = Screen::Rows;
+	{0} = Screen::Rows;
 ]

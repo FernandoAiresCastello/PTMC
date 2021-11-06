@@ -10,6 +10,7 @@
 #include <fstream>
 #include <sstream>
 #include <cstdio>
+#include <climits>
 //=============================================================================
 //	CONSTANTS
 //=============================================================================
@@ -54,7 +55,7 @@ namespace System {
 	int PauseTime = 0;
 	const Uint8* KbdState = nullptr;
 	static SDL_Thread* Thread = nullptr;
-	unsigned long Timer = 0;
+	long SysTimer = 0;
 
 	void Init();
 	void Exit();
@@ -271,7 +272,9 @@ void System::GetKeyboardState() {
 }
 int System::ThreadFn(void* ptr) {
 	while (true) {
-		Timer++;
+		SysTimer++;
+		if (SysTimer >= LONG_MAX)
+			SysTimer = 0;
 	}
 	return 0;
 }

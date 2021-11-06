@@ -15,6 +15,7 @@ namespace PTM
         private readonly string BeginMain = "// _BEGIN_MAIN_";
         private readonly string BeginDefs = "// _BEGIN_DEFS_";
         private readonly CommandMap CmdMap = new CommandMap();
+        private readonly CommandTranslator Translator = new CommandTranslator();
         private readonly List<Function> Functions = new List<Function>();
         private readonly List<string> Vars = new List<string>();
 
@@ -44,20 +45,20 @@ namespace PTM
         {
             Log("Compiling PTML to C++...");
 
-            srcLines = SplitLines(srcLines);
-            ParseFunctions(srcLines);
-
-            foreach (Function fn in Functions)
-                for (int fnLineNr = 0; fnLineNr < fn.Body.Count; fnLineNr++)
-                    fn.Body[fnLineNr] = CompileLine(fn.Body[fnLineNr]);
-
             StringBuilder decls = new StringBuilder();
             StringBuilder main = new StringBuilder();
             StringBuilder defs = new StringBuilder();
 
+            srcLines = SplitLines(srcLines);
+            ParseFunctions(srcLines);
+
             foreach (string var in Vars)
                 decls.AppendLine(CompileLine(var));
             decls.AppendLine();
+
+            foreach (Function fn in Functions)
+                for (int fnLineNr = 0; fnLineNr < fn.Body.Count; fnLineNr++)
+                    fn.Body[fnLineNr] = CompileLine(fn.Body[fnLineNr]);
 
             bool hasMain = false;
             
@@ -138,6 +139,17 @@ namespace PTM
             return proc.ExitCode == 0;
         }
 
+        private string CompileLine_2(string srcLine)
+        {
+            int ixLastQuote = srcLine.LastIndexOf('"');
+            int ixLastColon = srcLine.LastIndexOf(';');
+
+            if (ixLastQuote < ixLastColon)
+                srcLine = srcLine.Substring(0, ixLastColon).Trim();
+
+            return Translator.Translate(srcLine);
+        }
+
         private string CompileLine(string srcLine)
         {
             if (string.IsNullOrEmpty(srcLine))
@@ -145,7 +157,6 @@ namespace PTM
             if (srcLine.StartsWith(";"))
                 return "//" + srcLine.Substring(1);
 
-            string cppLine = "";
             string cmd = null;
             string[] args = null;
 
@@ -165,6 +176,14 @@ namespace PTM
 
             string cpp = CmdMap.Mappings[cmd].Cpp;
 
+            if (cpp == "*")
+            {
+                cpp = CompileSpecial(srcLine, cmd, args);
+                return cpp;
+            }
+
+            string cppLine = "";
+
             if (args == null)
             {
                 cppLine = cpp;
@@ -180,9 +199,34 @@ namespace PTM
                     throw new CompileError("Incomplete argument list: " + srcLine);
                 }
             }
-
-
+            
             return cppLine;
+        }
+
+        private string CompileSpecial(string src, string cmd, string[] args)
+        {
+            string cpp = "";
+
+            if (cmd == "VAR" || cmd == "CONST")
+            {
+                string id = args[0];
+                string value = args[1];
+                string type = "";
+
+                if (value.StartsWith("\"") && value.EndsWith("\""))
+                    type = "std::string";
+                else if (char.IsDigit(value[0]))
+                    type = "long";
+                else
+                    type = "auto";
+
+                if (cmd == "CONST")
+                    type = "const " + type;
+
+                cpp = string.Format("{0} {1} = {2};", type, id, value);
+            }
+
+            return cpp;
         }
 
         public string JoinArgs(string[] args, int initialIndex = 0)
@@ -230,7 +274,7 @@ namespace PTM
 
         private bool IsTopLevelKeyword(string keyword)
         {
-            return keyword.StartsWith("FN ") || keyword == "GLOBAL" || keyword == "CHR" || keyword == "PAL";
+            return keyword.StartsWith("[") && keyword.EndsWith("]");
         }
 
         private void ParseFunctions(string[] srcLines)
@@ -247,9 +291,29 @@ namespace PTM
                 if (string.IsNullOrWhiteSpace(line) || line.StartsWith(";") || lineNr >= srcLines.Length)
                     continue;
 
-                if (line.StartsWith("FN "))
+                if (line == "[GLOBAL]")
                 {
-                    string name = line.Substring(3);
+                    bool insideVars = true;
+                    while (insideVars)
+                    {
+                        string def = srcLines[lineNr].Trim();
+                        if (IsTopLevelKeyword(def))
+                            insideVars = false;
+                        else
+                        {
+                            if (!def.StartsWith(";"))
+                                Vars.Add(def);
+
+                            lineNr++;
+                            if (lineNr >= srcLines.Length)
+                                break;
+                        }
+
+                    }
+                }
+                else if (line.StartsWith("[FN ") && line.EndsWith("]"))
+                {
+                    string name = line.Substring(4, line.Length - 5);
                     List<string> body = new List<string>();
                     Function fn = new Function(name, body);
                     Functions.Add(fn);
@@ -271,27 +335,7 @@ namespace PTM
                         }
                     }
                 }
-                else if (line == "GLOBAL")
-                {
-                    bool insideVars = true;
-                    while (insideVars)
-                    {
-                        string def = srcLines[lineNr].Trim();
-                        if (IsTopLevelKeyword(def))
-                            insideVars = false;
-                        else
-                        {
-                            if (!def.StartsWith(";"))
-                                Vars.Add(def);
-
-                            lineNr++;
-                            if (lineNr >= srcLines.Length)
-                                break;
-                        }
-
-                    }
-                }
-                else if (line == "PAL")
+                else if (line == "[PAL]")
                 {
                     List<string> body = new List<string>();
                     Function fn = new Function("___InitPalette___", body);
@@ -316,7 +360,7 @@ namespace PTM
 
                     }
                 }
-                else if (line == "CHR")
+                else if (line == "[CHR]")
                 {
                     List<string> body = new List<string>();
                     Function fn = new Function("___InitTileset___", body);

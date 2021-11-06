@@ -57,7 +57,7 @@ namespace PTM
                         CurArgs = "";
                     }
                 }
-                else
+                else // InsideDefinition = true
                 {
                     if (line == "]")
                     {
